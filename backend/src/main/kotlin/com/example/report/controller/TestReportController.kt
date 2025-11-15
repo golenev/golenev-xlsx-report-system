@@ -1,5 +1,6 @@
 package com.example.report.controller
 
+import com.example.report.dto.CreateTestRequest
 import com.example.report.dto.PartialUpdateRequest
 import com.example.report.dto.TestBatchRequest
 import com.example.report.service.ColumnConfigService
@@ -27,6 +28,11 @@ class TestReportController(
 
     @GetMapping("/tests")
     fun getTests() = testReportService.getReport()
+
+    @PostMapping("/tests")
+    fun createTest(@Valid @RequestBody request: CreateTestRequest) {
+        testReportService.createTest(request)
+    }
 
     @PostMapping("/tests/batch")
     fun upsertBatch(@Valid @RequestBody request: TestBatchRequest) {

@@ -46,6 +46,24 @@ body {
   background-color: #1666cc;
 }
 
+.secondary-btn {
+  background-color: #fff;
+  border: 1px solid #dadce0;
+  color: #1a73e8;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.secondary-btn:disabled,
+.primary-btn:disabled,
+.save-btn:disabled,
+.cancel-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .status {
   font-size: 14px;
   color: #5f6368;
@@ -109,6 +127,44 @@ body {
   background-color: #f8f9fa;
 }
 
+.new-row .row-index-cell {
+  background-color: #e8f0fe;
+}
+
+.new-row-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+}
+
+.save-btn {
+  background-color: #1a73e8;
+  border: none;
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.save-btn:hover:not(:disabled) {
+  background-color: #1666cc;
+}
+
+.cancel-btn {
+  background-color: transparent;
+  border: none;
+  color: #5f6368;
+  padding: 0;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
 .header-content {
   display: flex;
   flex-direction: column;
@@ -157,6 +213,12 @@ body {
   display: block;
   padding: 6px 8px;
   font-size: 13px;
+}
+
+.empty-cell {
+  text-align: center;
+  font-size: 13px;
+  color: #9aa0a6;
 }
 
 tbody tr:nth-child(odd) .row-index-cell {
