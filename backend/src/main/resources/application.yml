@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/test_report}
+    username: ${DB_USERNAME:report}
+    password: ${DB_PASSWORD:report}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  port: ${PORT:8080}
+
+column-config:
+  path: ${COLUMN_CONFIG_PATH:classpath:config/column-config.json}
