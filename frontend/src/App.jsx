@@ -14,6 +14,13 @@ const FIELD_DEFINITIONS = [
   { key: 'notes', label: 'Notes', editable: true, type: 'textarea' }
 ];
 
+function createEmptyItem() {
+  return FIELD_DEFINITIONS.reduce((acc, field) => {
+    acc[field.key] = '';
+    return acc;
+  }, {});
+}
+
 function withBase(path) {
   if (!API_BASE) {
     return path;
@@ -38,6 +45,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [newItem, setNewItem] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -99,11 +107,87 @@ export default function App() {
     }
   };
 
+  const createTest = async (payload) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(withBase('/api/tests'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        let message = 'Failed to create test';
+        try {
+          const data = await response.json();
+          message = data.message || data.detail || message;
+        } catch (parseError) {
+          const text = await response.text();
+          message = text || message;
+        }
+        throw new Error(message);
+      }
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleBlur = (item, key) => {
     const value = item[key];
     const sanitizedValue = value === '' ? null : value;
     const payload = { [key]: sanitizedValue };
     sendUpdate(item.testId, payload);
+  };
+
+  const handleNewFieldChange = (key, value) => {
+    setNewItem((prev) => (prev ? { ...prev, [key]: value } : prev));
+  };
+
+  const startNewRow = () => {
+    setNewItem(createEmptyItem());
+  };
+
+  const cancelNewRow = () => {
+    setNewItem(null);
+  };
+
+  const handleCreate = async () => {
+    if (!newItem) {
+      return;
+    }
+    const trimmedId = newItem.testId.trim();
+    if (!trimmedId) {
+      setError('Test ID is required');
+      return;
+    }
+    const payload = { testId: trimmedId };
+    FIELD_DEFINITIONS.forEach((field) => {
+      if (field.key === 'testId') {
+        return;
+      }
+      const value = newItem[field.key];
+      if (field.type === 'date') {
+        if (value) {
+          payload[field.key] = value;
+        }
+      } else if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed) {
+          payload[field.key] = trimmed;
+        }
+      }
+    });
+
+    try {
+      await createTest(payload);
+      setNewItem(null);
+    } catch (err) {
+      // keep the form for correction
+    }
   };
 
   const handleRunChange = (item, runIndex, value) => {
@@ -149,6 +233,14 @@ export default function App() {
       <header className="app-header">
         <h1>Test Report</h1>
         <div className="header-actions">
+          <button
+            type="button"
+            onClick={startNewRow}
+            className="secondary-btn"
+            disabled={!!newItem || loading}
+          >
+            Add Row
+          </button>
           <button type="button" onClick={handleExport} className="primary-btn">
             Export to Excel
           </button>
@@ -182,6 +274,67 @@ export default function App() {
               </tr>
             </thead>
             <tbody>
+              {newItem && (
+                <tr className="new-row">
+                  <td className="row-index-cell new-row-actions">
+                    <button
+                      type="button"
+                      className="save-btn"
+                      onClick={handleCreate}
+                      disabled={saving || !newItem.testId.trim()}
+                    >
+                      Save
+                    </button>
+                    <button type="button" className="cancel-btn" onClick={cancelNewRow} disabled={saving}>
+                      Cancel
+                    </button>
+                  </td>
+                  {FIELD_DEFINITIONS.map((column) => {
+                    const width = columnConfig[column.key] ?? (column.type === 'textarea' ? 280 : 160);
+                    const value = newItem[column.key] ?? '';
+                    return (
+                      <td
+                        key={`new-${column.key}`}
+                        style={{ width: `${width}px`, minWidth: `${width}px` }}
+                      >
+                        {column.type === 'textarea' ? (
+                          <textarea
+                            value={value}
+                            onChange={(e) => handleNewFieldChange(column.key, e.target.value)}
+                            className="cell-textarea"
+                          />
+                        ) : column.type === 'date' ? (
+                          <input
+                            type="date"
+                            value={value}
+                            onChange={(e) => handleNewFieldChange(column.key, e.target.value)}
+                            className="cell-input"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={value}
+                            onChange={(e) => handleNewFieldChange(column.key, e.target.value)}
+                            className="cell-input"
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
+                  {runColumns.map((column) => {
+                    const width = columnConfig[column.key] ?? 120;
+                    return (
+                      <td
+                        key={`new-${column.key}`}
+                        style={{ width: `${width}px`, minWidth: `${width}px` }}
+                        className="empty-cell"
+                      >
+                        —
+                      </td>
+                    );
+                  })}
+                </tr>
+              )}
               {items.map((item, rowIndex) => (
                 <tr key={item.testId}>
                   <td className="row-index-cell">{rowIndex + 1}</td>

@@ -1,5 +1,6 @@
 package com.example.report.service
 
+import com.example.report.dto.CreateTestRequest
 import com.example.report.dto.PartialUpdateRequest
 import com.example.report.dto.TestBatchRequest
 import com.example.report.dto.TestReportItemDto
@@ -33,6 +34,30 @@ class TestReportService(
         }
         val columns = columnConfigService.getConfig().columns
         return TestReportResponse(items = items, runs = runs, columnConfig = columns)
+    }
+
+    @Transactional
+    fun createTest(request: CreateTestRequest) {
+        val normalizedId = request.testId.trim()
+        if (normalizedId.isEmpty()) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "testId must not be blank")
+        }
+        if (testReportRepository.findByTestId(normalizedId).isPresent) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "Test with ID $normalizedId already exists")
+        }
+        upsertSingle(
+            testId = normalizedId,
+            category = request.category,
+            shortTitle = request.shortTitle,
+            issueLink = request.issueLink,
+            readyDate = request.readyDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
+            generalStatus = request.generalStatus,
+            scenario = request.scenario,
+            notes = request.notes,
+            runIndex = null,
+            runStatus = null,
+            runDate = null
+        )
     }
 
     @Transactional
