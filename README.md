@@ -7,102 +7,96 @@
 - **backend/** — Kotlin + Spring Boot, PostgreSQL, Flyway, экспорт Excel
 - **frontend/** — React SPA (Vite)
 - **config/column-config.json** — конфигурация фиксированных ширин колонок
-- **docker-compose.yml** — быстрый запуск всех сервисов и PostgreSQL
+- **docker-compose.yml** — единая точка запуска инфраструктуры и сервисов
 
-## Подготовка окружения
-
-Необходимые инструменты:
+## Необходимые инструменты
 
 - Java 17+
-- Kotlin (идёт вместе с Gradle)
-- Gradle 8.x (если нет, установите с https://gradle.org/install)
-- Node.js 18+
-- npm 9+
-- Docker + Docker Compose (для контейнерного запуска)
+- Gradle 8.x (либо используйте встроенный `./gradlew`)
+- Node.js 18+ и npm 9+
+- Docker + Docker Compose
 
-## Backend
+## Быстрый запуск всего решения
 
-### Локальный запуск
+Ниже — единая последовательность действий, которая запускает БД, backend и frontend в правильном порядке. Все команды выполняются из корня репозитория.
 
-```bash
-cd backend
-# Применение миграций и запуск dev-сервера
-gradle bootRun
-```
-
-Переменные окружения:
-
-- `DB_URL` — JDBC строка (по умолчанию `jdbc:postgresql://localhost:5432/test_report`)
-- `DB_USERNAME`, `DB_PASSWORD` — учётные данные PostgreSQL (по умолчанию `report/report`)
-- `COLUMN_CONFIG_PATH` — путь к JSON с ширинами колонок (`classpath:config/column-config.json`)
-- `PORT` — порт приложения (по умолчанию 8080)
-
-### PostgreSQL и миграции
-
-1. Поднимите PostgreSQL (локально или через Docker):
+1. **Поднять инфраструктуру:**
    ```bash
-   docker run --name test-report-db -e POSTGRES_DB=test_report -e POSTGRES_USER=report -e POSTGRES_PASSWORD=report -p 5432:5432 -d postgres:15
+   docker compose up -d db
    ```
-2. При старте backend Flyway автоматически выполнит миграции из `backend/src/main/resources/db/migration`.
+   Этот шаг стартует контейнер PostgreSQL c внешним портом `55432`. Данные сохраняются в volume `db-data`, поэтому перезапуск контейнера не приводит к потере данных.
 
-### Docker-образ backend
+2. **Запустить backend (локально):**
+   ```bash
+   cd backend
+   ./gradlew bootRun
+   ```
+   Команда запускает `fun main(args: Array<String>) { runApplication<TestReportApplication>(*args) }`, тем самым поднимая Spring Boot приложение на порту `18080`. При старте автоматически применяются Flyway-миграции и считывается конфигурация ширин колонок.
 
+3. **Запустить frontend (локально):**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   Vite-разработческий сервер поднимется на `http://localhost:5173` и будет проксировать запросы `/api` на backend (`http://localhost:18080`). После открытия страницы загрузится таблица в стиле Google Sheets.
+
+> Такой сценарий — самый быстрый для локальной разработки: база работает в Docker, а приложение и SPA запускаются напрямую, что упрощает hot-reload и отладку.
+
+Для остановки сервисов:
 ```bash
-cd backend
-docker build -t test-report-backend .
+docker compose down
 ```
+(или `docker compose down -v`, если нужно удалить данные БД).
 
-Контейнер принимает те же переменные окружения для подключения к БД.
+## Альтернативные варианты запуска
 
-## Frontend
+### Полный запуск в Docker
 
-### Настройка и запуск dev-сервера
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Vite-прокси автоматически перенаправит запросы `/api` на `http://localhost:8080`.
-
-### Production-сборка
-
-```bash
-npm run build
-```
-
-Результат появится в `frontend/dist`. Для предпросмотра:
-
-```bash
-npm run preview
-```
-
-### Конфигурация колонок
-
-SPA получает ширины колонок вместе с данными из backend (`/api/tests`). Сам JSON лежит в `config/column-config.json`. Чтобы изменить значения:
-
-1. Обновите `config/column-config.json`
-2. При необходимости обновите `backend/src/main/resources/config/column-config.json`
-3. Перезапустите backend (конфиг перечитывается при старте или через REST `GET /api/config/columns`)
-
-## Совместный запуск через Docker Compose
-
+Если необходимо поднять все слои в контейнерах (например, для демонстрации), используйте:
 ```bash
 docker compose up --build
 ```
-
-Сервисы:
-
-- PostgreSQL: `localhost:5432`
-- Backend API: `http://localhost:8080`
+В результате появятся сервисы:
+- PostgreSQL: `localhost:55432`
+- Backend API: `http://localhost:18080`
 - Frontend SPA: `http://localhost:5173`
 
-Для остановки и очистки данных:
+### Самостоятельный запуск PostgreSQL
 
+При желании можно обойтись без Docker и использовать собственный сервер БД. В этом случае пропустите шаг 1, настройте доступ к базе и передайте переменные окружения `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` перед запуском backend.
+
+## Назначение Dockerfile'ов
+
+- **backend/Dockerfile** — многоэтапная сборка, которая сначала собирает Spring Boot JAR (`gradle clean bootJar`), а затем запускает приложение внутри легковесного JRE на порту `18080`. Используйте этот образ для деплоя или для `docker compose up --build`, если хотите изолировать backend от локального окружения.
+- **frontend/Dockerfile** — собирает production-бандл Vite и публикует его через статический сервер. Это удобно для контейнерного деплоя SPA.
+
+Оба Dockerfile не обязательны для локальной разработки. База в Docker — самая удобная часть, backend и frontend можно запускать напрямую из исходников.
+
+## Переменные окружения backend
+
+| Переменная           | Назначение                                            | Значение по умолчанию |
+|----------------------|--------------------------------------------------------|------------------------|
+| `DB_URL`             | JDBC-строка подключения к PostgreSQL                  | `jdbc:postgresql://localhost:55432/test_report` |
+| `DB_USERNAME`        | Пользователь PostgreSQL                               | `report` |
+| `DB_PASSWORD`        | Пароль PostgreSQL                                     | `report` |
+| `COLUMN_CONFIG_PATH` | Путь к JSON с ширинами колонок                        | `classpath:config/column-config.json` |
+| `PORT`               | Порт HTTP-сервера Spring Boot                         | `18080` |
+
+## Frontend
+
+При локальном запуске Vite использует прокси на `http://localhost:18080`. Если backend запущен на другом хосте/порту, укажите `VITE_API_BASE_URL`:
 ```bash
-docker compose down -v
+VITE_API_BASE_URL="http://example.com:18080" npm run dev
 ```
+
+## Конфигурация колонок
+
+SPA получает ширины колонок вместе с данными из backend (`/api/tests`). Сам JSON лежит в `config/column-config.json`. Чтобы изменить значения:
+
+1. Обновите `config/column-config.json` (общий конфиг).
+2. При необходимости обновите `backend/src/main/resources/config/column-config.json` (копия для backend).
+3. Перезапустите backend — файл перечитывается при старте. Для проверки актуальных значений используйте `GET /api/config/columns`.
 
 ## REST API
 
@@ -208,10 +202,10 @@ GET /api/tests/export/excel
 
 Используйте endpoint `/api/tests/batch` для пакетной передачи результатов.
 
-- Подготавливайте батч по уникальным `testId`
-- Указывайте только изменившиеся поля
-- Для обновления статуса прогона передавайте `runIndex` (1–5) и `runStatus`
-- `runDate` опционален. Если не указать, дата автоматически проставляется текущей
+- Подготавливайте батч по уникальным `testId`.
+- Указывайте только изменившиеся поля.
+- Для обновления статуса прогона передавайте `runIndex` (1–5) и `runStatus`.
+- `runDate` опционален. Если не указать, дата автоматически проставляется текущей.
 
 ### Пример Kotlin-клиента (Spring WebClient)
 
@@ -219,7 +213,7 @@ GET /api/tests/export/excel
 import org.springframework.web.reactive.function.client.WebClient
 
 data class TestUpsertRequest(
-    val items: List<TestItem>
+    val items: List<TestItem>,
 )
 
 data class TestItem(
@@ -227,19 +221,19 @@ data class TestItem(
     val category: String? = null,
     val shortTitle: String? = null,
     val runIndex: Int? = null,
-    val runStatus: String? = null
+    val runStatus: String? = null,
 )
 
 val client = WebClient.builder()
-    .baseUrl("http://localhost:8080/api")
+    .baseUrl("http://localhost:18080/api")
     .build()
 
 suspend fun sendResults() {
     val payload = TestUpsertRequest(
         items = listOf(
             TestItem(testId = "TC-001", runIndex = 1, runStatus = "PASSED"),
-            TestItem(testId = "TC-002", category = "Payments")
-        )
+            TestItem(testId = "TC-002", category = "Payments"),
+        ),
     )
 
     client.post()
@@ -253,16 +247,16 @@ suspend fun sendResults() {
 
 ## UI особенности
 
-- Таблица стилизована под Google Sheets: сетка, нумерация строк, буквенные заголовки
-- Фиксированные ширины колонок из конфигурации
-- Inline-редактирование: поля сохраняются по `blur`
-- Выпадающие списки для Run Result N (PASSED/FAILED/NOT RUN)
-- Автосохранение и отображение статуса «Saving…»
-- Кнопка экспорта «Export to Excel»
+- Таблица стилизована под Google Sheets: сетка, нумерация строк, буквенные заголовки.
+- Фиксированные ширины колонок из конфигурации.
+- Inline-редактирование: поля сохраняются по `blur`.
+- Выпадающие списки для Run Result N (PASSED/FAILED/NOT RUN).
+- Автосохранение и отображение статуса «Saving…».
+- Кнопка экспорта «Export to Excel».
 
 ## Полезные команды
 
-- Запуск backend-тестов: `cd backend && gradle test`
+- Запуск backend-тестов: `cd backend && ./gradlew test`
 - Линт фронтенда: `cd frontend && npm run lint`
 - Сброс БД в Docker Compose: `docker compose down -v`
 
@@ -293,4 +287,4 @@ CREATE TABLE test_run_metadata (
 );
 ```
 
-Готово к запуску «из коробки» по инструкциям выше.
+Проект готов к запуску «из коробки» по инструкции выше.

@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/test_report}
+    url: ${DB_URL:jdbc:postgresql://localhost:55432/test_report}
     username: ${DB_USERNAME:report}
     password: ${DB_PASSWORD:report}
   jpa:
@@ -18,7 +18,7 @@ spring:
     baseline-on-migrate: true
 
 server:
-  port: ${PORT:8080}
+  port: ${PORT:18080}
 
 column-config:
   path: ${COLUMN_CONFIG_PATH:classpath:config/column-config.json}

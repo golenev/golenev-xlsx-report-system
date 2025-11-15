@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: report
       POSTGRES_PASSWORD: report
     ports:
-      - "5432:5432"
+      - "55432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
 
@@ -19,16 +19,17 @@ services:
       DB_USERNAME: report
       DB_PASSWORD: report
       COLUMN_CONFIG_PATH: classpath:config/column-config.json
+      PORT: 18080
     depends_on:
       - db
     ports:
-      - "8080:8080"
+      - "18080:18080"
 
   frontend:
     build:
       context: ./frontend
     environment:
-      VITE_API_BASE_URL: http://backend:8080
+      VITE_API_BASE_URL: http://backend:18080
     depends_on:
       - backend
     ports:
