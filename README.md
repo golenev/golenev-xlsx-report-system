@@ -1,1 +1,290 @@
-# golenev-xlsx-report-system
+# Test Report System
+
+Полнофункциональная система ведения регрессионных тестов с web-интерфейсом в стиле Google Sheets.
+
+## Состав проекта
+
+- **backend/** — Kotlin + Spring Boot, PostgreSQL, Flyway, экспорт Excel
+- **frontend/** — React SPA (Vite)
+- **config/column-config.json** — конфигурация фиксированных ширин колонок
+- **docker-compose.yml** — единая точка запуска инфраструктуры и сервисов
+
+## Необходимые инструменты
+
+- Java 17+
+- Gradle 8.x (либо используйте встроенный `./gradlew`)
+- Node.js 18+ и npm 9+
+- Docker + Docker Compose
+
+## Быстрый запуск всего решения
+
+Ниже — единая последовательность действий, которая запускает БД, backend и frontend в правильном порядке. Все команды выполняются из корня репозитория.
+
+1. **Поднять инфраструктуру:**
+   ```bash
+   docker compose up -d db
+   ```
+   Этот шаг стартует контейнер PostgreSQL c внешним портом `55432`. Данные сохраняются в volume `db-data`, поэтому перезапуск контейнера не приводит к потере данных.
+
+2. **Запустить backend (локально):**
+   ```bash
+   cd backend
+   ./gradlew bootRun
+   ```
+   Команда запускает `fun main(args: Array<String>) { runApplication<TestReportApplication>(*args) }`, тем самым поднимая Spring Boot приложение на порту `18080`. При старте автоматически применяются Flyway-миграции и считывается конфигурация ширин колонок.
+
+3. **Запустить frontend (локально):**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   Vite-разработческий сервер поднимется на `http://localhost:5173` и будет проксировать запросы `/api` на backend (`http://localhost:18080`). После открытия страницы загрузится таблица в стиле Google Sheets.
+
+> Такой сценарий — самый быстрый для локальной разработки: база работает в Docker, а приложение и SPA запускаются напрямую, что упрощает hot-reload и отладку.
+
+Для остановки сервисов:
+```bash
+docker compose down
+```
+(или `docker compose down -v`, если нужно удалить данные БД).
+
+## Альтернативные варианты запуска
+
+### Полный запуск в Docker
+
+Если необходимо поднять все слои в контейнерах (например, для демонстрации), используйте:
+```bash
+docker compose up --build
+```
+В результате появятся сервисы:
+- PostgreSQL: `localhost:55432`
+- Backend API: `http://localhost:18080`
+- Frontend SPA: `http://localhost:5173`
+
+### Самостоятельный запуск PostgreSQL
+
+При желании можно обойтись без Docker и использовать собственный сервер БД. В этом случае пропустите шаг 1, настройте доступ к базе и передайте переменные окружения `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` перед запуском backend.
+
+## Назначение Dockerfile'ов
+
+- **backend/Dockerfile** — многоэтапная сборка, которая сначала собирает Spring Boot JAR (`gradle clean bootJar`), а затем запускает приложение внутри легковесного JRE на порту `18080`. Используйте этот образ для деплоя или для `docker compose up --build`, если хотите изолировать backend от локального окружения.
+- **frontend/Dockerfile** — собирает production-бандл Vite и публикует его через статический сервер. Это удобно для контейнерного деплоя SPA.
+
+Оба Dockerfile не обязательны для локальной разработки. База в Docker — самая удобная часть, backend и frontend можно запускать напрямую из исходников.
+
+## Переменные окружения backend
+
+| Переменная           | Назначение                                            | Значение по умолчанию |
+|----------------------|--------------------------------------------------------|------------------------|
+| `DB_URL`             | JDBC-строка подключения к PostgreSQL                  | `jdbc:postgresql://localhost:55432/test_report` |
+| `DB_USERNAME`        | Пользователь PostgreSQL                               | `report` |
+| `DB_PASSWORD`        | Пароль PostgreSQL                                     | `report` |
+| `COLUMN_CONFIG_PATH` | Путь к JSON с ширинами колонок                        | `classpath:config/column-config.json` |
+| `PORT`               | Порт HTTP-сервера Spring Boot                         | `18080` |
+
+## Frontend
+
+При локальном запуске Vite использует прокси на `http://localhost:18080`. Если backend запущен на другом хосте/порту, укажите `VITE_API_BASE_URL`:
+```bash
+VITE_API_BASE_URL="http://example.com:18080" npm run dev
+```
+
+## Конфигурация колонок
+
+SPA получает ширины колонок вместе с данными из backend (`/api/tests`). Сам JSON лежит в `config/column-config.json`. Чтобы изменить значения:
+
+1. Обновите `config/column-config.json` (общий конфиг).
+2. При необходимости обновите `backend/src/main/resources/config/column-config.json` (копия для backend).
+3. Перезапустите backend — файл перечитывается при старте. Для проверки актуальных значений используйте `GET /api/config/columns`.
+
+## REST API
+
+### Получить данные таблицы
+
+```
+GET /api/tests
+```
+
+Ответ:
+
+```json
+{
+  "items": [
+    {
+      "testId": "TC-001",
+      "category": "Delivery",
+      "shortTitle": "Успешная авторизация",
+      "issueLink": "https://youtrack/.../ABC-1",
+      "readyDate": "2025-11-15",
+      "generalStatus": "Ready",
+      "scenario": "Detailed test steps…",
+      "notes": "any info",
+      "runStatuses": ["PASSED", "FAILED", null, null, null],
+      "updatedAt": "2024-04-01T12:15:00Z"
+    }
+  ],
+  "runs": [
+    { "runIndex": 1, "runDate": "2024-03-30" }
+  ],
+  "columnConfig": {
+    "testId": 180
+  }
+}
+```
+
+### Пакетный upsert автотестов
+
+```
+POST /api/tests/batch
+Content-Type: application/json
+```
+
+Тело запроса:
+
+```json
+{
+  "items": [
+    {
+      "testId": "TC-001",
+      "category": "Delivery",
+      "shortTitle": "Успешная авторизация",
+      "issueLink": "https://youtrack/.../ABC-1",
+      "readyDate": "2025-11-15",
+      "generalStatus": "Ready",
+      "scenario": "Detailed test steps…",
+      "notes": "any info",
+      "runIndex": 3,
+      "runStatus": "PASSED",
+      "runDate": "2025-11-16"
+    }
+  ]
+}
+```
+
+- `testId` — уникальный ключ. Если запись существует, поля обновляются (идемпотентно).
+- `runIndex` опционально (1–5). Если указан, статус и дата прогона обновляются.
+- Поля, отсутствующие в запросе, остаются без изменений.
+
+### Частичное обновление из UI
+
+```
+PATCH /api/tests/{testId}
+Content-Type: application/json
+```
+
+Пример тела:
+
+```json
+{
+  "generalStatus": "In Progress"
+}
+```
+
+Для обновления результата прогона вручную:
+
+```json
+{
+  "runIndex": 2,
+  "runStatus": "FAILED"
+}
+```
+
+### Экспорт Excel
+
+```
+GET /api/tests/export/excel
+```
+
+Возвращает файл `.xlsx`, структура соответствует UI.
+
+## Интеграция с автотестами
+
+Используйте endpoint `/api/tests/batch` для пакетной передачи результатов.
+
+- Подготавливайте батч по уникальным `testId`.
+- Указывайте только изменившиеся поля.
+- Для обновления статуса прогона передавайте `runIndex` (1–5) и `runStatus`.
+- `runDate` опционален. Если не указать, дата автоматически проставляется текущей.
+
+### Пример Kotlin-клиента (Spring WebClient)
+
+```kotlin
+import org.springframework.web.reactive.function.client.WebClient
+
+data class TestUpsertRequest(
+    val items: List<TestItem>,
+)
+
+data class TestItem(
+    val testId: String,
+    val category: String? = null,
+    val shortTitle: String? = null,
+    val runIndex: Int? = null,
+    val runStatus: String? = null,
+)
+
+val client = WebClient.builder()
+    .baseUrl("http://localhost:18080/api")
+    .build()
+
+suspend fun sendResults() {
+    val payload = TestUpsertRequest(
+        items = listOf(
+            TestItem(testId = "TC-001", runIndex = 1, runStatus = "PASSED"),
+            TestItem(testId = "TC-002", category = "Payments"),
+        ),
+    )
+
+    client.post()
+        .uri("/tests/batch")
+        .bodyValue(payload)
+        .retrieve()
+        .toBodilessEntity()
+        .awaitBody()
+}
+```
+
+## UI особенности
+
+- Таблица стилизована под Google Sheets: сетка, нумерация строк, буквенные заголовки.
+- Фиксированные ширины колонок из конфигурации.
+- Inline-редактирование: поля сохраняются по `blur`.
+- Выпадающие списки для Run Result N (PASSED/FAILED/NOT RUN).
+- Автосохранение и отображение статуса «Saving…».
+- Кнопка экспорта «Export to Excel».
+
+## Полезные команды
+
+- Запуск backend-тестов: `cd backend && ./gradlew test`
+- Линт фронтенда: `cd frontend && npm run lint`
+- Сброс БД в Docker Compose: `docker compose down -v`
+
+## Структура БД
+
+```sql
+CREATE TABLE test_report (
+    id          bigserial PRIMARY KEY,
+    test_id     text NOT NULL UNIQUE,
+    category    text,
+    short_title text,
+    issue_link  text,
+    ready_date  date,
+    general_status text,
+    scenario    text,
+    notes       text,
+    run_1_status text,
+    run_2_status text,
+    run_3_status text,
+    run_4_status text,
+    run_5_status text,
+    updated_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE test_run_metadata (
+    run_index int PRIMARY KEY,
+    run_date  date
+);
+```
+
+Проект готов к запуску «из коробки» по инструкции выше.

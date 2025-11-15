@@ -1,0 +1,135 @@
+package com.example.report.service
+
+import com.example.report.dto.PartialUpdateRequest
+import com.example.report.dto.TestBatchRequest
+import com.example.report.dto.TestReportItemDto
+import com.example.report.dto.TestReportResponse
+import com.example.report.dto.TestRunMetaDto
+import com.example.report.entity.TestReportEntity
+import com.example.report.entity.TestRunMetadataEntity
+import com.example.report.repository.TestReportRepository
+import com.example.report.repository.TestRunMetadataRepository
+import jakarta.transaction.Transactional
+import org.springframework.http.HttpStatus
+import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
+import java.time.LocalDate
+import java.time.OffsetDateTime
+
+@Service
+class TestReportService(
+    private val testReportRepository: TestReportRepository,
+    private val testRunMetadataRepository: TestRunMetadataRepository,
+    private val columnConfigService: ColumnConfigService
+) {
+
+    fun getReport(): TestReportResponse {
+        val items = testReportRepository.findAll()
+            .sortedBy { it.id }
+            .map { it.toDto() }
+        val runs = (1..5).map { index ->
+            val meta = testRunMetadataRepository.findById(index).orElse(TestRunMetadataEntity(index, null))
+            TestRunMetaDto(runIndex = index, runDate = meta.runDate)
+        }
+        val columns = columnConfigService.getConfig().columns
+        return TestReportResponse(items = items, runs = runs, columnConfig = columns)
+    }
+
+    @Transactional
+    fun upsertBatch(request: TestBatchRequest) {
+        request.items.forEach { item ->
+            upsertSingle(
+                testId = item.testId,
+                category = item.category,
+                shortTitle = item.shortTitle,
+                issueLink = item.issueLink,
+                readyDate = item.readyDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
+                generalStatus = item.generalStatus,
+                scenario = item.scenario,
+                notes = item.notes,
+                runIndex = item.runIndex,
+                runStatus = item.runStatus?.takeIf { it.isNotBlank() },
+                runDate = item.runDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
+            )
+        }
+    }
+
+    @Transactional
+    fun partialUpdate(testId: String, request: PartialUpdateRequest) {
+        upsertSingle(
+            testId = testId,
+            category = request.category,
+            shortTitle = request.shortTitle,
+            issueLink = request.issueLink,
+            readyDate = request.readyDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
+            generalStatus = request.generalStatus,
+            scenario = request.scenario,
+            notes = request.notes,
+            runIndex = request.runIndex,
+            runStatus = request.runStatus?.takeIf { it.isNotBlank() },
+            runDate = request.runDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
+            ensureExists = true
+        )
+    }
+
+    private fun upsertSingle(
+        testId: String,
+        category: String?,
+        shortTitle: String?,
+        issueLink: String?,
+        readyDate: LocalDate?,
+        generalStatus: String?,
+        scenario: String?,
+        notes: String?,
+        runIndex: Int?,
+        runStatus: String?,
+        runDate: LocalDate?,
+        ensureExists: Boolean = false
+    ) {
+        val entity = testReportRepository.findByTestId(testId).orElseGet {
+            if (ensureExists) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Test with ID $testId not found")
+            }
+            TestReportEntity(testId = testId)
+        }
+
+        category?.let { entity.category = it }
+        shortTitle?.let { entity.shortTitle = it }
+        issueLink?.let { entity.issueLink = it }
+        readyDate?.let { entity.readyDate = it }
+        generalStatus?.let { entity.generalStatus = it }
+        scenario?.let { entity.scenario = it }
+        notes?.let { entity.notes = it }
+
+        if (runIndex != null) {
+            when (runIndex) {
+                1 -> entity.run1Status = runStatus?.uppercase()
+                2 -> entity.run2Status = runStatus?.uppercase()
+                3 -> entity.run3Status = runStatus?.uppercase()
+                4 -> entity.run4Status = runStatus?.uppercase()
+                5 -> entity.run5Status = runStatus?.uppercase()
+                else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "runIndex must be between 1 and 5")
+            }
+            val meta = testRunMetadataRepository.findById(runIndex)
+                .orElse(TestRunMetadataEntity(runIndex = runIndex))
+            meta.runDate = runDate ?: meta.runDate ?: if (runStatus != null) LocalDate.now() else null
+            testRunMetadataRepository.save(meta)
+        }
+
+        entity.updatedAt = OffsetDateTime.now()
+        testReportRepository.save(entity)
+    }
+
+    private fun TestReportEntity.toDto(): TestReportItemDto = TestReportItemDto(
+        testId = testId,
+        category = category,
+        shortTitle = shortTitle,
+        issueLink = issueLink,
+        readyDate = readyDate,
+        generalStatus = generalStatus,
+        scenario = scenario,
+        notes = notes,
+        runStatuses = listOf(run1Status, run2Status, run3Status, run4Status, run5Status),
+        updatedAt = updatedAt?.toString()
+    )
+}
