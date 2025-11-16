@@ -1,11 +1,10 @@
 package com.example.report.service
 
-import com.example.report.dto.CreateTestRequest
-import com.example.report.dto.PartialUpdateRequest
 import com.example.report.dto.TestBatchRequest
 import com.example.report.dto.TestReportItemDto
 import com.example.report.dto.TestReportResponse
 import com.example.report.dto.TestRunMetaDto
+import com.example.report.dto.TestUpsertItem
 import com.example.report.entity.TestReportEntity
 import com.example.report.entity.TestRunMetadataEntity
 import com.example.report.model.GeneralTestStatus
@@ -38,14 +37,8 @@ class TestReportService(
     }
 
     @Transactional
-    fun createTest(request: CreateTestRequest) {
-        val normalizedId = request.testId.trim()
-        if (normalizedId.isEmpty()) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "testId must not be blank")
-        }
-        if (testReportRepository.findByTestId(normalizedId).isPresent) {
-            throw ResponseStatusException(HttpStatus.CONFLICT, "Test with ID $normalizedId already exists")
-        }
+    fun upsertTest(request: TestUpsertItem) {
+        val normalizedId = normalizeTestId(request.testId)
         upsertSingle(
             testId = normalizedId,
             category = request.category,
@@ -55,9 +48,9 @@ class TestReportService(
             generalStatus = validateGeneralStatus(request.generalStatus),
             scenario = request.scenario,
             notes = request.notes,
-            runIndex = null,
-            runStatus = null,
-            runDate = null
+            runIndex = request.runIndex,
+            runStatus = request.runStatus?.takeIf { it.isNotBlank() },
+            runDate = request.runDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
         )
     }
 
@@ -65,7 +58,7 @@ class TestReportService(
     fun upsertBatch(request: TestBatchRequest) {
         request.items.forEach { item ->
             upsertSingle(
-                testId = item.testId,
+                testId = normalizeTestId(item.testId),
                 category = item.category,
                 shortTitle = item.shortTitle,
                 issueLink = item.issueLink,
@@ -78,24 +71,6 @@ class TestReportService(
                 runDate = item.runDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
             )
         }
-    }
-
-    @Transactional
-    fun partialUpdate(testId: String, request: PartialUpdateRequest) {
-        upsertSingle(
-            testId = testId,
-            category = request.category,
-            shortTitle = request.shortTitle,
-            issueLink = request.issueLink,
-            readyDate = request.readyDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
-            generalStatus = validateGeneralStatus(request.generalStatus),
-            scenario = request.scenario,
-            notes = request.notes,
-            runIndex = request.runIndex,
-            runStatus = request.runStatus?.takeIf { it.isNotBlank() },
-            runDate = request.runDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
-            ensureExists = true
-        )
     }
 
     @Transactional
@@ -118,15 +93,10 @@ class TestReportService(
         notes: String?,
         runIndex: Int?,
         runStatus: String?,
-        runDate: LocalDate?,
-        ensureExists: Boolean = false
+        runDate: LocalDate?
     ) {
-        val entity = testReportRepository.findByTestId(testId).orElseGet {
-            if (ensureExists) {
-                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Test with ID $testId not found")
-            }
-            TestReportEntity(testId = testId)
-        }
+        val entity = testReportRepository.findByTestId(testId)
+            .orElse(TestReportEntity(testId = testId))
 
         category?.let { entity.category = it }
         shortTitle?.let { entity.shortTitle = it }
@@ -166,8 +136,7 @@ class TestReportService(
         notes = notes,
         runStatuses = listOf(run1Status, run2Status, run3Status, run4Status, run5Status),
         updatedAt = updatedAt?.toString()
-        )
-    }
+    )
 
     private fun validateGeneralStatus(generalStatus: String?): String? {
         return try {
@@ -176,3 +145,12 @@ class TestReportService(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid status")
         }
     }
+
+    private fun normalizeTestId(testId: String): String {
+        val normalizedId = testId.trim()
+        if (normalizedId.isEmpty()) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "testId must not be blank")
+        }
+        return normalizedId
+    }
+}

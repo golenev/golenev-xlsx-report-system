@@ -25,17 +25,3 @@ data class TestRunMetaDto(
     val runIndex: Int,
     val runDate: LocalDate?
 )
-
-
-data class PartialUpdateRequest(
-    val category: String? = null,
-    val shortTitle: String? = null,
-    val issueLink: String? = null,
-    val readyDate: String? = null,
-    val generalStatus: String? = null,
-    val scenario: String? = null,
-    val notes: String? = null,
-    val runIndex: Int? = null,
-    val runStatus: String? = null,
-    val runDate: String? = null
-)
