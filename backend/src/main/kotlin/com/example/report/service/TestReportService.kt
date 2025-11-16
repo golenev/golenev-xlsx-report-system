@@ -11,7 +11,6 @@ import com.example.report.model.GeneralTestStatus
 import com.example.report.repository.TestReportRepository
 import com.example.report.repository.TestRunMetadataRepository
 import jakarta.transaction.Transactional
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -121,26 +120,19 @@ class TestReportService(
             }
         }
 
-        val entity = testReportRepository.findByTestId(testId)
-            .orElse(TestReportEntity(testId = testId))
-
-        applyUpdates(entity)
-        entity.updatedAt = OffsetDateTime.now()
-
-        try {
+        val existing = testReportRepository.findByTestId(testId)
+        if (existing.isPresent) {
+            val entity = existing.get()
+            applyUpdates(entity)
+            entity.updatedAt = OffsetDateTime.now()
             testReportRepository.save(entity)
-        } catch (ex: DataIntegrityViolationException) {
-            val existing = testReportRepository.findByTestId(testId)
-                .orElseThrow {
-                    ResponseStatusException(
-                        HttpStatus.CONFLICT,
-                        "Test with ID $testId already exists and could not be overwritten"
-                    )
-                }
-            applyUpdates(existing)
-            existing.updatedAt = OffsetDateTime.now()
-            testReportRepository.save(existing)
+            return
         }
+
+        val newEntity = TestReportEntity(testId = testId)
+        applyUpdates(newEntity)
+        newEntity.updatedAt = OffsetDateTime.now()
+        testReportRepository.save(newEntity)
     }
 
     private fun TestReportEntity.toDto(): TestReportItemDto = TestReportItemDto(
