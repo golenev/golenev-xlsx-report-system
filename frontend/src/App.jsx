@@ -122,6 +122,7 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [newItems, setNewItems] = useState([]);
+  const [popup, setPopup] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -254,6 +255,8 @@ export default function App() {
     [newItems]
   );
 
+  const closePopup = () => setPopup(null);
+
   const handleCreate = async (index) => {
     const draft = newItems[index];
     if (!draft) {
@@ -264,6 +267,20 @@ export default function App() {
       setError('Test ID is required');
       return;
     }
+
+    const isExistingId = items.some((item) => String(item.testId).trim() === trimmedId);
+    const isDuplicateDraft = newItems.some(
+      (item, idx) => idx !== index && (item.testId || '').trim() === trimmedId
+    );
+
+    if (isExistingId || isDuplicateDraft) {
+      setPopup({
+        title: 'Duplicate Test ID',
+        message: `Test case with ID "${trimmedId}" already exists. Please use a unique ID before saving.`
+      });
+      return;
+    }
+
     const payload = { testId: trimmedId };
     FIELD_DEFINITIONS.forEach((field) => {
       if (field.key === 'testId') {
@@ -365,6 +382,25 @@ export default function App() {
 
   return (
     <div className="app-container">
+      {popup && (
+        <div className="popup-backdrop" role="alertdialog" aria-modal="true">
+          <div className="popup-card">
+            <div className="popup-header">
+              <div className="popup-icon" aria-hidden="true">⚠️</div>
+              <div>
+                <div className="popup-title">{popup.title}</div>
+                <div className="popup-subtitle">Resolve the issue to continue</div>
+              </div>
+            </div>
+            <p className="popup-message">{popup.message}</p>
+            <div className="popup-actions">
+              <button type="button" className="primary-btn" onClick={closePopup}>
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <header className="app-header">
         <h1>Test Report</h1>
         <div className="header-actions">
