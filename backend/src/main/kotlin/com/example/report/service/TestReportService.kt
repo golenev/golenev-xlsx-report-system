@@ -11,6 +11,7 @@ import com.example.report.model.GeneralTestStatus
 import com.example.report.repository.TestReportRepository
 import com.example.report.repository.TestRunMetadataRepository
 import jakarta.transaction.Transactional
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -95,34 +96,51 @@ class TestReportService(
         runStatus: String?,
         runDate: LocalDate?
     ) {
+        val applyUpdates: TestReportEntity.() -> Unit = {
+            category?.let { this.category = it }
+            shortTitle?.let { this.shortTitle = it }
+            issueLink?.let { this.issueLink = it }
+            readyDate?.let { this.readyDate = it }
+            generalStatus?.let { this.generalStatus = it }
+            scenario?.let { this.scenario = it }
+            notes?.let { this.notes = it }
+
+            if (runIndex != null) {
+                when (runIndex) {
+                    1 -> this.run1Status = runStatus?.uppercase()
+                    2 -> this.run2Status = runStatus?.uppercase()
+                    3 -> this.run3Status = runStatus?.uppercase()
+                    4 -> this.run4Status = runStatus?.uppercase()
+                    5 -> this.run5Status = runStatus?.uppercase()
+                    else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "runIndex must be between 1 and 5")
+                }
+                val meta = testRunMetadataRepository.findById(runIndex)
+                    .orElse(TestRunMetadataEntity(runIndex = runIndex))
+                meta.runDate = runDate ?: meta.runDate ?: if (runStatus != null) LocalDate.now() else null
+                testRunMetadataRepository.save(meta)
+            }
+        }
+
         val entity = testReportRepository.findByTestId(testId)
             .orElse(TestReportEntity(testId = testId))
 
-        category?.let { entity.category = it }
-        shortTitle?.let { entity.shortTitle = it }
-        issueLink?.let { entity.issueLink = it }
-        readyDate?.let { entity.readyDate = it }
-        generalStatus?.let { entity.generalStatus = it }
-        scenario?.let { entity.scenario = it }
-        notes?.let { entity.notes = it }
-
-        if (runIndex != null) {
-            when (runIndex) {
-                1 -> entity.run1Status = runStatus?.uppercase()
-                2 -> entity.run2Status = runStatus?.uppercase()
-                3 -> entity.run3Status = runStatus?.uppercase()
-                4 -> entity.run4Status = runStatus?.uppercase()
-                5 -> entity.run5Status = runStatus?.uppercase()
-                else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "runIndex must be between 1 and 5")
-            }
-            val meta = testRunMetadataRepository.findById(runIndex)
-                .orElse(TestRunMetadataEntity(runIndex = runIndex))
-            meta.runDate = runDate ?: meta.runDate ?: if (runStatus != null) LocalDate.now() else null
-            testRunMetadataRepository.save(meta)
-        }
-
+        applyUpdates(entity)
         entity.updatedAt = OffsetDateTime.now()
-        testReportRepository.save(entity)
+
+        try {
+            testReportRepository.save(entity)
+        } catch (ex: DataIntegrityViolationException) {
+            val existing = testReportRepository.findByTestId(testId)
+                .orElseThrow {
+                    ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Test with ID $testId already exists and could not be overwritten"
+                    )
+                }
+            applyUpdates(existing)
+            existing.updatedAt = OffsetDateTime.now()
+            testReportRepository.save(existing)
+        }
     }
 
     private fun TestReportEntity.toDto(): TestReportItemDto = TestReportItemDto(
