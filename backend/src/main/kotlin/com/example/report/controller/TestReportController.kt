@@ -1,7 +1,6 @@
 package com.example.report.controller
 
-import com.example.report.dto.CreateTestRequest
-import com.example.report.dto.PartialUpdateRequest
+import com.example.report.dto.TestUpsertItem
 import com.example.report.dto.TestBatchRequest
 import com.example.report.service.ColumnConfigService
 import com.example.report.service.ExcelExportService
@@ -11,7 +10,6 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -31,21 +29,13 @@ class TestReportController(
     fun getTests() = testReportService.getReport()
 
     @PostMapping("/tests")
-    fun createTest(@Valid @RequestBody request: CreateTestRequest) {
-        testReportService.createTest(request)
+    fun upsertTest(@Valid @RequestBody request: TestUpsertItem) {
+        testReportService.upsertTest(request)
     }
 
     @PostMapping("/tests/batch")
     fun upsertBatch(@Valid @RequestBody request: TestBatchRequest) {
         testReportService.upsertBatch(request)
-    }
-
-    @PatchMapping("/tests/{testId}")
-    fun partialUpdate(
-        @PathVariable testId: String,
-        @RequestBody request: PartialUpdateRequest
-    ) {
-        testReportService.partialUpdate(testId, request)
     }
 
     @DeleteMapping("/tests/{testId}")

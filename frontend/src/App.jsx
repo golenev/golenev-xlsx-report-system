@@ -167,10 +167,10 @@ export default function App() {
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(withBase(`/api/tests/${encodeURIComponent(testId)}`), {
-        method: 'PATCH',
+      const response = await fetch(withBase('/api/tests'), {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ testId, ...payload })
       });
       if (!response.ok) {
         throw new Error('Failed to save changes');
