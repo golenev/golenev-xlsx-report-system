@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const STATUS_OPTIONS = ['PASSED', 'FAILED', 'NOT RUN'];
+const GENERAL_STATUS_OPTIONS = [
+  { value: 'Очередь', color: '#e0e8ff', textColor: '#294a9a' },
+  { value: 'В работе', color: '#fff4e0', textColor: '#9a5b29' },
+  { value: 'Готово', color: '#e0f4e0', textColor: '#1b6b35' },
+  { value: 'Бэклог', color: '#ffe5e5', textColor: '#b3261e' },
+  { value: 'Только ручное', color: '#ffecec', textColor: '#b23b34' },
+  { value: 'Неактуально', color: '#f2e6ff', textColor: '#6b3fa0' },
+  { value: 'Фронт', color: '#e0f7f4', textColor: '#0f766e' }
+];
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 const FIELD_DEFINITIONS = [
@@ -9,10 +18,12 @@ const FIELD_DEFINITIONS = [
   { key: 'shortTitle', label: 'Short Title', editable: true, type: 'text' },
   { key: 'issueLink', label: 'YouTrack Issue Link', editable: true, type: 'text' },
   { key: 'readyDate', label: 'Ready Date', editable: true, type: 'date' },
-  { key: 'generalStatus', label: 'General Test Status', editable: true, type: 'text' },
+  { key: 'generalStatus', label: 'General Test Status', editable: true, type: 'generalStatus' },
   { key: 'scenario', label: 'Detailed Scenario', editable: true, type: 'textarea' },
   { key: 'notes', label: 'Notes', editable: true, type: 'textarea' }
 ];
+
+const ACTION_COLUMN = { key: 'actions', label: '', type: 'actions', editable: false };
 
 function createEmptyItem() {
   return FIELD_DEFINITIONS.reduce((acc, field) => {
@@ -36,6 +47,71 @@ function columnLetter(index) {
     n = Math.floor(n / 26) - 1;
   }
   return result;
+}
+
+function StatusChip({ option }) {
+  if (!option) {
+    return <span className="status-chip placeholder-chip">—</span>;
+  }
+  const style = {
+    backgroundColor: option.color,
+    color: option.textColor
+  };
+  return (
+    <span className="status-chip" style={style}>
+      {option.value}
+    </span>
+  );
+}
+
+function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true }) {
+  const selectedOption = GENERAL_STATUS_OPTIONS.find((option) => option.value === value);
+
+  const handleSelect = (optionValue, event) => {
+    if (disabled) return;
+    onChange(optionValue);
+    const details = event?.target?.closest('details');
+    if (details) {
+      details.removeAttribute('open');
+    }
+  };
+
+  return (
+    <div className="status-dropdown">
+      <details className="status-dropdown-toggle">
+        <summary>
+          <StatusChip option={selectedOption} />
+        </summary>
+        <div className="status-options">
+          {allowEmpty && (
+            <button
+              type="button"
+              className="status-option"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(event) => handleSelect('', event)}
+              disabled={disabled}
+            >
+              <StatusChip option={null} />
+              <span className="status-option-label">Очистить</span>
+            </button>
+          )}
+          {GENERAL_STATUS_OPTIONS.map((option) => (
+            <button
+              type="button"
+              key={option.value}
+              className="status-option"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(event) => handleSelect(option.value, event)}
+              disabled={disabled}
+            >
+              <StatusChip option={option} />
+              <span className="status-option-label">{option.value}</span>
+            </button>
+          ))}
+        </div>
+      </details>
+    </div>
+  );
 }
 
 export default function App() {
@@ -231,6 +307,32 @@ export default function App() {
     });
   };
 
+  const handleGeneralStatusChange = (item, value) => {
+    handleFieldChange(item.testId, 'generalStatus', value);
+    sendUpdate(item.testId, { generalStatus: value === '' ? null : value });
+  };
+
+  const handleDelete = async (testId) => {
+    if (!window.confirm(`Delete test ${testId}?`)) {
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(withBase(`/api/tests/${encodeURIComponent(testId)}`), {
+        method: 'DELETE'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete test');
+      }
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleExport = async () => {
     setError(null);
     try {
@@ -252,7 +354,14 @@ export default function App() {
     }
   };
 
-  const columns = [...FIELD_DEFINITIONS, ...runColumns];
+  const columns = [ACTION_COLUMN, ...FIELD_DEFINITIONS, ...runColumns];
+
+  const getColumnWidth = (column) => {
+    if (column.key === ACTION_COLUMN.key) {
+      return columnConfig[column.key] ?? 72;
+    }
+    return columnConfig[column.key] ?? (column.type === 'textarea' ? 280 : 160);
+  };
 
   return (
     <div className="app-container">
@@ -283,7 +392,7 @@ export default function App() {
               <tr>
                 <th className="row-index-header">#</th>
                 {columns.map((column, idx) => {
-                  const width = columnConfig[column.key] ?? (column.type === 'textarea' ? 280 : 160);
+                  const width = getColumnWidth(column);
                   const letter = columnLetter(idx);
                   return (
                     <th
@@ -322,8 +431,14 @@ export default function App() {
                       Cancel
                     </button>
                   </td>
+                  <td
+                    className="action-cell"
+                    style={{ width: `${getColumnWidth(ACTION_COLUMN)}px`, minWidth: `${getColumnWidth(ACTION_COLUMN)}px` }}
+                  >
+                    —
+                  </td>
                   {FIELD_DEFINITIONS.map((column) => {
-                    const width = columnConfig[column.key] ?? (column.type === 'textarea' ? 280 : 160);
+                    const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
                     return (
                       <td
@@ -342,6 +457,11 @@ export default function App() {
                             value={value}
                             onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                             className="cell-input"
+                          />
+                        ) : column.type === 'generalStatus' ? (
+                          <StatusDropdown
+                            value={value}
+                            onChange={(newValue) => handleNewFieldChange(index, column.key, newValue)}
                           />
                         ) : (
                           <input
@@ -371,8 +491,21 @@ export default function App() {
               {items.map((item, rowIndex) => (
                 <tr key={item.testId}>
                   <td className="row-index-cell">{rowIndex + 1}</td>
+                  <td
+                    className="action-cell"
+                    style={{ width: `${getColumnWidth(ACTION_COLUMN)}px`, minWidth: `${getColumnWidth(ACTION_COLUMN)}px` }}
+                  >
+                    <button
+                      type="button"
+                      className="delete-btn"
+                      onClick={() => handleDelete(item.testId)}
+                      disabled={saving}
+                    >
+                      ✕
+                    </button>
+                  </td>
                   {FIELD_DEFINITIONS.map((column) => {
-                    const width = columnConfig[column.key] ?? (column.type === 'textarea' ? 280 : 160);
+                    const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
                     return (
                       <td
@@ -394,6 +527,12 @@ export default function App() {
                               onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
                               onBlur={() => handleBlur(item, column.key)}
                               className="cell-input"
+                            />
+                          ) : column.type === 'generalStatus' ? (
+                            <StatusDropdown
+                              value={value}
+                              onChange={(newValue) => handleGeneralStatusChange(item, newValue)}
+                              disabled={saving}
                             />
                           ) : (
                             <input

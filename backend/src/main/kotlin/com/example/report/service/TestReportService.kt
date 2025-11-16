@@ -8,6 +8,7 @@ import com.example.report.dto.TestReportResponse
 import com.example.report.dto.TestRunMetaDto
 import com.example.report.entity.TestReportEntity
 import com.example.report.entity.TestRunMetadataEntity
+import com.example.report.model.GeneralTestStatus
 import com.example.report.repository.TestReportRepository
 import com.example.report.repository.TestRunMetadataRepository
 import jakarta.transaction.Transactional
@@ -51,7 +52,7 @@ class TestReportService(
             shortTitle = request.shortTitle,
             issueLink = request.issueLink,
             readyDate = request.readyDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
-            generalStatus = request.generalStatus,
+            generalStatus = validateGeneralStatus(request.generalStatus),
             scenario = request.scenario,
             notes = request.notes,
             runIndex = null,
@@ -69,7 +70,7 @@ class TestReportService(
                 shortTitle = item.shortTitle,
                 issueLink = item.issueLink,
                 readyDate = item.readyDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
-                generalStatus = item.generalStatus,
+                generalStatus = validateGeneralStatus(item.generalStatus),
                 scenario = item.scenario,
                 notes = item.notes,
                 runIndex = item.runIndex,
@@ -87,7 +88,7 @@ class TestReportService(
             shortTitle = request.shortTitle,
             issueLink = request.issueLink,
             readyDate = request.readyDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
-            generalStatus = request.generalStatus,
+            generalStatus = validateGeneralStatus(request.generalStatus),
             scenario = request.scenario,
             notes = request.notes,
             runIndex = request.runIndex,
@@ -95,6 +96,15 @@ class TestReportService(
             runDate = request.runDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
             ensureExists = true
         )
+    }
+
+    @Transactional
+    fun deleteTest(testId: String) {
+        val entity = testReportRepository.findByTestId(testId)
+            .orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Test with ID $testId not found")
+            }
+        testReportRepository.delete(entity)
     }
 
     private fun upsertSingle(
@@ -156,5 +166,13 @@ class TestReportService(
         notes = notes,
         runStatuses = listOf(run1Status, run2Status, run3Status, run4Status, run5Status),
         updatedAt = updatedAt?.toString()
-    )
-}
+        )
+    }
+
+    private fun validateGeneralStatus(generalStatus: String?): String? {
+        return try {
+            GeneralTestStatus.requireValid(generalStatus)
+        } catch (ex: IllegalArgumentException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid status")
+        }
+    }
