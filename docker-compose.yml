@@ -11,9 +11,10 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
-  backend:
+  app:
     build:
-      context: ./backend
+      context: .
+      dockerfile: Dockerfile
     environment:
       DB_URL: jdbc:postgresql://db:5432/test_report
       DB_USERNAME: report
@@ -24,16 +25,6 @@ services:
       - db
     ports:
       - "18080:18080"
-
-  frontend:
-    build:
-      context: ./frontend
-    environment:
-      VITE_API_BASE_URL: http://backend:18080
-    depends_on:
-      - backend
-    ports:
-      - "5173:5173"
 
 volumes:
   db-data:
