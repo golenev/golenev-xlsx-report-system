@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -33,9 +34,12 @@ class TestReportController(
         testReportService.upsertTest(request)
     }
 
-    @PostMapping("/tests/batch")
-    fun upsertBatch(@Valid @RequestBody request: TestBatchRequest) {
-        testReportService.upsertBatch(request)
+    @PostMapping("/add_test_case")
+    fun upsertBatch(
+        @Valid @RequestBody request: TestBatchRequest,
+        @RequestParam(name = "rewite_force", defaultValue = "false") rewriteForce: Boolean
+    ) {
+        testReportService.upsertBatch(request, rewriteForce)
     }
 
     @DeleteMapping("/tests/{testId}")

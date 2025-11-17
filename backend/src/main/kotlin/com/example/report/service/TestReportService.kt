@@ -55,10 +55,27 @@ class TestReportService(
     }
 
     @Transactional
-    fun upsertBatch(request: TestBatchRequest) {
-        request.items.forEach { item ->
+    fun upsertBatch(request: TestBatchRequest, rewriteForce: Boolean) {
+        val normalizedItems = request.items.map { item ->
+            item.copy(testId = normalizeTestId(item.testId))
+        }
+
+        if (!rewriteForce) {
+            val existingIds = testReportRepository.findAllByTestIdIn(normalizedItems.map { it.testId })
+                .map { it.testId }
+                .toSet()
+            if (existingIds.isNotEmpty()) {
+                val idsList = existingIds.joinToString(", ") { it }
+                throw ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Test with ID(s) $idsList already exist"
+                )
+            }
+        }
+
+        normalizedItems.forEach { item ->
             upsertSingle(
-                testId = normalizeTestId(item.testId),
+                testId = item.testId,
                 category = item.category,
                 shortTitle = item.shortTitle,
                 issueLink = item.issueLink,
