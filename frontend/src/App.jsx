@@ -49,6 +49,23 @@ function columnLetter(index) {
   return result;
 }
 
+function compareTestIds(a, b) {
+  const aId = (a?.testId ?? '').trim();
+  const bId = (b?.testId ?? '').trim();
+
+  const aNum = Number(aId);
+  const bNum = Number(bId);
+
+  const aIsNumber = Number.isFinite(aNum);
+  const bIsNumber = Number.isFinite(bNum);
+
+  if (aIsNumber && bIsNumber) {
+    return aNum - bNum;
+  }
+
+  return aId.localeCompare(bId, undefined, { numeric: true, sensitivity: 'base' });
+}
+
 function StatusChip({ option }) {
   if (!option) {
     return <span className="status-chip placeholder-chip">—</span>;
@@ -254,6 +271,10 @@ export default function App() {
     () => newItems.some((item) => isDraftEmpty(item)),
     [newItems]
   );
+
+  const sortedItems = useMemo(() => {
+    return [...items].sort(compareTestIds);
+  }, [items]);
 
   const closePopup = () => setPopup(null);
 
@@ -524,7 +545,7 @@ export default function App() {
                   })}
                 </tr>
               ))}
-              {items.map((item, rowIndex) => (
+              {sortedItems.map((item, rowIndex) => (
                 <tr key={item.testId}>
                   <td className="row-index-cell">{rowIndex + 1}</td>
                   <td
