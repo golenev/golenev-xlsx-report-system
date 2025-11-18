@@ -49,21 +49,43 @@ function columnLetter(index) {
   return result;
 }
 
-function compareTestIds(a, b) {
-  const aId = (a?.testId ?? '').trim();
-  const bId = (b?.testId ?? '').trim();
+function parseTestId(rawId) {
+  const trimmed = (rawId ?? '').trim();
+  const match = /^([0-9]+)(?:-([0-9]+))?$/.exec(trimmed);
 
-  const aNum = Number(aId);
-  const bNum = Number(bId);
-
-  const aIsNumber = Number.isFinite(aNum);
-  const bIsNumber = Number.isFinite(bNum);
-
-  if (aIsNumber && bIsNumber) {
-    return aNum - bNum;
+  if (!match) {
+    return { original: trimmed, base: null, suffix: null };
   }
 
-  return aId.localeCompare(bId, undefined, { numeric: true, sensitivity: 'base' });
+  return {
+    original: trimmed,
+    base: Number(match[1]),
+    suffix: match[2] ? Number(match[2]) : null
+  };
+}
+
+function compareTestIds(a, b) {
+  const left = parseTestId(a?.testId);
+  const right = parseTestId(b?.testId);
+
+  if (Number.isFinite(left.base) && Number.isFinite(right.base)) {
+    const baseDiff = left.base - right.base;
+    if (baseDiff !== 0) {
+      return baseDiff;
+    }
+
+    if (left.suffix == null && right.suffix != null) return -1;
+    if (left.suffix != null && right.suffix == null) return 1;
+
+    if (left.suffix != null && right.suffix != null) {
+      const suffixDiff = left.suffix - right.suffix;
+      if (suffixDiff !== 0) {
+        return suffixDiff;
+      }
+    }
+  }
+
+  return left.original.localeCompare(right.original, undefined, { numeric: true, sensitivity: 'base' });
 }
 
 function StatusChip({ option }) {
