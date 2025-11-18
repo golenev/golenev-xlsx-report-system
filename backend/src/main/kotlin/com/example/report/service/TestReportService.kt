@@ -26,7 +26,7 @@ class TestReportService(
 
     fun getReport(): TestReportResponse {
         val items = testReportRepository.findAll()
-            .sortedBy { it.id }
+            .sortedWith { a, b -> compareTestIds(a.testId, b.testId) }
             .map { it.toDto() }
         val runs = (1..5).map { index ->
             val meta = testRunMetadataRepository.findById(index).orElse(TestRunMetadataEntity(index, null))
@@ -162,5 +162,51 @@ class TestReportService(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "testId must not be blank")
         }
         return normalizedId
+    }
+
+    private fun compareTestIds(a: String, b: String): Int {
+        val left = ParsedTestId.from(a)
+        val right = ParsedTestId.from(b)
+
+        if (left.numericPart != null && right.numericPart != null) {
+            val numericComparison = left.numericPart.compareTo(right.numericPart)
+            if (numericComparison != 0) {
+                return numericComparison
+            }
+
+            if (left.suffix == null && right.suffix != null) return -1
+            if (left.suffix != null && right.suffix == null) return 1
+
+            if (left.suffix != null && right.suffix != null) {
+                val suffixComparison = left.suffix.compareTo(right.suffix)
+                if (suffixComparison != 0) {
+                    return suffixComparison
+                }
+            }
+        }
+
+        return left.original.compareTo(right.original, ignoreCase = true)
+    }
+
+    private data class ParsedTestId(
+        val original: String,
+        val numericPart: Long?,
+        val suffix: Long?
+    ) {
+        companion object {
+            private val pattern = Regex("^(\\d+)(?:-(\\d+))?$")
+
+            fun from(raw: String): ParsedTestId {
+                val trimmed = raw.trim()
+                val match = pattern.matchEntire(trimmed)
+                return if (match != null) {
+                    val numeric = match.groupValues[1].toLong()
+                    val suffix = match.groupValues.getOrNull(2)?.takeIf { it.isNotEmpty() }?.toLong()
+                    ParsedTestId(trimmed, numeric, suffix)
+                } else {
+                    ParsedTestId(trimmed, null, null)
+                }
+            }
+        }
     }
 }
