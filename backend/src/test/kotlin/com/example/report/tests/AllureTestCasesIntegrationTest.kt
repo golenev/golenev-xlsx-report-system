@@ -15,11 +15,11 @@ import org.junit.jupiter.api.Test
 class AllureTestCasesIntegrationTest {
 
     private val mapper = jacksonObjectMapper()
-    private val baseUrl: String = resolveBaseUrl()
+    private val baseUrl: String = "http://localhost:8080"
 
     @Test
     fun `should return parsed allure test cases`() {
-        val folderPath = resolveAllureFolderPath()
+        val folderPath = "C:/Users/inter/IdeaProjects/motivation-service-tests/build/reports/allure-report/allureReport/data/test-cases"
 
         val response = Given {
             baseUri(baseUrl)
@@ -39,21 +39,4 @@ class AllureTestCasesIntegrationTest {
         assertThat(actual).containsExactlyElementsOf(expected)
     }
 
-    private fun resolveBaseUrl(): String {
-        val fromSystemProperty = System.getProperty("app.baseUrl")
-        val fromEnv = System.getenv("APP_BASE_URL")
-
-        return listOfNotNull(fromSystemProperty, fromEnv)
-            .firstOrNull()
-            ?: "http://localhost:8080"
-    }
-
-    private fun resolveAllureFolderPath(): String {
-        val fromSystemProperty = System.getProperty("allure.testcases.path")
-        val fromEnv = System.getenv("ALLURE_TEST_CASES_PATH")
-
-        return listOfNotNull(fromSystemProperty, fromEnv)
-            .firstOrNull()
-            ?: "C:/Users/inter/IdeaProjects/motivation-service-tests/build/reports/allure-report/allureReport/data/test-cases"
-    }
 }
