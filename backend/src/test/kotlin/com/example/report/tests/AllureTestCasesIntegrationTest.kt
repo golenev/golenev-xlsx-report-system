@@ -11,32 +11,18 @@ import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.server.LocalServerPort
-@SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = [
-        "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=none",
-        "spring.flyway.enabled=false"
-    ]
-)
+
 class AllureTestCasesIntegrationTest {
 
-    @LocalServerPort
-    private var port: Int = 0
-
     private val mapper = jacksonObjectMapper()
+    private val baseUrl: String = resolveBaseUrl()
 
     @Test
     fun `should return parsed allure test cases`() {
         val folderPath = resolveAllureFolderPath()
 
         val response = Given {
-            port(port)
+            baseUri(baseUrl)
             accept(ContentType.JSON)
             queryParam("path", folderPath)
         } When {
@@ -52,6 +38,16 @@ class AllureTestCasesIntegrationTest {
 
         assertThat(actual).containsExactlyElementsOf(expected)
     }
+
+    private fun resolveBaseUrl(): String {
+        val fromSystemProperty = System.getProperty("app.baseUrl")
+        val fromEnv = System.getenv("APP_BASE_URL")
+
+        return listOfNotNull(fromSystemProperty, fromEnv)
+            .firstOrNull()
+            ?: "http://localhost:8080"
+    }
+
     private fun resolveAllureFolderPath(): String {
         val fromSystemProperty = System.getProperty("allure.testcases.path")
         val fromEnv = System.getenv("ALLURE_TEST_CASES_PATH")
