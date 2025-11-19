@@ -1,0 +1,29 @@
+{
+  "name": "Simple API test",
+  "testStage": {
+    "steps": [
+      {
+        "name": "Open page",
+        "parameters": [
+          { "name": "url", "value": "https://example.com" }
+        ],
+        "steps": [
+          {
+            "name": "Verify title",
+            "parameters": [],
+            "steps": []
+          }
+        ]
+      },
+      {
+        "name": "Submit form",
+        "parameters": [],
+        "steps": []
+      }
+    ]
+  },
+  "labels": [
+    { "name": "AS_ID", "value": "455" },
+    { "name": "suite", "value": "Smoke" }
+  ]
+}
