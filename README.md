@@ -207,7 +207,7 @@ GET /api/tests/export/excel
 
 ### Парсинг тест-кейсов Allure
 
-Чтобы дернуть endpoint, который парсит Allure-отчёт и возвращает список тест-кейсов, используйте `GET /api/allure/test-cases` c параметром `path`, указывающим папку `allureReport/data`. Пример curl, который можно перенести в Postman (Windows-путь экранирован двойными обратными слэшами):
+Чтобы дернуть endpoint, который парсит Allure-отчёт и возвращает список тест-кейсов, используйте `GET /api/allure/test-cases` c параметром `path`, указывающим каталог с JSON-ами Allure. Бэкенд автоматически пытается найти подпапку `test-cases` внутри `allureReport/data`, поэтому допустимо передавать путь как до `.../allureReport`, так и до `.../allureReport/data` или напрямую до `.../allureReport/data/test-cases`. Пример curl, который можно перенести в Postman (Windows-путь экранирован двойными обратными слэшами):
 
 ```bash
 curl -G "http://localhost:18080/api/allure/test-cases" \
@@ -216,6 +216,8 @@ curl -G "http://localhost:18080/api/allure/test-cases" \
 ```
 
 Если backend запущен на другом адресе/порту, замените `http://localhost:18080` на актуальный URL. В Postman достаточно создать запрос `GET http://<host>:<port>/api/allure/test-cases`, добавить query-параметр `path` со значением пути к директории Allure и выставить заголовок `Accept: application/json`.
+
+HTTP 400 (Bad Request) означает, что контейнер не смог найти JSON-файлы ни в переданном каталоге, ни в его стандартных подпапках (`test-cases`, `data/test-cases`). В этом случае убедитесь, что директория проброшена в Docker и содержит `*.json` из `allureReport/data/test-cases`.
 
 ## Интеграция с автотестами
 

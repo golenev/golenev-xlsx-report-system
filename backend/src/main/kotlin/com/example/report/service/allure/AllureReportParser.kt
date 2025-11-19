@@ -166,12 +166,14 @@ fun parseAllureReportsFromFolder(folderPath: String): List<TestCaseModel> {
         "Папка не найдена или не является директорией: $folderPath"
     }
 
-    val jsonFiles = folder.listFiles { file ->
+    val targetFolder = resolveAllureJsonDirectory(folder)
+
+    val jsonFiles = targetFolder.listFiles { file ->
         file.isFile && file.extension.equals("json", ignoreCase = true)
     } ?: emptyArray()
 
     require(jsonFiles.isNotEmpty()) {
-        "JSON-файлы не найдены в папке: $folderPath"
+        "JSON-файлы не найдены в папке: ${targetFolder.absolutePath}"
     }
 
     // Парсим все файлы в RawTestCase
@@ -228,4 +230,29 @@ fun parseAllureReportsFromFolder(folderPath: String): List<TestCaseModel> {
     }
 
     return result
+}
+
+private fun resolveAllureJsonDirectory(root: File): File {
+    val candidates = linkedSetOf(
+        root,
+        root.resolve("test-cases"),
+        root.resolve("data"),
+        root.resolve("data/test-cases")
+    )
+
+    val jsonDir = candidates.firstOrNull { it.hasJsonFiles() }
+
+    return jsonDir ?: throw IllegalArgumentException(
+        "JSON-файлы не найдены в указанных директориях: ${candidates.joinToString { it.absolutePath }}. " +
+            "Убедитесь, что путь указывает на папку allureReport/data/test-cases, доступную внутри контейнера."
+    )
+}
+
+private fun File.hasJsonFiles(): Boolean {
+    if (!exists() || !isDirectory) return false
+    val jsonFiles = listFiles { file ->
+        file.isFile && file.extension.equals("json", ignoreCase = true)
+    } ?: return false
+
+    return jsonFiles.isNotEmpty()
 }
