@@ -174,24 +174,35 @@ fun parseAllureReportsFromFolder(folderPath: String): List<TestCaseModel> {
         "JSON-файлы не найдены в папке: $folderPath"
     }
 
-    // Парсим все файлы в RawTestCase
-    val rawCases: MutableList<Pair<File, RawTestCase>> = mutableListOf()
+    val fileContents = jsonFiles.map { file ->
+        file.name to file.readText()
+    }
 
-    jsonFiles.forEach { file ->
-        val content = file.readText()
-        val raw = extractRawTestCase(content, file.name)
-        rawCases.add(file to raw)
+    return parseAllureReports(fileContents)
+}
+
+fun parseAllureReports(fileContents: List<Pair<String, String>>): List<TestCaseModel> {
+    require(fileContents.isNotEmpty()) {
+        "JSON-файлы не найдены"
+    }
+
+    // Парсим все файлы в RawTestCase
+    val rawCases: MutableList<Pair<String, RawTestCase>> = mutableListOf()
+
+    fileContents.forEach { (fileName, content) ->
+        val raw = extractRawTestCase(content, fileName)
+        rawCases.add(fileName to raw)
     }
 
     // Проверяем, что у всех есть AS_ID
     val withoutId = rawCases.filter { it.second.baseId == null }
     if (withoutId.isNotEmpty()) {
-        val fileNames = withoutId.joinToString { it.first.name }
+        val fileNames = withoutId.joinToString { it.first }
         throw IllegalStateException("Для некоторых тестов не найден AS_ID (Label name='AS_ID'): $fileNames")
     }
 
     // Группируем по baseId (AS_ID), чтобы понять, какие тесты параметризованные
-    val groupedByBaseId: Map<String, List<Pair<File, RawTestCase>>> =
+    val groupedByBaseId: Map<String, List<Pair<String, RawTestCase>>> =
         rawCases.groupBy { it.second.baseId!! }
 
     val result = mutableListOf<TestCaseModel>()
@@ -211,7 +222,7 @@ fun parseAllureReportsFromFolder(folderPath: String): List<TestCaseModel> {
         } else {
             // Параметризованный: ID = "455-1", "455-2", ...
             // Стабилизируем порядок: по имени файла
-            val sortedGroup = group.sortedBy { it.first.name }
+            val sortedGroup = group.sortedBy { it.first }
             sortedGroup.forEachIndexed { index, (_, raw) ->
                 val runNumber = index + 1
                 val id = "$baseId-$runNumber"

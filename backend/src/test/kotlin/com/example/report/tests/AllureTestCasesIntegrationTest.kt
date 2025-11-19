@@ -11,6 +11,7 @@ import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.io.File
 
 class AllureTestCasesIntegrationTest {
 
@@ -20,13 +21,19 @@ class AllureTestCasesIntegrationTest {
     @Test
     fun `should return parsed allure test cases`() {
         val folderPath = "C:/Users/inter/IdeaProjects/motivation-service-tests/build/reports/allure-report/allureReport/data/test-cases"
+        val jsonFiles = File(folderPath).listFiles { file ->
+            file.isFile && file.extension.equals("json", ignoreCase = true)
+        } ?: emptyArray()
 
         val response = Given {
             baseUri(baseUrl)
             accept(ContentType.JSON)
-            queryParam("path", folderPath)
+            contentType("multipart/form-data")
+            jsonFiles.forEach { file ->
+                multiPart("files", file)
+            }
         } When {
-            get("/api/allure/test-cases")
+            post("/api/allure/test-cases")
         } Then {
             statusCode(200)
         } Extract {
