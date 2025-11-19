@@ -13,8 +13,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
-import java.nio.file.Paths
-
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
@@ -35,10 +33,7 @@ class AllureTestCasesIntegrationTest {
 
     @Test
     fun `should return parsed allure test cases`() {
-        val folderPath = Paths.get("src", "test", "resources", "allure", "test-cases")
-            .toAbsolutePath()
-            .normalize()
-            .toString()
+        val folderPath = resolveAllureFolderPath()
 
         val response = Given {
             port(port)
@@ -56,5 +51,13 @@ class AllureTestCasesIntegrationTest {
         val expected = parseAllureReportsFromFolder(folderPath)
 
         assertThat(actual).containsExactlyElementsOf(expected)
+    }
+    private fun resolveAllureFolderPath(): String {
+        val fromSystemProperty = System.getProperty("allure.testcases.path")
+        val fromEnv = System.getenv("ALLURE_TEST_CASES_PATH")
+
+        return listOfNotNull(fromSystemProperty, fromEnv)
+            .firstOrNull()
+            ?: "C:/Users/inter/IdeaProjects/motivation-service-tests/build/reports/allure-report/allureReport/data/test-cases"
     }
 }
