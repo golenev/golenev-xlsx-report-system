@@ -205,6 +205,18 @@ GET /api/tests/export/excel
 
 Возвращает файл `.xlsx`, структура соответствует UI.
 
+### Парсинг тест-кейсов Allure
+
+Чтобы дернуть endpoint, который парсит Allure-отчёт и возвращает список тест-кейсов, используйте `GET /api/allure/test-cases` c параметром `path`, указывающим папку `allureReport/data`. Пример curl, который можно перенести в Postman (Windows-путь экранирован двойными обратными слэшами):
+
+```bash
+curl -G "http://localhost:18080/api/allure/test-cases" \
+  --data-urlencode "path=C:\\Users\\inter\\IdeaProjects\\motivation-service-tests\\build\\reports\\allure-report\\allureReport\\data" \
+  -H "Accept: application/json"
+```
+
+Если backend запущен на другом адресе/порту, замените `http://localhost:18080` на актуальный URL. В Postman достаточно создать запрос `GET http://<host>:<port>/api/allure/test-cases`, добавить query-параметр `path` со значением пути к директории Allure и выставить заголовок `Accept: application/json`.
+
 ## Интеграция с автотестами
 
 Используйте endpoint `/api/tests/batch` для пакетной передачи результатов.
