@@ -1,0 +1,32 @@
+{
+  "name": "User can log in with another dataset",
+  "testStage": {
+    "steps": [
+      {
+        "name": "Open login page",
+        "parameters": [],
+        "steps": []
+      },
+      {
+        "name": "Submit credentials",
+        "parameters": [
+          {
+            "name": "username",
+            "value": "qa"
+          }
+        ],
+        "steps": []
+      }
+    ]
+  },
+  "labels": [
+    {
+      "name": "AS_ID",
+      "value": "100"
+    },
+    {
+      "name": "suite",
+      "value": "Authentication"
+    }
+  ]
+}
