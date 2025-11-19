@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 class AllureTestCasesIntegrationTest {
 
     private val mapper = jacksonObjectMapper()
-    private val baseUrl: String = "http://localhost:8080"
+    private val baseUrl: String = "http://localhost:18080"
 
     @Test
     fun `should return parsed allure test cases`() {
