@@ -38,39 +38,15 @@ class TestReportService(
 
     @Transactional
     fun upsertTest(request: TestUpsertItem) {
-        val normalizedId = normalizeTestId(request.testId)
-        upsertSingle(
-            testId = normalizedId,
-            category = request.category,
-            shortTitle = request.shortTitle,
-            issueLink = request.issueLink,
-            readyDate = request.readyDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
-            generalStatus = validateGeneralStatus(request.generalStatus),
-            scenario = request.scenario,
-            notes = request.notes,
-            runIndex = request.runIndex,
-            runStatus = request.runStatus?.takeIf { it.isNotBlank() },
-            runDate = request.runDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
-        )
+        val validated = validateAndNormalize(request)
+        upsertSingle(validated)
     }
 
     @Transactional
     fun upsertBatch(request: TestBatchRequest) {
-        request.items.forEach { item ->
-            upsertSingle(
-                testId = normalizeTestId(item.testId),
-                category = item.category,
-                shortTitle = item.shortTitle,
-                issueLink = item.issueLink,
-                readyDate = item.readyDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
-                generalStatus = validateGeneralStatus(item.generalStatus),
-                scenario = item.scenario,
-                notes = item.notes,
-                runIndex = item.runIndex,
-                runStatus = item.runStatus?.takeIf { it.isNotBlank() },
-                runDate = item.runDate?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
-            )
-        }
+        request.items
+            .map { validateAndNormalize(it) }
+            .forEach { upsertSingle(it) }
     }
 
     @Transactional
@@ -82,45 +58,34 @@ class TestReportService(
         testReportRepository.delete(entity)
     }
 
-    private fun upsertSingle(
-        testId: String,
-        category: String?,
-        shortTitle: String?,
-        issueLink: String?,
-        readyDate: LocalDate?,
-        generalStatus: String?,
-        scenario: String?,
-        notes: String?,
-        runIndex: Int?,
-        runStatus: String?,
-        runDate: LocalDate?
-    ) {
+    private fun upsertSingle(item: ValidatedUpsert) {
         val applyUpdates: TestReportEntity.() -> Unit = {
-            category?.let { this.category = it }
-            shortTitle?.let { this.shortTitle = it }
-            issueLink?.let { this.issueLink = it }
-            readyDate?.let { this.readyDate = it }
-            generalStatus?.let { this.generalStatus = it }
-            scenario?.let { this.scenario = it }
-            notes?.let { this.notes = it }
+            category = item.category
+            shortTitle = item.shortTitle
+            scenario = item.scenario
 
-            if (runIndex != null) {
-                when (runIndex) {
-                    1 -> this.run1Status = runStatus?.uppercase()
-                    2 -> this.run2Status = runStatus?.uppercase()
-                    3 -> this.run3Status = runStatus?.uppercase()
-                    4 -> this.run4Status = runStatus?.uppercase()
-                    5 -> this.run5Status = runStatus?.uppercase()
+            item.issueLink?.let { this.issueLink = it }
+            item.readyDate?.let { this.readyDate = it }
+            item.generalStatus?.let { this.generalStatus = it }
+            item.notes?.let { this.notes = it }
+
+            if (item.runIndex != null) {
+                when (item.runIndex) {
+                    1 -> this.run1Status = item.runStatus?.uppercase()
+                    2 -> this.run2Status = item.runStatus?.uppercase()
+                    3 -> this.run3Status = item.runStatus?.uppercase()
+                    4 -> this.run4Status = item.runStatus?.uppercase()
+                    5 -> this.run5Status = item.runStatus?.uppercase()
                     else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "runIndex must be between 1 and 5")
                 }
-                val meta = testRunMetadataRepository.findById(runIndex)
-                    .orElse(TestRunMetadataEntity(runIndex = runIndex))
-                meta.runDate = runDate ?: meta.runDate ?: if (runStatus != null) LocalDate.now() else null
+                val meta = testRunMetadataRepository.findById(item.runIndex)
+                    .orElse(TestRunMetadataEntity(runIndex = item.runIndex))
+                meta.runDate = item.runDate ?: meta.runDate ?: if (item.runStatus != null) LocalDate.now() else null
                 testRunMetadataRepository.save(meta)
             }
         }
 
-        val existing = testReportRepository.findByTestId(testId)
+        val existing = testReportRepository.findByTestId(item.testId)
         if (existing.isPresent) {
             val entity = existing.get()
             applyUpdates(entity)
@@ -129,10 +94,31 @@ class TestReportService(
             return
         }
 
-        val newEntity = TestReportEntity(testId = testId)
+        val newEntity = TestReportEntity(testId = item.testId)
         applyUpdates(newEntity)
         newEntity.updatedAt = OffsetDateTime.now()
         testReportRepository.save(newEntity)
+    }
+
+    private fun validateAndNormalize(item: TestUpsertItem): ValidatedUpsert {
+        val normalizedId = normalizeTestId(item.testId)
+        val category = normalizeRequiredField(item.category, "category")
+        val shortTitle = normalizeRequiredField(item.shortTitle, "shortTitle")
+        val scenario = normalizeRequiredField(item.scenario, "scenario")
+
+        return ValidatedUpsert(
+            testId = normalizedId,
+            category = category,
+            shortTitle = shortTitle,
+            scenario = scenario,
+            issueLink = item.issueLink?.takeIf { it.isNotBlank() }?.trim(),
+            readyDate = item.readyDate?.takeIf { it.isNotBlank() }?.trim()?.let { LocalDate.parse(it) },
+            generalStatus = validateGeneralStatus(item.generalStatus?.takeIf { it.isNotBlank() }?.trim()),
+            notes = item.notes,
+            runIndex = item.runIndex,
+            runStatus = item.runStatus?.takeIf { it.isNotBlank() }?.trim(),
+            runDate = item.runDate?.takeIf { it.isNotBlank() }?.trim()?.let { LocalDate.parse(it) }
+        )
     }
 
     private fun TestReportEntity.toDto(): TestReportItemDto = TestReportItemDto(
@@ -156,13 +142,39 @@ class TestReportService(
         }
     }
 
-    private fun normalizeTestId(testId: String): String {
-        val normalizedId = testId.trim()
+    private fun normalizeTestId(testId: String?): String {
+        val normalizedId = testId?.trim().orEmpty()
         if (normalizedId.isEmpty()) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "testId must not be blank")
+            requiredFieldMissing("testId")
         }
         return normalizedId
     }
+
+    private fun normalizeRequiredField(value: String?, fieldName: String): String {
+        val normalized = value?.trim().orEmpty()
+        if (normalized.isEmpty()) {
+            requiredFieldMissing(fieldName)
+        }
+        return normalized
+    }
+
+    private fun requiredFieldMissing(fieldName: String): Nothing {
+        throw ResponseStatusException(HttpStatus.NOT_FOUND, "Required field $fieldName is missing")
+    }
+
+    private data class ValidatedUpsert(
+        val testId: String,
+        val category: String,
+        val shortTitle: String,
+        val scenario: String,
+        val issueLink: String?,
+        val readyDate: LocalDate?,
+        val generalStatus: String?,
+        val notes: String?,
+        val runIndex: Int?,
+        val runStatus: String?,
+        val runDate: LocalDate?
+    )
 
     private fun compareTestIds(a: String, b: String): Int {
         val left = ParsedTestId.from(a)
