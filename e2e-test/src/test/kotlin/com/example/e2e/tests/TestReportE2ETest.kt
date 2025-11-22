@@ -5,7 +5,6 @@ import com.example.e2e.dto.GeneralTestStatus
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
-import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -21,7 +20,7 @@ class TestReportE2ETest {
     @DisplayName("Создаем запись через batch и проверяем отображение в отчете")
     fun createAndReadReportThroughApi() {
         val today = LocalDate.now()
-        DatabaseCleaner.deleteTodayReports(today)
+        DatabaseCleaner.deleteReportsByDate(today)
 
         val batchRequest = TestBatchRequest(
             items = listOf(

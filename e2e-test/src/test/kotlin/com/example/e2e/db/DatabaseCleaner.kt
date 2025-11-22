@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.deleteWhere
 
 object DatabaseCleaner {
 
-    fun deleteTodayReports(date: LocalDate = LocalDate.now()) = dbReportExec {
+    fun deleteReportsByDate(date: LocalDate = LocalDate.now()) = dbReportExec {
         TestReportTable.deleteWhere { TestReportTable.readyDate eq date }
     }
 }
