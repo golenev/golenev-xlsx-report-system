@@ -2,7 +2,6 @@ package com.example.report.dto
 
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
-import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 
 data class TestBatchRequest(
@@ -11,8 +10,7 @@ data class TestBatchRequest(
 )
 
 data class TestUpsertItem(
-    @field:NotBlank
-    val testId: String,
+    val testId: String? = null,
     val category: String? = null,
     val shortTitle: String? = null,
     val issueLink: String? = null,
