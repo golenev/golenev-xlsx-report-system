@@ -2,7 +2,6 @@ package com.example.report.controller
 
 import com.example.report.dto.TestUpsertItem
 import com.example.report.dto.TestBatchRequest
-import com.example.report.service.AllureReportImportService
 import com.example.report.service.ColumnConfigService
 import com.example.report.service.ExcelExportService
 import com.example.report.service.TestReportService
@@ -25,7 +24,6 @@ class TestReportController(
     private val testReportService: TestReportService,
     private val excelExportService: ExcelExportService,
     private val columnConfigService: ColumnConfigService,
-    private val allureReportImportService: AllureReportImportService
 ) {
 
     @GetMapping("/tests")
@@ -58,7 +56,4 @@ class TestReportController(
     @GetMapping("/config/columns")
     fun getColumnConfig() = columnConfigService.getConfig()
 
-    @GetMapping("/allure/test-cases")
-    fun getAllureTestCases(@RequestParam path: String) =
-        allureReportImportService.loadTestCases(path)
 }

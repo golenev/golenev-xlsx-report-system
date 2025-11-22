@@ -21,7 +21,7 @@ class ApiExceptionHandler {
         val body = buildMap<String, Any?> {
             put("timestamp", OffsetDateTime.now())
             put("status", status.value())
-            put("error", status.reasonPhrase)
+            put("error", ex.cause)
             put("message", reason)
             put("path", request.requestURI)
             if (missingField != null) {
