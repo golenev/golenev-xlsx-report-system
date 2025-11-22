@@ -60,9 +60,9 @@ class TestReportService(
 
     private fun upsertSingle(item: ValidatedUpsert) {
         val applyUpdates: TestReportEntity.() -> Unit = {
-            category = item.category
-            shortTitle = item.shortTitle
-            scenario = item.scenario
+            item.category?.let { this.category = it }
+            item.shortTitle?.let { this.shortTitle = it }
+            item.scenario?.let { this.scenario = it }
 
             item.issueLink?.let { this.issueLink = it }
             item.readyDate?.let { this.readyDate = it }
@@ -102,9 +102,9 @@ class TestReportService(
 
     private fun validateAndNormalize(item: TestUpsertItem): ValidatedUpsert {
         val normalizedId = normalizeTestId(item.testId)
-        val category = normalizeRequiredField(item.category, "category")
-        val shortTitle = normalizeRequiredField(item.shortTitle, "shortTitle")
-        val scenario = normalizeRequiredField(item.scenario, "scenario")
+        val category = item.category?.takeIf { it.isNotBlank() }?.trim()
+        val shortTitle = item.shortTitle?.takeIf { it.isNotBlank() }?.trim()
+        val scenario = item.scenario?.takeIf { it.isNotBlank() }?.trim()
 
         return ValidatedUpsert(
             testId = normalizedId,
@@ -150,23 +150,15 @@ class TestReportService(
         return normalizedId
     }
 
-    private fun normalizeRequiredField(value: String?, fieldName: String): String {
-        val normalized = value?.trim().orEmpty()
-        if (normalized.isEmpty()) {
-            requiredFieldMissing(fieldName)
-        }
-        return normalized
-    }
-
     private fun requiredFieldMissing(fieldName: String): Nothing {
-        throw ResponseStatusException(HttpStatus.NOT_FOUND, "Required field $fieldName is missing")
+        throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Required field $fieldName is missing")
     }
 
     private data class ValidatedUpsert(
         val testId: String,
-        val category: String,
-        val shortTitle: String,
-        val scenario: String,
+        val category: String?,
+        val shortTitle: String?,
+        val scenario: String?,
         val issueLink: String?,
         val readyDate: LocalDate?,
         val generalStatus: String?,
