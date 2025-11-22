@@ -7,6 +7,7 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.timestampWithTimeZone
 
+
 object TestReportTable : Table("test_report") {
     val id = long("id").autoIncrement()
     val testId = text("test_id")

@@ -1,3 +1,6 @@
+import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     kotlin("jvm") version "1.9.23"
 }
@@ -17,6 +20,8 @@ dependencies {
     testImplementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    testImplementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
+
     testImplementation("org.postgresql:postgresql:42.7.3")
     testImplementation("com.zaxxer:HikariCP:5.1.0")
 
@@ -27,7 +32,6 @@ dependencies {
     testImplementation("io.kotest:kotest-assertions-core:5.9.1")
     testImplementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
     testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.1")
-
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
@@ -37,6 +41,3 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = "17"
-}

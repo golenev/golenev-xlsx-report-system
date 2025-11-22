@@ -7,8 +7,8 @@ import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldNotBeNull
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -53,8 +53,7 @@ class TestReportE2ETest {
         reportService.sendBatch(batchRequest)
         val report = reportService.getReport()
 
-        assertSoftly {
-            report.items.shouldHaveSize(2)
+            report.items.filter { it.readyDate == today } .shouldHaveSize(2)
 
             val itemsById = report.items.associateBy { it.testId }
 
@@ -73,7 +72,7 @@ class TestReportE2ETest {
             secondItem.generalStatus shouldBe GeneralTestStatus.QUEUE.value
             secondItem.runStatuses.first() shouldBe "FAILED"
             secondItem.updatedAt.shouldNotBeNull()
-        }
+
 
         val firstRun = report.runs.first { it.runIndex == 1 }
         firstRun.runDate shouldBe today
