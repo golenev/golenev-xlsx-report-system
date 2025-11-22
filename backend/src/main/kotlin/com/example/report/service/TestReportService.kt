@@ -60,9 +60,9 @@ class TestReportService(
 
     private fun upsertSingle(item: ValidatedUpsert) {
         val applyUpdates: TestReportEntity.() -> Unit = {
-            category = item.category
-            shortTitle = item.shortTitle
-            scenario = item.scenario
+            item.category?.let { this.category = it }
+            item.shortTitle?.let { this.shortTitle = it }
+            item.scenario?.let { this.scenario = it }
 
             item.issueLink?.let { this.issueLink = it }
             item.readyDate?.let { this.readyDate = it }
