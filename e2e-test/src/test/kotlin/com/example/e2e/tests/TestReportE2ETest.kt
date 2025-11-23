@@ -5,7 +5,7 @@ import com.example.e2e.dto.GeneralTestStatus
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
-import io.qameta.allure.Allure.step
+import com.example.e2e.utils.step
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
