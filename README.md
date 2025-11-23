@@ -62,6 +62,29 @@ docker compose up -d --build
 
 Docker Compose собирает образ из исходников, которые находятся в рабочей копии — поэтому после `git checkout` образ автоматически строится из кода выбранной ветки. Дополнительно ничего настраивать не нужно. Если ранее был запущен другой вариант приложения, при необходимости предварительно выполните `docker compose down`.
 
+## Allure-отчет по e2e-тестам
+
+1. Поднимите сервисы приложения (API и БД), чтобы e2e-тесты могли ходить по HTTP. Проще всего использовать Docker Compose:
+   ```bash
+   docker compose up -d
+   ```
+2. Запустите e2e-тесты, чтобы собрать результаты Allure (нужен установленный Gradle):
+   ```bash
+   cd e2e-test
+   gradle test
+   ```
+   После прогона результаты появятся в `e2e-test/build/allure-results`.
+3. Сгенерируйте и откройте отчет при помощи Allure CLI:
+   ```bash
+   allure serve build/allure-results
+   ```
+   Либо сохраните статику в `build/allure-report` без автоматического открытия браузера:
+   ```bash
+   allure generate --clean build/allure-results -o build/allure-report
+   ```
+
+Убедитесь, что [Allure Commandline](https://github.com/allure-framework/allure2/releases) установлен и доступен в PATH.
+
 ## Альтернативные варианты запуска
 
 ### Локальная разработка без полного Docker-образа
