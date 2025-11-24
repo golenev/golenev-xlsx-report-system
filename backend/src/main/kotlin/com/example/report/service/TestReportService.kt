@@ -65,7 +65,9 @@ class TestReportService(
             item.scenario?.let { this.scenario = it }
 
             item.issueLink?.let { this.issueLink = it }
-            item.readyDate?.let { this.readyDate = it }
+            if (this.readyDate == null) {
+                this.readyDate = LocalDate.now()
+            }
             item.generalStatus?.let { this.generalStatus = it }
             item.notes?.let { this.notes = it }
 
@@ -112,7 +114,6 @@ class TestReportService(
             shortTitle = shortTitle,
             scenario = scenario,
             issueLink = item.issueLink?.takeIf { it.isNotBlank() }?.trim(),
-            readyDate = item.readyDate?.takeIf { it.isNotBlank() }?.trim()?.let { LocalDate.parse(it) },
             generalStatus = validateGeneralStatus(item.generalStatus?.takeIf { it.isNotBlank() }?.trim()),
             notes = item.notes,
             runIndex = item.runIndex,
@@ -160,7 +161,6 @@ class TestReportService(
         val shortTitle: String?,
         val scenario: String?,
         val issueLink: String?,
-        val readyDate: LocalDate?,
         val generalStatus: String?,
         val notes: String?,
         val runIndex: Int?,
