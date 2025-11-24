@@ -12,10 +12,11 @@ class ReportService : RequestExecutor<Unit>(
 ) {
 
     @Step("Отправляем batch запрос для обновления тестов")
-    fun sendBatch(request: TestBatchRequest): Response {
+    fun sendBatch(request: TestBatchRequest, expectedStatus: Int = 200): Response {
         return postRequest(
             url = Paths.REPORTS_BATCH.path,
             requestSpecification = baseRequest().body(request),
+            expectedStatus = expectedStatus,
         )
     }
 
