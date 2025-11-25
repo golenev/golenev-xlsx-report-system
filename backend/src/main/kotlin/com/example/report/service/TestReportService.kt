@@ -60,15 +60,15 @@ class TestReportService(
 
     private fun upsertSingle(item: ValidatedUpsert) {
         val applyUpdates: TestReportEntity.() -> Unit = {
-            item.category?.let { this.category = it }
-            item.shortTitle?.let { this.shortTitle = it }
-            item.scenario?.let { this.scenario = it }
+            this.category = item.category
+            this.shortTitle = item.shortTitle
+            this.scenario = item.scenario
 
             item.issueLink?.let { this.issueLink = it }
             if (this.readyDate == null) {
                 this.readyDate = LocalDate.now()
             }
-            item.generalStatus?.let { this.generalStatus = it }
+            this.generalStatus = item.generalStatus
             item.notes?.let { this.notes = it }
 
             if (item.runIndex != null) {
@@ -104,9 +104,11 @@ class TestReportService(
 
     private fun validateAndNormalize(item: TestUpsertItem): ValidatedUpsert {
         val normalizedId = normalizeTestId(item.testId)
-        val category = item.category?.takeIf { it.isNotBlank() }?.trim()
-        val shortTitle = item.shortTitle?.takeIf { it.isNotBlank() }?.trim()
-        val scenario = item.scenario?.takeIf { it.isNotBlank() }?.trim()
+        val category = item.category?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("category")
+        val shortTitle = item.shortTitle?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("shortTitle")
+        val scenario = item.scenario?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("scenario")
+        val generalStatusRaw =
+            item.generalStatus?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("generalStatus")
 
         return ValidatedUpsert(
             testId = normalizedId,
@@ -114,7 +116,7 @@ class TestReportService(
             shortTitle = shortTitle,
             scenario = scenario,
             issueLink = item.issueLink?.takeIf { it.isNotBlank() }?.trim(),
-            generalStatus = validateGeneralStatus(item.generalStatus?.takeIf { it.isNotBlank() }?.trim()),
+            generalStatus = validateGeneralStatus(generalStatusRaw),
             notes = item.notes,
             runIndex = item.runIndex,
             runStatus = item.runStatus?.takeIf { it.isNotBlank() }?.trim(),
@@ -135,9 +137,9 @@ class TestReportService(
         updatedAt = updatedAt?.toString()
     )
 
-    private fun validateGeneralStatus(generalStatus: String?): String? {
+    private fun validateGeneralStatus(generalStatus: String): String {
         return try {
-            GeneralTestStatus.requireValid(generalStatus)
+            GeneralTestStatus.requireValid(generalStatus) ?: requiredFieldMissing("generalStatus")
         } catch (ex: IllegalArgumentException) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid status")
         }
@@ -157,11 +159,11 @@ class TestReportService(
 
     private data class ValidatedUpsert(
         val testId: String,
-        val category: String?,
-        val shortTitle: String?,
-        val scenario: String?,
+        val category: String,
+        val shortTitle: String,
+        val scenario: String,
         val issueLink: String?,
-        val generalStatus: String?,
+        val generalStatus: String,
         val notes: String?,
         val runIndex: Int?,
         val runStatus: String?,
