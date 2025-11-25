@@ -6,6 +6,7 @@ import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
 import com.example.e2e.utils.step
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.DisplayName
@@ -31,10 +32,9 @@ class RequiredFieldsE2ETest {
 
         val errorResponse = response.`as`(ErrorResponse::class.java)
 
-        step("Проверяем ответ для отсутствующего поля $field") {
+        step("Проверяем статус код и упоминание для отсутствующего поля $field") {
             response.statusCode shouldBe 400
-            val actualMessage = errorResponse.message ?: errorResponse.missingField
-            requireNotNull(actualMessage) { "Error message is missing in response body" }
+            val actualMessage = errorResponse.message.shouldNotBeNull()
             actualMessage shouldContain expectedMessage
             errorResponse.missingField shouldBe field
         }
