@@ -1,13 +1,13 @@
 package com.example.e2e.tests
 
+import com.example.e2e.dto.ErrorResponse
 import com.example.e2e.dto.GeneralTestStatus
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
 import com.example.e2e.utils.step
-import org.hamcrest.Matchers.anyOf
-import org.hamcrest.Matchers.containsString
-import org.hamcrest.Matchers.hasEntry
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -29,15 +29,14 @@ class RequiredFieldsE2ETest {
             )
         }
 
+        val errorResponse = response.`as`(ErrorResponse::class.java)
+
         step("Проверяем ответ для отсутствующего поля $field") {
-            response.then()
-                .statusCode(400)
-                .body(
-                    anyOf(
-                        hasEntry("detail", containsString(expectedMessage)),
-                        hasEntry("message", containsString(expectedMessage)),
-                    )
-                )
+            response.statusCode shouldBe 400
+            val actualMessage = errorResponse.message ?: errorResponse.missingField
+            requireNotNull(actualMessage) { "Error message is missing in response body" }
+            actualMessage shouldContain expectedMessage
+            errorResponse.missingField shouldBe field
         }
     }
 

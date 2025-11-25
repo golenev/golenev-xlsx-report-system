@@ -47,6 +47,16 @@ data class TestRunMetaDto(
     val runDate: LocalDate?,
 )
 
+data class ErrorResponse(
+    val timestamp: String? = null,
+    val status: Int? = null,
+    val error: Any? = null,
+    val message: String? = null,
+    val path: String? = null,
+    val missingField: String? = null,
+    val items: List<TestUpsertItem>? = null,
+)
+
 enum class GeneralTestStatus(val value: String) {
     QUEUE("Очередь"),
     IN_PROGRESS("В работе"),

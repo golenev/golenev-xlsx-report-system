@@ -30,6 +30,7 @@ open class BaseSpecification(
             .baseUri(baseUri)
             .contentType(ContentType.JSON)
             .accept(ContentType.JSON)
+            .log().all()
             .filter(AllureRestAssured())
     }
 
