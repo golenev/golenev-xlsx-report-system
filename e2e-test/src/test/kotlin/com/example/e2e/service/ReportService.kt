@@ -27,4 +27,13 @@ class ReportService : RequestExecutor<Unit>(
             requestSpecification = baseRequest(),
         ).`as`(TestReportResponse::class.java)
     }
+
+    @Step("Сбрасываем данные Run-колонок через API")
+    fun resetRuns(expectedStatus: Int = 200): Response {
+        return postRequest(
+            url = Paths.RUNS_RESET.path,
+            requestSpecification = baseRequest(),
+            expectedStatus = expectedStatus,
+        )
+    }
 }
