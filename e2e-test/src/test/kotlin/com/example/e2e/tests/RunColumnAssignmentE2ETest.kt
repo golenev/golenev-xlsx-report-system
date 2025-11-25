@@ -1,6 +1,8 @@
 package com.example.e2e.tests
 
 import com.example.e2e.db.DatabaseCleaner
+import com.example.e2e.db.TestReportTable
+import com.example.e2e.db.dbReportExec
 import com.example.e2e.dto.GeneralTestStatus
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
@@ -10,13 +12,26 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import org.jetbrains.exposed.sql.deleteWhere
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+
 
 class RunColumnAssignmentE2ETest {
 
     private val reportService = ReportService()
+
+    @AfterEach
+    fun cleaDb () {
+        dbReportExec {
+            TestReportTable.deleteWhere {
+                (TestReportTable.testId inList listOf("765", "376", "9567", "11153"))
+            }
+        }
+    }
 
     @Test
     @DisplayName("Батчи с разными датами попадают в правильные Run-колонки")
@@ -41,8 +56,8 @@ class RunColumnAssignmentE2ETest {
             TestBatchRequest(
                 items = listOf(
                     TestUpsertItem(
-                        testId = "RUN-DATE-1",
-                        category = "E2E",
+                        testId = "765",
+                        category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Сегодня PASSED",
                         scenario = "Сценарий сегодняшнего успешного теста",
                         generalStatus = GeneralTestStatus.QUEUE.value,
@@ -51,8 +66,8 @@ class RunColumnAssignmentE2ETest {
                         readyDate = today.toString(),
                     ),
                     TestUpsertItem(
-                        testId = "RUN-DATE-2",
-                        category = "E2E",
+                        testId = "376",
+                        category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Сегодня FAILED",
                         scenario = "Сценарий сегодняшнего упавшего теста",
                         generalStatus = GeneralTestStatus.QUEUE.value,
@@ -90,8 +105,8 @@ class RunColumnAssignmentE2ETest {
             TestBatchRequest(
                 items = listOf(
                     TestUpsertItem(
-                        testId = "RUN-DATE-3",
-                        category = "E2E",
+                        testId = "9567",
+                        category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Завтра PASSED",
                         scenario = "Сценарий завтрашнего успешного теста",
                         generalStatus = GeneralTestStatus.QUEUE.value,
@@ -100,8 +115,8 @@ class RunColumnAssignmentE2ETest {
                         readyDate = tomorrow.toString(),
                     ),
                     TestUpsertItem(
-                        testId = "RUN-DATE-4",
-                        category = "E2E",
+                        testId = "11153",
+                        category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Завтра FAILED",
                         scenario = "Сценарий завтрашнего упавшего теста",
                         generalStatus = GeneralTestStatus.QUEUE.value,
