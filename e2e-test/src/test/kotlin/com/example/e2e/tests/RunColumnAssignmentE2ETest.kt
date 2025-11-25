@@ -1,0 +1,153 @@
+package com.example.e2e.tests
+
+import com.example.e2e.db.DatabaseCleaner
+import com.example.e2e.db.TestReportTable
+import com.example.e2e.db.dbReportExec
+import com.example.e2e.dto.GeneralTestStatus
+import com.example.e2e.dto.TestBatchRequest
+import com.example.e2e.dto.TestUpsertItem
+import com.example.e2e.service.ReportService
+import com.example.e2e.utils.step
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import org.jetbrains.exposed.sql.deleteWhere
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
+import java.time.LocalDate
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+
+
+class RunColumnAssignmentE2ETest {
+
+    private val reportService = ReportService()
+
+    @AfterEach
+    fun cleaDb () {
+        dbReportExec {
+            TestReportTable.deleteWhere {
+                (TestReportTable.testId inList listOf("765", "376", "9567", "11153"))
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Батчи с разными датами попадают в правильные Run-колонки")
+    fun batchesAreAssignedToProperRunColumns() {
+        val today = step("Определяем сегодняшнюю дату") { LocalDate.now() }
+        val tomorrow = step("Определяем завтрашнюю дату") { today.plusDays(1) }
+
+        step("Очищаем данные по нужным датам и сбрасываем Run-колонки") {
+            DatabaseCleaner.deleteReportsByDate(today)
+            DatabaseCleaner.deleteReportsByDate(tomorrow)
+            reportService.resetRuns()
+        }
+
+        val emptyReport = step("Проверяем, что заголовки Run очищены") {
+            reportService.getReport()
+        }
+        step("Все Run-колонки не имеют даты") {
+            emptyReport.runs.map { it.runDate } shouldContainExactly listOf(null, null, null, null, null)
+        }
+
+        val firstBatch = step("Формируем первый батч с сегодняшней датой") {
+            TestBatchRequest(
+                items = listOf(
+                    TestUpsertItem(
+                        testId = "765",
+                        category = "E2E_FOR_AUTOTEST",
+                        shortTitle = "Сегодня PASSED",
+                        scenario = "Сценарий сегодняшнего успешного теста",
+                        generalStatus = GeneralTestStatus.QUEUE.value,
+                        runStatus = "PASSED",
+                        runDate = today.toString(),
+                        readyDate = today.toString(),
+                    ),
+                    TestUpsertItem(
+                        testId = "376",
+                        category = "E2E_FOR_AUTOTEST",
+                        shortTitle = "Сегодня FAILED",
+                        scenario = "Сценарий сегодняшнего упавшего теста",
+                        generalStatus = GeneralTestStatus.QUEUE.value,
+                        runStatus = "FAILED",
+                        runDate = today.toString(),
+                        readyDate = today.toString(),
+                    ),
+                ),
+            )
+        }
+
+        step("Отправляем первый батч") {
+            reportService.sendBatch(firstBatch)
+        }
+
+        val afterFirstBatch = step("Читаем отчет после первого батча") {
+            reportService.getReport()
+        }
+
+        step("Первая колонка Run выставлена на сегодня, остальные пустые") {
+            val runDates = afterFirstBatch.runs.associateBy { it.runIndex }
+            runDates[1]?.runDate shouldBe today
+            runDates[2]?.runDate.shouldBeNull()
+        }
+
+        step("Статусы тестов записаны в первую колонку") {
+            val items = afterFirstBatch.items.associateBy { it.testId }
+            items["RUN-DATE-1"].shouldNotBeNull().runStatuses[0] shouldBe "PASSED"
+            items["RUN-DATE-1"].shouldNotBeNull().runStatuses[1].shouldBeNull()
+            items["RUN-DATE-2"].shouldNotBeNull().runStatuses[0] shouldBe "FAILED"
+            items["RUN-DATE-2"].shouldNotBeNull().runStatuses[1].shouldBeNull()
+        }
+
+        val secondBatch = step("Формируем второй батч с завтрашней датой") {
+            TestBatchRequest(
+                items = listOf(
+                    TestUpsertItem(
+                        testId = "9567",
+                        category = "E2E_FOR_AUTOTEST",
+                        shortTitle = "Завтра PASSED",
+                        scenario = "Сценарий завтрашнего успешного теста",
+                        generalStatus = GeneralTestStatus.QUEUE.value,
+                        runStatus = "PASSED",
+                        runDate = tomorrow.toString(),
+                        readyDate = tomorrow.toString(),
+                    ),
+                    TestUpsertItem(
+                        testId = "11153",
+                        category = "E2E_FOR_AUTOTEST",
+                        shortTitle = "Завтра FAILED",
+                        scenario = "Сценарий завтрашнего упавшего теста",
+                        generalStatus = GeneralTestStatus.QUEUE.value,
+                        runStatus = "FAILED",
+                        runDate = tomorrow.toString(),
+                        readyDate = tomorrow.toString(),
+                    ),
+                ),
+            )
+        }
+
+        step("Отправляем второй батч") {
+            reportService.sendBatch(secondBatch)
+        }
+
+        val afterSecondBatch = step("Читаем отчет после второго батча") {
+            reportService.getReport()
+        }
+
+        step("Дата сегодняшнего запуска сохранилась в первой колонке, завтрашняя попала во вторую") {
+            val runDates = afterSecondBatch.runs.associateBy { it.runIndex }
+            runDates[1]?.runDate shouldBe today
+            runDates[2]?.runDate shouldBe tomorrow
+        }
+
+        step("Статусы второго батча записаны во вторую колонку") {
+            val items = afterSecondBatch.items.associateBy { it.testId }
+            items["RUN-DATE-3"].shouldNotBeNull().runStatuses[1] shouldBe "PASSED"
+            items["RUN-DATE-3"].shouldNotBeNull().runStatuses[0].shouldBeNull()
+            items["RUN-DATE-4"].shouldNotBeNull().runStatuses[1] shouldBe "FAILED"
+            items["RUN-DATE-4"].shouldNotBeNull().runStatuses[0].shouldBeNull()
+        }
+    }
+}

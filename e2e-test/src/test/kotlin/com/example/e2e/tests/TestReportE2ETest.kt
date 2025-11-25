@@ -1,6 +1,8 @@
 package com.example.e2e.tests
 
 import com.example.e2e.db.DatabaseCleaner
+import com.example.e2e.db.TestReportTable
+import com.example.e2e.db.dbReportExec
 import com.example.e2e.dto.GeneralTestStatus
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
@@ -9,6 +11,9 @@ import com.example.e2e.utils.step
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.deleteWhere
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -16,6 +21,15 @@ import java.time.LocalDate
 class TestReportE2ETest {
 
     private val reportService = ReportService()
+
+    @AfterEach
+    fun cleaDb () {
+        dbReportExec {
+            TestReportTable.deleteWhere {
+                (TestReportTable.testId inList listOf("4856", "11123"))
+            }
+        }
+    }
 
     @Test
     @DisplayName("Создаем запись через batch и проверяем отображение в отчете")
@@ -30,8 +44,8 @@ class TestReportE2ETest {
             TestBatchRequest(
                 items = listOf(
                     TestUpsertItem(
-                        testId = "45-7",
-                        category = "E2E",
+                        testId = "4856",
+                        category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Smoke отчет 1",
                         scenario = "Короткий сценарий 1",
                         readyDate = today.toString(),
@@ -41,8 +55,8 @@ class TestReportE2ETest {
                         runDate = today.toString(),
                     ),
                     TestUpsertItem(
-                        testId = "45-9",
-                        category = "E2E",
+                        testId = "11123",
+                        category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Smoke отчет 2",
                         scenario = "Короткий сценарий 2",
                         readyDate = today.toString(),
@@ -72,8 +86,8 @@ class TestReportE2ETest {
         }
 
         step("Проверяем первую запись") {
-            val firstItem = itemsById["45-7"].shouldNotBeNull()
-            firstItem.category shouldBe "E2E"
+            val firstItem = itemsById["4856"].shouldNotBeNull()
+            firstItem.category shouldBe "E2E_FOR_AUTOTEST"
             firstItem.shortTitle shouldBe "Smoke отчет 1"
             firstItem.readyDate shouldBe today
             firstItem.generalStatus shouldBe GeneralTestStatus.QUEUE.value
@@ -82,8 +96,8 @@ class TestReportE2ETest {
         }
 
         step("Проверяем вторую запись") {
-            val secondItem = itemsById["45-9"].shouldNotBeNull()
-            secondItem.category shouldBe "E2E"
+            val secondItem = itemsById["11123"].shouldNotBeNull()
+            secondItem.category shouldBe "E2E_FOR_AUTOTEST"
             secondItem.shortTitle shouldBe "Smoke отчет 2"
             secondItem.readyDate shouldBe today
             secondItem.generalStatus shouldBe GeneralTestStatus.QUEUE.value

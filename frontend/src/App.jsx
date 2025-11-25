@@ -197,6 +197,16 @@ export default function App() {
       }));
   }, [runs]);
 
+  const activeRunIndex = useMemo(() => {
+    const datedRuns = runs.filter((run) => run.runDate);
+    if (datedRuns.length > 0) {
+      return datedRuns.reduce((latest, current) =>
+        current.runDate > latest.runDate ? current : latest
+      ).runIndex;
+    }
+    return runs.find((run) => !run.runDate)?.runIndex ?? runs[0]?.runIndex ?? null;
+  }, [runs]);
+
   const handleFieldChange = (testId, key, value) => {
     setItems((prev) =>
       prev.map((item) => (item.testId === testId ? { ...item, [key]: value } : item))
@@ -473,10 +483,14 @@ export default function App() {
                 {columns.map((column, idx) => {
                   const width = getColumnWidth(column);
                   const letter = columnLetter(idx);
+                  const runColumnClass = column.runIndex
+                    ? `run-column-header ${column.runIndex === activeRunIndex ? 'run-column-active' : 'run-column-inactive'}`
+                    : '';
                   return (
                     <th
                       key={column.key}
                       style={{ width: `${width}px`, minWidth: `${width}px` }}
+                      className={runColumnClass}
                     >
                       <div className="header-content">
                         <span className="column-letter">{letter}</span>
@@ -555,11 +569,12 @@ export default function App() {
                   })}
                   {runColumns.map((column) => {
                     const width = columnConfig[column.key] ?? 120;
+                    const runColumnClass = `run-column-cell ${column.runIndex === activeRunIndex ? 'run-column-active' : 'run-column-inactive'}`;
                     return (
                       <td
                         key={`new-${index}-${column.key}`}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
-                        className="empty-cell"
+                        className={`empty-cell ${runColumnClass}`}
                       >
                         —
                       </td>
@@ -631,15 +646,19 @@ export default function App() {
                   {runColumns.map((column) => {
                     const width = columnConfig[column.key] ?? 120;
                     const current = item.runStatuses?.[column.runIndex - 1] ?? '';
+                    const isActiveRun = column.runIndex === activeRunIndex;
+                    const runColumnClass = `run-column-cell ${isActiveRun ? 'run-column-active' : 'run-column-inactive'}`;
                     return (
                       <td
                         key={column.key}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
+                        className={runColumnClass}
                       >
                         <select
                           value={current}
                           onChange={(e) => handleRunChange(item, column.runIndex, e.target.value)}
                           className="cell-select"
+                          disabled={!isActiveRun || saving}
                         >
                           <option value="">—</option>
                           {STATUS_OPTIONS.map((status) => (
