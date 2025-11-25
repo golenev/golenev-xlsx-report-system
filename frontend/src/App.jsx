@@ -200,8 +200,8 @@ export default function App() {
   const activeRunIndex = useMemo(() => {
     const datedRuns = runs.filter((run) => run.runDate);
     if (datedRuns.length > 0) {
-      return datedRuns.reduce((earliest, current) =>
-        current.runDate < earliest.runDate ? current : earliest
+      return datedRuns.reduce((latest, current) =>
+        current.runDate > latest.runDate ? current : latest
       ).runIndex;
     }
     return runs.find((run) => !run.runDate)?.runIndex ?? runs[0]?.runIndex ?? null;
