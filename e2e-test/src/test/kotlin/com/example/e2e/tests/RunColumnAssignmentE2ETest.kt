@@ -88,17 +88,21 @@ class RunColumnAssignmentE2ETest {
         }
 
         step("Первая колонка Run выставлена на сегодня, остальные пустые") {
-            val runDates = afterFirstBatch.runs.associateBy { it.runIndex }
-            runDates[1]?.runDate shouldBe today
-            runDates[2]?.runDate.shouldBeNull()
+            val firstRun = afterFirstBatch.runs.first { it.runIndex == 1 }
+            val secondRun = afterFirstBatch.runs.first { it.runIndex == 2 }
+
+            firstRun.runDate shouldBe today
+            secondRun.runDate.shouldBeNull()
         }
 
         step("Статусы тестов записаны в первую колонку") {
-            val items = afterFirstBatch.items.associateBy { it.testId }
-            items["RUN-DATE-1"].shouldNotBeNull().runStatuses[0] shouldBe "PASSED"
-            items["RUN-DATE-1"].shouldNotBeNull().runStatuses[1].shouldBeNull()
-            items["RUN-DATE-2"].shouldNotBeNull().runStatuses[0] shouldBe "FAILED"
-            items["RUN-DATE-2"].shouldNotBeNull().runStatuses[1].shouldBeNull()
+            val firstTest = afterFirstBatch.items.first { it.testId == "765" }
+            val secondTest = afterFirstBatch.items.first { it.testId == "376" }
+
+            firstTest.runStatuses[0] shouldBe "PASSED"
+            firstTest.runStatuses[1].shouldBeNull()
+            secondTest.runStatuses[0] shouldBe "FAILED"
+            secondTest.runStatuses[1].shouldBeNull()
         }
 
         val secondBatch = step("Формируем второй батч с завтрашней датой") {
@@ -137,17 +141,21 @@ class RunColumnAssignmentE2ETest {
         }
 
         step("Дата сегодняшнего запуска сохранилась в первой колонке, завтрашняя попала во вторую") {
-            val runDates = afterSecondBatch.runs.associateBy { it.runIndex }
-            runDates[1]?.runDate shouldBe today
-            runDates[2]?.runDate shouldBe tomorrow
+            val firstRun = afterSecondBatch.runs.first { it.runIndex == 1 }
+            val secondRun = afterSecondBatch.runs.first { it.runIndex == 2 }
+
+            firstRun.runDate shouldBe today
+            secondRun.runDate shouldBe tomorrow
         }
 
         step("Статусы второго батча записаны во вторую колонку") {
-            val items = afterSecondBatch.items.associateBy { it.testId }
-            items["RUN-DATE-3"].shouldNotBeNull().runStatuses[1] shouldBe "PASSED"
-            items["RUN-DATE-3"].shouldNotBeNull().runStatuses[0].shouldBeNull()
-            items["RUN-DATE-4"].shouldNotBeNull().runStatuses[1] shouldBe "FAILED"
-            items["RUN-DATE-4"].shouldNotBeNull().runStatuses[0].shouldBeNull()
+            val thirdTest = afterSecondBatch.items.first { it.testId == "9567" }
+            val fourthTest = afterSecondBatch.items.first { it.testId == "11153" }
+
+            thirdTest.runStatuses[1] shouldBe "PASSED"
+            thirdTest.runStatuses[0].shouldBeNull()
+            fourthTest.runStatuses[1] shouldBe "FAILED"
+            fourthTest.runStatuses[0].shouldBeNull()
         }
     }
 }
