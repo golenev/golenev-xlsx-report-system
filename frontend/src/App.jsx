@@ -450,14 +450,22 @@ export default function App() {
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(withBase('/api/tests/regression'), {
+      const batchResponse = await fetch(withBase('/api/tests/batch'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!response.ok) {
+      if (!batchResponse.ok) {
         throw new Error('Failed to save regression');
       }
+
+      const completeResponse = await fetch(withBase('/api/regressions/complete'), {
+        method: 'POST'
+      });
+      if (!completeResponse.ok) {
+        throw new Error('Failed to complete regression');
+      }
+
       await loadData();
     } catch (err) {
       setError(err.message);

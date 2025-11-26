@@ -141,22 +141,46 @@ class TestReportService(
 
     private fun validateAndNormalize(item: TestUpsertItem): ValidatedUpsert {
         val normalizedId = normalizeTestId(item.testId)
-        val category = item.category?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("category")
-        val shortTitle = item.shortTitle?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("shortTitle")
-        val scenario = item.scenario?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("scenario")
-        val generalStatusRaw =
-            item.generalStatus?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("generalStatus")
-        val regressionStatus = parseRegressionStatus(item)
-        val regressionDate = parseRegressionDate(item)
+        val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
+
+        val category = item.category?.takeIf { it.isNotBlank() }?.trim()
+            ?: existing?.category?.takeIf { it.isNotBlank() }
+            ?: requiredFieldMissing("category")
+
+        val shortTitle = item.shortTitle?.takeIf { it.isNotBlank() }?.trim()
+            ?: existing?.shortTitle?.takeIf { it.isNotBlank() }
+            ?: requiredFieldMissing("shortTitle")
+
+        val scenario = item.scenario?.takeIf { it.isNotBlank() }?.trim()
+            ?: existing?.scenario?.takeIf { it.isNotBlank() }
+            ?: requiredFieldMissing("scenario")
+
+        val generalStatusRaw = item.generalStatus?.takeIf { it.isNotBlank() }?.trim()
+            ?: existing?.generalStatus?.takeIf { it.isNotBlank() }
+            ?: requiredFieldMissing("generalStatus")
+
+        val regressionFieldsProvided =
+            item.regression != null || item.regressionStatus != null || item.regressionDate != null
+        val regressionStatus = if (regressionFieldsProvided) {
+            parseRegressionStatus(item)
+        } else {
+            existing?.regressionStatus
+        }
+        val regressionDate = if (regressionFieldsProvided) {
+            parseRegressionDate(item)
+        } else {
+            existing?.regressionDate
+        }
 
         return ValidatedUpsert(
             testId = normalizedId,
             category = category,
             shortTitle = shortTitle,
             scenario = scenario,
-            issueLink = item.issueLink?.takeIf { it.isNotBlank() }?.trim(),
+            issueLink = item.issueLink?.takeIf { it.isNotBlank() }?.trim()
+                ?: existing?.issueLink?.takeIf { it.isNotBlank() },
             generalStatus = validateGeneralStatus(generalStatusRaw),
-            notes = item.notes,
+            notes = item.notes ?: existing?.notes,
             regressionStatus = regressionStatus,
             regressionDate = regressionDate
         )
