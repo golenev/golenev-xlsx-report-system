@@ -21,11 +21,7 @@ class ExcelExportService(
         "generalStatus",
         "scenario",
         "notes",
-        "run1",
-        "run2",
-        "run3",
-        "run4",
-        "run5"
+        "regressionStatus"
     )
 
     fun generateWorkbook(): ByteArray {
@@ -58,12 +54,9 @@ class ExcelExportService(
             "Ready Date",
             "General Test Status",
             "Detailed Scenario",
-            "Notes"
-        ) + (1..5).map { index ->
-            val runMeta = report.runs.firstOrNull { it.runIndex == index }
-            val dateSuffix = runMeta?.runDate?.toString()?.let { " (" + it + ")" } ?: ""
-            "Run #$index$dateSuffix"
-        }
+            "Notes",
+            "Regression Status"
+        )
 
         val headerRow = sheet.createRow(0)
         headers.forEachIndexed { idx, title ->
@@ -86,8 +79,9 @@ class ExcelExportService(
                 item.readyDate?.toString(),
                 item.generalStatus,
                 item.scenario,
-                item.notes
-            ) + item.runStatuses
+                item.notes,
+                item.regressionStatus
+            )
             values.forEachIndexed { cellIndex, value ->
                 val cell = row.createCell(cellIndex)
                 cell.setCellValue(value ?: "")
