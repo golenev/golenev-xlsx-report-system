@@ -8,4 +8,5 @@ import java.util.Optional
 interface RegressionRepository : JpaRepository<RegressionEntity, Long> {
     fun findByRegressionDate(regressionDate: LocalDate): Optional<RegressionEntity>
     fun findAllByOrderByRegressionDateDesc(): List<RegressionEntity>
+    fun findFirstByOrderByRegressionDateDesc(): RegressionEntity?
 }

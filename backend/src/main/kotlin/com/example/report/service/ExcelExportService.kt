@@ -21,7 +21,8 @@ class ExcelExportService(
         "generalStatus",
         "scenario",
         "notes",
-        "regressionStatus"
+        "regressionStatus",
+        "regressionDate"
     )
 
     fun generateWorkbook(): ByteArray {
@@ -55,7 +56,8 @@ class ExcelExportService(
             "General Test Status",
             "Detailed Scenario",
             "Notes",
-            "Regression Status"
+            "Regression Status",
+            "Regression Completed"
         )
 
         val headerRow = sheet.createRow(0)
@@ -80,7 +82,8 @@ class ExcelExportService(
                 item.generalStatus,
                 item.scenario,
                 item.notes,
-                item.regressionStatus
+                item.regression?.status ?: item.regressionStatus,
+                item.regression?.completedAt ?: item.regressionDate?.toString()
             )
             values.forEachIndexed { cellIndex, value ->
                 val cell = row.createCell(cellIndex)

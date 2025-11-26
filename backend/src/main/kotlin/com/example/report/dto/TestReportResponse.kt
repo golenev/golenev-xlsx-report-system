@@ -4,7 +4,8 @@ import java.time.LocalDate
 
 data class TestReportResponse(
     val items: List<TestReportItemDto>,
-    val columnConfig: Map<String, Int>
+    val columnConfig: Map<String, Int>,
+    val regression: RegressionStateDto
 )
 
 data class TestReportItemDto(
@@ -17,5 +18,7 @@ data class TestReportItemDto(
     val scenario: String?,
     val notes: String?,
     val regressionStatus: String?,
+    val regressionDate: LocalDate?,
+    val regression: RegressionDataDto?,
     val updatedAt: String?
 )

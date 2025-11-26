@@ -16,5 +16,12 @@ data class TestUpsertItem(
     val generalStatus: String? = null,
     val scenario: String? = null,
     val notes: String? = null,
-    val regressionStatus: String? = null
+    val regressionStatus: String? = null,
+    val regressionDate: String? = null,
+    val regression: RegressionDataPayload? = null
+)
+
+data class RegressionDataPayload(
+    val status: String? = null,
+    val completedAt: String? = null
 )

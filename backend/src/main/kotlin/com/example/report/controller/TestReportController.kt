@@ -1,6 +1,5 @@
 package com.example.report.controller
 
-import com.example.report.dto.RegressionRequest
 import com.example.report.dto.TestBatchRequest
 import com.example.report.dto.TestUpsertItem
 import com.example.report.service.ColumnConfigService
@@ -62,9 +61,9 @@ class TestReportController(
     }
 
     @GetMapping("/regressions")
-    fun getRegressions() = testReportService.getRegressions()
+    fun getRegressions() = testReportService.getRegressionState()
 
-    @PostMapping("/regressions")
-    fun saveRegression(@Valid @RequestBody request: RegressionRequest) = testReportService.saveRegression(request)
+    @PostMapping("/regressions/complete")
+    fun completeRegression() = testReportService.completeRegression()
 
 }
