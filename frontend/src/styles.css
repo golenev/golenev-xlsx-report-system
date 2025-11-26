@@ -374,28 +374,66 @@ body {
   color: #9aa0a6;
 }
 
-.run-column-header,
-.run-column-cell {
-  transition: filter 0.2s ease, opacity 0.2s ease;
+.regression-header {
+  background-color: #f8f9fa;
 }
 
-.run-column-active {
+.regression-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stop-btn {
+  background-color: #d93025;
+  border: none;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.stop-btn:hover:not(:disabled) {
+  background-color: #b8281e;
+}
+
+.run-column-cell {
+  transition: filter 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.run-column-cell.regression-idle {
+  filter: blur(2px);
+  opacity: 0.65;
+}
+
+.regression-header.regression-idle {
   filter: none;
   opacity: 1;
 }
 
-.run-column-inactive {
-  filter: blur(0.35px);
-  opacity: 0.65;
-}
-
-.run-column-inactive select,
-.run-column-inactive .cell-select {
+.run-column-cell.regression-idle select,
+.run-column-cell.regression-idle .cell-select {
   pointer-events: none;
 }
 
-.run-column-inactive .cell-select,
-.run-column-inactive select:disabled {
+.run-column-cell.regression-active,
+.regression-header.regression-active {
+  filter: none;
+  opacity: 1;
+  background-color: #e8f0fe;
+}
+
+.run-column-cell.regression-stopped,
+.regression-header.regression-stopped {
+  filter: none;
+  opacity: 0.7;
+  background-color: #f5f5f5;
+}
+
+.run-column-cell.regression-stopped select,
+.run-column-cell.regression-stopped .cell-select {
+  pointer-events: none;
   background-color: #f5f5f5;
 }
 
