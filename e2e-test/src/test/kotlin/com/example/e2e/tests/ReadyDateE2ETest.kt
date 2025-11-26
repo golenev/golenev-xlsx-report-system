@@ -47,9 +47,6 @@ class ReadyDateE2ETest {
                         shortTitle = "Ready date auto set",
                         generalStatus = GeneralTestStatus.QUEUE.value,
                         scenario = "Сценарий 1. шаг 1 шаг 2 шаг 3",
-                        runIndex = 1,
-                        runStatus = "PASSED",
-                        runDate = today.toString(),
 
                         ),
                 ),

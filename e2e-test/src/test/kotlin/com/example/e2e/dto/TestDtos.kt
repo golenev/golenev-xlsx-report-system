@@ -18,15 +18,15 @@ data class TestUpsertItem(
     val generalStatus: String? = null,
     val scenario: String? = null,
     val notes: String? = null,
-    val runIndex: Int? = null,
-    val runStatus: String? = null,
-    val runDate: String? = null,
+    val regressionStatus: String? = null,
+    val regressionDate: String? = null,
+    val regression: RegressionDataPayload? = null,
 )
 
 data class TestReportResponse(
     val items: List<TestReportItemDto>,
-    val runs: List<TestRunMetaDto>,
     val columnConfig: Map<String, Int>,
+    val regression: RegressionStateDto,
 )
 
 data class TestReportItemDto(
@@ -38,13 +38,27 @@ data class TestReportItemDto(
     val generalStatus: String?,
     val scenario: String?,
     val notes: String?,
-    val runStatuses: List<String?>,
+    val regressionStatus: String?,
+    val regressionDate: LocalDate?,
+    val regression: RegressionDataDto?,
     val updatedAt: String?,
 )
 
-data class TestRunMetaDto(
-    val runIndex: Int,
-    val runDate: LocalDate?,
+data class RegressionDataPayload(
+    val status: String? = null,
+    val completedAt: String? = null,
+)
+
+data class RegressionDataDto(
+    val status: String?,
+    val completedAt: String?,
+)
+
+enum class RegressionState { ACTIVE, IDLE }
+
+data class RegressionStateDto(
+    val state: RegressionState,
+    val lastCompletedAt: String?,
 )
 
 data class ErrorResponse(
