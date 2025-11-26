@@ -1,7 +1,8 @@
 package com.example.report.controller
 
-import com.example.report.dto.TestUpsertItem
+import com.example.report.dto.RegressionRequest
 import com.example.report.dto.TestBatchRequest
+import com.example.report.dto.TestUpsertItem
 import com.example.report.service.ColumnConfigService
 import com.example.report.service.ExcelExportService
 import com.example.report.service.TestReportService
@@ -9,13 +10,12 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -60,5 +60,11 @@ class TestReportController(
     fun resetRuns() {
         testReportService.resetRuns()
     }
+
+    @GetMapping("/regressions")
+    fun getRegressions() = testReportService.getRegressions()
+
+    @PostMapping("/regressions")
+    fun saveRegression(@Valid @RequestBody request: RegressionRequest) = testReportService.saveRegression(request)
 
 }
