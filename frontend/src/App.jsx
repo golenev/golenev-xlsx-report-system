@@ -172,11 +172,17 @@ export default function App() {
         throw new Error('Failed to load data');
       }
       const data = await response.json();
-      const loadedItems = data.items ?? [];
+      const loadedItems = (data.items ?? []).map((item) => ({
+        ...item,
+        regressionStatus:
+          item.regressionStatus ?? item.regressionData?.status ?? item.runStatuses?.[0] ?? '',
+        regressionDate:
+          item.regressionDate ?? item.regressionData?.date ?? item.runDates?.[0] ?? null
+      }));
       setItems(loadedItems);
       setColumnConfig(data.columnConfig ?? {});
 
-      const hasStatuses = loadedItems.some((item) => (item.runStatuses?.[0] ?? '') !== '');
+      const hasStatuses = loadedItems.some((item) => (item.regressionStatus ?? '') !== '');
       setRegressionState((prev) => {
         if (prev === 'stopped') {
           return hasStatuses ? 'stopped' : 'stopped';
@@ -197,10 +203,7 @@ export default function App() {
     loadData();
   }, []);
 
-  const regressionColumn = useMemo(
-    () => ({ key: 'regression', label: 'Regression', runIndex: 1 }),
-    []
-  );
+  const regressionColumn = useMemo(() => ({ key: 'regression', label: 'Regression' }), []);
 
   const handleFieldChange = (testId, key, value) => {
     setItems((prev) =>
@@ -357,19 +360,48 @@ export default function App() {
     }
   };
 
-  const handleRunChange = (item, runIndex, value) => {
-    const runStatuses = [...(item.runStatuses ?? [])];
-    runStatuses[runIndex - 1] = value;
+  const handleRegressionChange = (item, value) => {
+    const regressionStatus = value === '' ? null : value;
+    const regressionDate = regressionStatus ? new Date().toISOString().slice(0, 10) : null;
+
     setItems((prev) =>
       prev.map((row) =>
-        row.testId === item.testId ? { ...row, runStatuses } : row
+        row.testId === item.testId ? { ...row, regressionStatus, regressionDate } : row
       )
     );
+
     sendUpdate(item.testId, {
-      runIndex,
-      runStatus: value === '' ? null : value,
-      runDate: value === '' ? null : new Date().toISOString().slice(0, 10)
+      regressionStatus,
+      regressionDate
     });
+  };
+
+  const submitRegression = async () => {
+    const payload = {
+      items: items.map(({ testId, regressionStatus, regressionDate }) => ({
+        testId,
+        regressionStatus: regressionStatus ?? null,
+        regressionDate: regressionDate ?? null
+      }))
+    };
+
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(withBase('/api/tests/regression'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save regression');
+      }
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleGeneralStatusChange = (item, value) => {
@@ -500,7 +532,11 @@ export default function App() {
                               <button
                                 type="button"
                                 className="stop-btn"
-                                onClick={() => setRegressionState('stopped')}
+                                onClick={() => {
+                                  setRegressionState('stopped');
+                                  submitRegression();
+                                }}
+                                disabled={saving}
                               >
                                 Stop
                               </button>
@@ -509,6 +545,7 @@ export default function App() {
                                 type="button"
                                 className="primary-btn"
                                 onClick={() => setRegressionState('active')}
+                                disabled={saving}
                               >
                                 Хотите начать регресс
                               </button>
@@ -669,8 +706,8 @@ export default function App() {
                     className={`run-column-cell regression-${regressionState}`}
                   >
                     <select
-                      value={item.runStatuses?.[0] ?? ''}
-                      onChange={(e) => handleRunChange(item, 1, e.target.value)}
+                      value={item.regressionStatus ?? ''}
+                      onChange={(e) => handleRegressionChange(item, e.target.value)}
                       className="cell-select"
                       disabled={!regressionEditable || saving}
                     >
