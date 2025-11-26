@@ -155,13 +155,13 @@ function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true }
 
 export default function App() {
   const [items, setItems] = useState([]);
-  const [runs, setRuns] = useState([]);
   const [columnConfig, setColumnConfig] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [newItems, setNewItems] = useState([]);
   const [popup, setPopup] = useState(null);
+  const [regressionState, setRegressionState] = useState('idle');
 
   const loadData = async () => {
     setLoading(true);
@@ -172,9 +172,20 @@ export default function App() {
         throw new Error('Failed to load data');
       }
       const data = await response.json();
-      setItems(data.items ?? []);
-      setRuns(data.runs ?? []);
+      const loadedItems = data.items ?? [];
+      setItems(loadedItems);
       setColumnConfig(data.columnConfig ?? {});
+
+      const hasStatuses = loadedItems.some((item) => (item.runStatuses?.[0] ?? '') !== '');
+      setRegressionState((prev) => {
+        if (prev === 'stopped') {
+          return hasStatuses ? 'stopped' : 'stopped';
+        }
+        if (hasStatuses) {
+          return 'active';
+        }
+        return 'idle';
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -186,26 +197,10 @@ export default function App() {
     loadData();
   }, []);
 
-  const runColumns = useMemo(() => {
-    return runs
-      .slice()
-      .sort((a, b) => a.runIndex - b.runIndex)
-      .map((run) => ({
-        key: `run${run.runIndex}`,
-        label: `Run #${run.runIndex}${run.runDate ? ` (${run.runDate})` : ''}`,
-        runIndex: run.runIndex
-      }));
-  }, [runs]);
-
-  const activeRunIndex = useMemo(() => {
-    const datedRuns = runs.filter((run) => run.runDate);
-    if (datedRuns.length > 0) {
-      return datedRuns.reduce((latest, current) =>
-        current.runDate > latest.runDate ? current : latest
-      ).runIndex;
-    }
-    return runs.find((run) => !run.runDate)?.runIndex ?? runs[0]?.runIndex ?? null;
-  }, [runs]);
+  const regressionColumn = useMemo(
+    () => ({ key: 'regression', label: 'Regression', runIndex: 1 }),
+    []
+  );
 
   const handleFieldChange = (testId, key, value) => {
     setItems((prev) =>
@@ -424,14 +419,19 @@ export default function App() {
     }
   };
 
-  const columns = [ACTION_COLUMN, ...FIELD_DEFINITIONS, ...runColumns];
+  const columns = [ACTION_COLUMN, ...FIELD_DEFINITIONS, regressionColumn];
 
   const getColumnWidth = (column) => {
     if (column.key === ACTION_COLUMN.key) {
       return columnConfig[column.key] ?? 72;
     }
+    if (column.key === regressionColumn.key) {
+      return columnConfig.run1 ?? columnConfig[column.key] ?? 160;
+    }
     return columnConfig[column.key] ?? (column.type === 'textarea' ? 280 : 160);
   };
+
+  const regressionEditable = regressionState === 'active';
 
   return (
     <div className="app-container">
@@ -483,18 +483,38 @@ export default function App() {
                 {columns.map((column, idx) => {
                   const width = getColumnWidth(column);
                   const letter = columnLetter(idx);
-                  const runColumnClass = column.runIndex
-                    ? `run-column-header ${column.runIndex === activeRunIndex ? 'run-column-active' : 'run-column-inactive'}`
-                    : '';
+                  const isRegression = column.key === regressionColumn.key;
+                  const regressionHeaderState = `regression-header regression-${regressionState}`;
                   return (
                     <th
                       key={column.key}
                       style={{ width: `${width}px`, minWidth: `${width}px` }}
-                      className={runColumnClass}
+                      className={isRegression ? regressionHeaderState : ''}
                     >
                       <div className="header-content">
                         <span className="column-letter">{letter}</span>
                         <span>{column.label}</span>
+                        {isRegression && (
+                          <div className="regression-actions">
+                            {regressionEditable ? (
+                              <button
+                                type="button"
+                                className="stop-btn"
+                                onClick={() => setRegressionState('stopped')}
+                              >
+                                Stop
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="primary-btn"
+                                onClick={() => setRegressionState('active')}
+                              >
+                                Хотите начать регресс
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </th>
                   );
@@ -567,19 +587,16 @@ export default function App() {
                       </td>
                     );
                   })}
-                  {runColumns.map((column) => {
-                    const width = columnConfig[column.key] ?? 120;
-                    const runColumnClass = `run-column-cell ${column.runIndex === activeRunIndex ? 'run-column-active' : 'run-column-inactive'}`;
-                    return (
-                      <td
-                        key={`new-${index}-${column.key}`}
-                        style={{ width: `${width}px`, minWidth: `${width}px` }}
-                        className={`empty-cell ${runColumnClass}`}
-                      >
-                        —
-                      </td>
-                    );
-                  })}
+                  <td
+                    key={`new-${index}-${regressionColumn.key}`}
+                    style={{
+                      width: `${getColumnWidth(regressionColumn)}px`,
+                      minWidth: `${getColumnWidth(regressionColumn)}px`
+                    }}
+                    className={`run-column-cell regression-${regressionState} empty-cell`}
+                  >
+                    —
+                  </td>
                 </tr>
               ))}
               {sortedItems.map((item, rowIndex) => (
@@ -643,33 +660,28 @@ export default function App() {
                       </td>
                     );
                   })}
-                  {runColumns.map((column) => {
-                    const width = columnConfig[column.key] ?? 120;
-                    const current = item.runStatuses?.[column.runIndex - 1] ?? '';
-                    const isActiveRun = column.runIndex === activeRunIndex;
-                    const runColumnClass = `run-column-cell ${isActiveRun ? 'run-column-active' : 'run-column-inactive'}`;
-                    return (
-                      <td
-                        key={column.key}
-                        style={{ width: `${width}px`, minWidth: `${width}px` }}
-                        className={runColumnClass}
-                      >
-                        <select
-                          value={current}
-                          onChange={(e) => handleRunChange(item, column.runIndex, e.target.value)}
-                          className="cell-select"
-                          disabled={!isActiveRun || saving}
-                        >
-                          <option value="">—</option>
-                          {STATUS_OPTIONS.map((status) => (
-                            <option key={status} value={status}>
-                              {status}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                    );
-                  })}
+                  <td
+                    key={regressionColumn.key}
+                    style={{
+                      width: `${getColumnWidth(regressionColumn)}px`,
+                      minWidth: `${getColumnWidth(regressionColumn)}px`
+                    }}
+                    className={`run-column-cell regression-${regressionState}`}
+                  >
+                    <select
+                      value={item.runStatuses?.[0] ?? ''}
+                      onChange={(e) => handleRunChange(item, 1, e.target.value)}
+                      className="cell-select"
+                      disabled={!regressionEditable || saving}
+                    >
+                      <option value="">—</option>
+                      {STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                 </tr>
               ))}
             </tbody>
