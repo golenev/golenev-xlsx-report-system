@@ -12,6 +12,16 @@ const GENERAL_STATUS_OPTIONS = [
 ];
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
+const DEFAULT_COLUMN_CONFIG = {
+  columns: {},
+  regressionColumn: {
+    key: 'regressionStatus',
+    label: 'Regression',
+    width: 160,
+    saveOnBlur: false
+  }
+};
+
 const FIELD_DEFINITIONS = [
   { key: 'testId', label: 'Test ID', editable: false, type: 'text' },
   { key: 'category', label: 'Category / Feature', editable: true, type: 'text' },
@@ -47,6 +57,24 @@ function columnLetter(index) {
     n = Math.floor(n / 26) - 1;
   }
   return result;
+}
+
+function normalizeColumnConfig(rawConfig) {
+  const columnsSource =
+    rawConfig && typeof rawConfig === 'object' ? rawConfig.columns ?? rawConfig : DEFAULT_COLUMN_CONFIG.columns;
+
+  const regressionColumn = {
+    ...DEFAULT_COLUMN_CONFIG.regressionColumn,
+    ...(rawConfig?.regressionColumn ?? {})
+  };
+
+  const resolvedWidth =
+    regressionColumn.width ?? columnsSource?.[regressionColumn.key] ?? DEFAULT_COLUMN_CONFIG.regressionColumn.width;
+
+  return {
+    columns: { ...(columnsSource ?? {}) },
+    regressionColumn: { ...regressionColumn, width: resolvedWidth }
+  };
 }
 
 function parseTestId(rawId) {
@@ -155,13 +183,17 @@ function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true }
 
 export default function App() {
   const [items, setItems] = useState([]);
-  const [columnConfig, setColumnConfig] = useState({});
+  const [columnConfig, setColumnConfig] = useState(() => normalizeColumnConfig());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [newItems, setNewItems] = useState([]);
   const [popup, setPopup] = useState(null);
   const [regressionState, setRegressionState] = useState('idle');
+  const [pendingRegressionUpdates, setPendingRegressionUpdates] = useState({});
+  const regressionColumn = columnConfig.regressionColumn;
+  const regressionKey = regressionColumn.key ?? 'regressionStatus';
+  const regressionSaveOnBlur = Boolean(regressionColumn.saveOnBlur);
 
   const loadData = async () => {
     setLoading(true);
@@ -180,7 +212,7 @@ export default function App() {
           item.regressionDate ?? item.regressionData?.date ?? item.runDates?.[0] ?? null
       }));
       setItems(loadedItems);
-      setColumnConfig(data.columnConfig ?? {});
+      setColumnConfig(normalizeColumnConfig(data.columnConfig));
 
       const hasStatuses = loadedItems.some((item) => (item.regressionStatus ?? '') !== '');
       setRegressionState((prev) => {
@@ -202,8 +234,6 @@ export default function App() {
   useEffect(() => {
     loadData();
   }, []);
-
-  const regressionColumn = useMemo(() => ({ key: 'regression', label: 'Regression' }), []);
 
   const handleFieldChange = (testId, key, value) => {
     setItems((prev) =>
@@ -360,19 +390,51 @@ export default function App() {
     }
   };
 
-  const handleRegressionChange = (item, value) => {
+  const handleRegressionChange = (item, columnKey, value) => {
     const regressionStatus = value === '' ? null : value;
     const regressionDate = regressionStatus ? new Date().toISOString().slice(0, 10) : null;
 
     setItems((prev) =>
       prev.map((row) =>
-        row.testId === item.testId ? { ...row, regressionStatus, regressionDate } : row
+        row.testId === item.testId ? { ...row, [columnKey]: regressionStatus, regressionDate } : row
       )
     );
 
+    if (regressionSaveOnBlur) {
+      setPendingRegressionUpdates((prev) => ({
+        ...prev,
+        [item.testId]: { regressionStatus, regressionDate, columnKey }
+      }));
+      return;
+    }
+
+    setPendingRegressionUpdates((prev) => {
+      if (!prev[item.testId]) return prev;
+      const next = { ...prev };
+      delete next[item.testId];
+      return next;
+    });
+
     sendUpdate(item.testId, {
-      regressionStatus,
+      [columnKey]: regressionStatus,
       regressionDate
+    });
+  };
+
+  const handleRegressionBlur = (item) => {
+    if (!regressionSaveOnBlur) return;
+    const pending = pendingRegressionUpdates[item.testId];
+    if (!pending) return;
+
+    setPendingRegressionUpdates((prev) => {
+      const next = { ...prev };
+      delete next[item.testId];
+      return next;
+    });
+
+    sendUpdate(item.testId, {
+      [pending.columnKey]: pending.regressionStatus,
+      regressionDate: pending.regressionDate
     });
   };
 
@@ -455,12 +517,12 @@ export default function App() {
 
   const getColumnWidth = (column) => {
     if (column.key === ACTION_COLUMN.key) {
-      return columnConfig[column.key] ?? 72;
+      return columnConfig.columns?.[column.key] ?? 72;
     }
     if (column.key === regressionColumn.key) {
-      return columnConfig.run1 ?? columnConfig[column.key] ?? 160;
+      return regressionColumn.width ?? columnConfig.columns?.[column.key] ?? 160;
     }
-    return columnConfig[column.key] ?? (column.type === 'textarea' ? 280 : 160);
+    return columnConfig.columns?.[column.key] ?? (column.type === 'textarea' ? 280 : 160);
   };
 
   const regressionEditable = regressionState === 'active';
@@ -706,8 +768,9 @@ export default function App() {
                     className={`run-column-cell regression-${regressionState}`}
                   >
                     <select
-                      value={item.regressionStatus ?? ''}
-                      onChange={(e) => handleRegressionChange(item, e.target.value)}
+                      value={item[regressionKey] ?? ''}
+                      onChange={(e) => handleRegressionChange(item, regressionKey, e.target.value)}
+                      onBlur={() => handleRegressionBlur(item)}
                       className="cell-select"
                       disabled={!regressionEditable || saving}
                     >

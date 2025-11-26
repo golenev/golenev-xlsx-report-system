@@ -1,10 +1,11 @@
 package com.example.report.dto
 
+import com.example.report.config.ColumnConfigProperties
 import java.time.LocalDate
 
 data class TestReportResponse(
     val items: List<TestReportItemDto>,
-    val columnConfig: Map<String, Int>,
+    val columnConfig: ColumnConfigProperties,
     val regression: RegressionStateDto
 )
 
