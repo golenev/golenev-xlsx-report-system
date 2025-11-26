@@ -42,6 +42,9 @@ data class TestReportEntity(
     @Column(name = "regression_status")
     var regressionStatus: String? = null,
 
+    @Column(name = "regression_date")
+    var regressionDate: LocalDate? = null,
+
     @Column(name = "updated_at")
     var updatedAt: OffsetDateTime? = null
 )

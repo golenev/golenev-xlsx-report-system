@@ -1,17 +1,26 @@
 package com.example.report.dto
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.JsonNode
-import jakarta.validation.constraints.NotNull
-
-data class RegressionRequest(
-    @field:NotNull
-    val regressionDate: String?,
-    @field:NotNull
-    val payload: JsonNode?
-)
 
 data class RegressionRecordDto(
     val id: Long,
     val regressionDate: String,
     val payload: JsonNode
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class RegressionDataDto(
+    val status: String?,
+    val completedAt: String?
+)
+
+enum class RegressionState {
+    ACTIVE,
+    IDLE
+}
+
+data class RegressionStateDto(
+    val state: RegressionState,
+    val lastCompletedAt: String?
 )

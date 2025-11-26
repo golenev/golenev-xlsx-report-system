@@ -1,7 +1,8 @@
 package com.example.report.service
 
-import com.example.report.dto.RegressionRecordDto
-import com.example.report.dto.RegressionRequest
+import com.example.report.dto.RegressionDataDto
+import com.example.report.dto.RegressionState
+import com.example.report.dto.RegressionStateDto
 import com.example.report.dto.TestBatchRequest
 import com.example.report.dto.TestReportItemDto
 import com.example.report.dto.TestReportResponse
@@ -32,7 +33,11 @@ class TestReportService(
             .sortedWith { a, b -> compareTestIds(a.testId, b.testId) }
             .map { it.toDto() }
         val columns = columnConfigService.getConfig().columns
-        return TestReportResponse(items = items, columnConfig = columns)
+        return TestReportResponse(
+            items = items,
+            columnConfig = columns,
+            regression = getRegressionState()
+        )
     }
 
     @Transactional
@@ -62,35 +67,45 @@ class TestReportService(
         val reports = testReportRepository.findAll()
         reports.forEach {
             it.regressionStatus = null
+            it.regressionDate = null
             it.updatedAt = OffsetDateTime.now()
         }
         testReportRepository.saveAll(reports)
         regressionRepository.deleteAll()
     }
 
+    fun getRegressionState(): RegressionStateDto {
+        val hasActiveRegression = testReportRepository.existsByRegressionStatusIsNotNull()
+        val lastCompleted = regressionRepository.findFirstByOrderByRegressionDateDesc()
+        return RegressionStateDto(
+            state = if (hasActiveRegression) RegressionState.ACTIVE else RegressionState.IDLE,
+            lastCompletedAt = lastCompleted?.regressionDate?.toString()
+        )
+    }
+
     @Transactional
-    fun saveRegression(request: RegressionRequest): RegressionRecordDto {
-        val regressionDate = request.regressionDate?.takeIf { it.isNotBlank() }
-            ?.trim()
-            ?.let {
-                runCatching { LocalDate.parse(it) }.getOrElse {
-                    throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid regressionDate format")
-                }
-            }
-            ?: requiredFieldMissing("regressionDate")
-        val payload = request.payload ?: requiredFieldMissing("payload")
-        val payloadJson = objectMapper.writeValueAsString(payload)
+    fun completeRegression(): RegressionStateDto {
+        val reports = testReportRepository.findAll()
+        val regressionDate = reports.mapNotNull { it.regressionDate }.maxOrNull() ?: LocalDate.now()
+        val payloadItems = reports
+            .sortedWith { a, b -> compareTestIds(a.testId, b.testId) }
+            .map { it.toDto() }
+        val payloadJson = objectMapper.writeValueAsString(mapOf("items" to payloadItems))
 
         val entity = regressionRepository.findByRegressionDate(regressionDate)
             .orElse(RegressionEntity(regressionDate = regressionDate, payload = payloadJson))
         entity.payload = payloadJson
+        regressionRepository.save(entity)
 
-        val saved = regressionRepository.save(entity)
-        return saved.toDto()
-    }
+        val now = OffsetDateTime.now()
+        reports.forEach {
+            it.regressionStatus = null
+            it.regressionDate = null
+            it.updatedAt = now
+        }
+        testReportRepository.saveAll(reports)
 
-    fun getRegressions(): List<RegressionRecordDto> {
-        return regressionRepository.findAllByOrderByRegressionDateDesc().map { it.toDto() }
+        return RegressionStateDto(RegressionState.IDLE, regressionDate.toString())
     }
 
     private fun upsertSingle(item: ValidatedUpsert) {
@@ -105,7 +120,8 @@ class TestReportService(
             }
             this.generalStatus = item.generalStatus
             item.notes?.let { this.notes = it }
-            item.regressionStatus?.let { this.regressionStatus = it }
+            this.regressionStatus = item.regressionStatus
+            this.regressionDate = item.regressionDate
         }
 
         val existing = testReportRepository.findByTestId(item.testId)
@@ -130,6 +146,8 @@ class TestReportService(
         val scenario = item.scenario?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("scenario")
         val generalStatusRaw =
             item.generalStatus?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("generalStatus")
+        val regressionStatus = parseRegressionStatus(item)
+        val regressionDate = parseRegressionDate(item)
 
         return ValidatedUpsert(
             testId = normalizedId,
@@ -139,7 +157,8 @@ class TestReportService(
             issueLink = item.issueLink?.takeIf { it.isNotBlank() }?.trim(),
             generalStatus = validateGeneralStatus(generalStatusRaw),
             notes = item.notes,
-            regressionStatus = item.regressionStatus?.takeIf { it.isNotBlank() }?.trim()?.uppercase()
+            regressionStatus = regressionStatus,
+            regressionDate = regressionDate
         )
     }
 
@@ -153,14 +172,38 @@ class TestReportService(
         scenario = scenario,
         notes = notes,
         regressionStatus = regressionStatus,
+        regressionDate = regressionDate,
+        regression = buildRegressionDto(),
         updatedAt = updatedAt?.toString()
     )
+
+    private fun TestReportEntity.buildRegressionDto(): RegressionDataDto? {
+        if (regressionStatus == null && regressionDate == null) return null
+        return RegressionDataDto(
+            status = regressionStatus,
+            completedAt = regressionDate?.toString()
+        )
+    }
 
     private fun validateGeneralStatus(generalStatus: String): String {
         return try {
             GeneralTestStatus.requireValid(generalStatus) ?: requiredFieldMissing("generalStatus")
         } catch (ex: IllegalArgumentException) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid status")
+        }
+    }
+
+    private fun parseRegressionStatus(item: TestUpsertItem): String? {
+        val preferred = item.regression?.status?.takeIf { it.isNotBlank() }?.trim()
+        val legacy = item.regressionStatus?.takeIf { it.isNotBlank() }?.trim()
+        return (preferred ?: legacy)?.uppercase()
+    }
+
+    private fun parseRegressionDate(item: TestUpsertItem): LocalDate? {
+        val rawDate = item.regression?.completedAt ?: item.regressionDate
+        val normalized = rawDate?.takeIf { it.isNotBlank() }?.trim() ?: return null
+        return runCatching { LocalDate.parse(normalized) }.getOrElse {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid regressionDate format")
         }
     }
 
@@ -184,13 +227,8 @@ class TestReportService(
         val issueLink: String?,
         val generalStatus: String,
         val notes: String?,
-        val regressionStatus: String?
-    )
-
-    private fun RegressionEntity.toDto(): RegressionRecordDto = RegressionRecordDto(
-        id = id,
-        regressionDate = regressionDate.toString(),
-        payload = objectMapper.readTree(payload)
+        val regressionStatus: String?,
+        val regressionDate: LocalDate?
     )
 
     private fun compareTestIds(a: String, b: String): Int {
