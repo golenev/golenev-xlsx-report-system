@@ -9,5 +9,11 @@
     "scenario": 300,
     "notes": 220,
     "regressionStatus": 160
+  },
+  "regressionColumn": {
+    "key": "regressionStatus",
+    "label": "Regression",
+    "width": 160,
+    "saveOnBlur": false
   }
 }

@@ -32,10 +32,10 @@ class TestReportService(
         val items = testReportRepository.findAll()
             .sortedWith { a, b -> compareTestIds(a.testId, b.testId) }
             .map { it.toDto() }
-        val columns = columnConfigService.getConfig().columns
+        val columnConfig = columnConfigService.getConfig()
         return TestReportResponse(
             items = items,
-            columnConfig = columns,
+            columnConfig = columnConfig,
             regression = getRegressionState()
         )
     }

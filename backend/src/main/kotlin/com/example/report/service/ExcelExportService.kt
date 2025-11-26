@@ -66,7 +66,7 @@ class ExcelExportService(
             cell.setCellValue(title)
             cell.cellStyle = headerStyle
             val key = columnKeys.getOrNull(idx)
-            key?.let { report.columnConfig[it] }?.let { width ->
+            key?.let { report.columnConfig.columns[it] }?.let { width ->
                 sheet.setColumnWidth(idx, width * 40)
             }
         }
