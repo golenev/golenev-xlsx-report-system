@@ -6,5 +6,4 @@ import java.util.Optional
 
 interface TestReportRepository : JpaRepository<TestReportEntity, Long> {
     fun findByTestId(testId: String): Optional<TestReportEntity>
-    fun existsByRegressionStatusIsNotNull(): Boolean
 }

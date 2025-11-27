@@ -21,8 +21,11 @@ class ExcelExportService(
         "generalStatus",
         "scenario",
         "notes",
-        "regressionStatus",
-        "regressionDate"
+        "run1",
+        "run2",
+        "run3",
+        "run4",
+        "run5"
     )
 
     fun generateWorkbook(): ByteArray {
@@ -55,10 +58,12 @@ class ExcelExportService(
             "Ready Date",
             "General Test Status",
             "Detailed Scenario",
-            "Notes",
-            "Regression Status",
-            "Regression Completed"
-        )
+            "Notes"
+        ) + (1..5).map { index ->
+            val runMeta = report.runs.firstOrNull { it.runIndex == index }
+            val dateSuffix = runMeta?.runDate?.toString()?.let { " (" + it + ")" } ?: ""
+            "Run #$index$dateSuffix"
+        }
 
         val headerRow = sheet.createRow(0)
         headers.forEachIndexed { idx, title ->
@@ -66,7 +71,7 @@ class ExcelExportService(
             cell.setCellValue(title)
             cell.cellStyle = headerStyle
             val key = columnKeys.getOrNull(idx)
-            key?.let { report.columnConfig.columns[it] }?.let { width ->
+            key?.let { report.columnConfig[it] }?.let { width ->
                 sheet.setColumnWidth(idx, width * 40)
             }
         }
@@ -81,10 +86,8 @@ class ExcelExportService(
                 item.readyDate?.toString(),
                 item.generalStatus,
                 item.scenario,
-                item.notes,
-                item.regression?.status ?: item.regressionStatus,
-                item.regression?.completedAt ?: item.regressionDate?.toString()
-            )
+                item.notes
+            ) + item.runStatuses
             values.forEachIndexed { cellIndex, value ->
                 val cell = row.createCell(cellIndex)
                 cell.setCellValue(value ?: "")

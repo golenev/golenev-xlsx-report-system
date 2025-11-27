@@ -1,5 +1,7 @@
 package com.example.report.dto
 
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotEmpty
 
 data class TestBatchRequest(
@@ -16,12 +18,9 @@ data class TestUpsertItem(
     val generalStatus: String? = null,
     val scenario: String? = null,
     val notes: String? = null,
-    val regressionStatus: String? = null,
-    val regressionDate: String? = null,
-    val regression: RegressionDataPayload? = null
-)
-
-data class RegressionDataPayload(
-    val status: String? = null,
-    val completedAt: String? = null
+    @field:Min(1)
+    @field:Max(5)
+    val runIndex: Int? = null,
+    val runStatus: String? = null,
+    val runDate: String? = null
 )
