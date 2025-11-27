@@ -2,8 +2,10 @@ package com.example.report.controller
 
 import com.example.report.dto.TestUpsertItem
 import com.example.report.dto.TestBatchRequest
+import com.example.report.dto.RegressionStopRequest
 import com.example.report.service.ColumnConfigService
 import com.example.report.service.ExcelExportService
+import com.example.report.service.RegressionService
 import com.example.report.service.TestReportService
 import jakarta.validation.Valid
 import org.springframework.http.HttpHeaders
@@ -24,6 +26,7 @@ class TestReportController(
     private val testReportService: TestReportService,
     private val excelExportService: ExcelExportService,
     private val columnConfigService: ColumnConfigService,
+    private val regressionService: RegressionService,
 ) {
 
     @GetMapping("/tests")
@@ -55,4 +58,17 @@ class TestReportController(
 
     @GetMapping("/config/columns")
     fun getColumnConfig() = columnConfigService.getConfig()
+
+    @GetMapping("/regressions/current")
+    fun getCurrentRegression() = regressionService.getTodayState()
+
+    @PostMapping("/regressions/start")
+    fun startRegression() = regressionService.startRegression()
+
+    @PostMapping("/regressions/stop")
+    fun stopRegression(@Valid @RequestBody request: RegressionStopRequest) =
+        regressionService.stopRegression(request)
+
+    @PostMapping("/regressions/cancel")
+    fun cancelRegression() = regressionService.cancelRegression()
 }
