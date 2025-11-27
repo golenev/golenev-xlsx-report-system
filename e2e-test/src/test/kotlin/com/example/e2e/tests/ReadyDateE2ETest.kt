@@ -21,7 +21,7 @@ class ReadyDateE2ETest {
     private val reportService = ReportService()
 
     @AfterEach
-    fun cleaDb () {
+    fun cleaDb() {
         dbReportExec {
             TestReportTable.deleteWhere {
                 (TestReportTable.testId inList listOf("123"))
@@ -49,9 +49,8 @@ class ReadyDateE2ETest {
                         scenario = "Сценарий 1. шаг 1 шаг 2 шаг 3",
                         runIndex = 1,
                         runStatus = "PASSED",
-                        runDate = today.toString(),
-
-                        ),
+                        readyDate = today.toString()
+                    ),
                 ),
             )
         }
@@ -95,7 +94,7 @@ class ReadyDateE2ETest {
         }
 
         step("Готовая дата осталась прежней, остальные поля обновлены") {
-            updatedItem.readyDate shouldBe today
+            updatedItem.readyDate.toString() shouldBe updateRequest.items.first().readyDate
             updatedItem.generalStatus shouldBe GeneralTestStatus.DONE.value
             updatedItem.notes shouldBe "Updated notes"
         }

@@ -78,11 +78,11 @@ class TestReportE2ETest {
         }
 
         step("Проверяем количество записей за выбранную дату") {
-            report.items.filter { it.readyDate == today }.shouldHaveSize(2)
+            report.items?.filter { it.readyDate == today }?.shouldHaveSize(2) ?: error("записей за выбранную дату ytn")
         }
 
         val itemsById = step("Группируем записи отчета по testId") {
-            report.items.associateBy { it.testId }
+            report.items?.associateBy { it.testId } ?: error("записи отчета по testId не найдены")
         }
 
         step("Проверяем первую запись") {
@@ -91,7 +91,6 @@ class TestReportE2ETest {
             firstItem.shortTitle shouldBe "Smoke отчет 1"
             firstItem.readyDate shouldBe today
             firstItem.generalStatus shouldBe GeneralTestStatus.QUEUE.value
-            firstItem.runStatuses.first() shouldBe "PASSED"
             firstItem.updatedAt.shouldNotBeNull()
         }
 
@@ -101,13 +100,8 @@ class TestReportE2ETest {
             secondItem.shortTitle shouldBe "Smoke отчет 2"
             secondItem.readyDate shouldBe today
             secondItem.generalStatus shouldBe GeneralTestStatus.QUEUE.value
-            secondItem.runStatuses.first() shouldBe "FAILED"
             secondItem.updatedAt.shouldNotBeNull()
         }
 
-        step("Проверяем дату первого прогона") {
-            val firstRun = report.runs.first { it.runIndex == 1 }
-            firstRun.runDate shouldBe today
-        }
     }
 }

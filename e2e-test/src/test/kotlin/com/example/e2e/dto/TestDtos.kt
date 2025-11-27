@@ -25,7 +25,6 @@ data class TestUpsertItem(
 
 data class TestReportResponse(
     val items: List<TestReportItemDto>,
-    val runs: List<TestRunMetaDto>,
     val columnConfig: Map<String, Int>,
 )
 
@@ -38,14 +37,9 @@ data class TestReportItemDto(
     val generalStatus: String?,
     val scenario: String?,
     val notes: String?,
-    val runStatuses: List<String?>,
     val updatedAt: String?,
 )
 
-data class TestRunMetaDto(
-    val runIndex: Int,
-    val runDate: LocalDate?,
-)
 
 data class ErrorResponse(
     val timestamp: String? = null,
