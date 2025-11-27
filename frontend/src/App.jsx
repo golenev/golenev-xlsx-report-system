@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-
-const STATUS_OPTIONS = ['PASSED', 'FAILED', 'NOT RUN'];
 const GENERAL_STATUS_OPTIONS = [
   { value: 'Очередь', color: '#e0e8ff', textColor: '#294a9a' },
   { value: 'В работе', color: '#fff4e0', textColor: '#9a5b29' },
@@ -155,7 +153,6 @@ function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true }
 
 export default function App() {
   const [items, setItems] = useState([]);
-  const [runs, setRuns] = useState([]);
   const [columnConfig, setColumnConfig] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -173,7 +170,6 @@ export default function App() {
       }
       const data = await response.json();
       setItems(data.items ?? []);
-      setRuns(data.runs ?? []);
       setColumnConfig(data.columnConfig ?? {});
     } catch (err) {
       setError(err.message);
@@ -185,27 +181,6 @@ export default function App() {
   useEffect(() => {
     loadData();
   }, []);
-
-  const runColumns = useMemo(() => {
-    return runs
-      .slice()
-      .sort((a, b) => a.runIndex - b.runIndex)
-      .map((run) => ({
-        key: `run${run.runIndex}`,
-        label: `Run #${run.runIndex}${run.runDate ? ` (${run.runDate})` : ''}`,
-        runIndex: run.runIndex
-      }));
-  }, [runs]);
-
-  const activeRunIndex = useMemo(() => {
-    const datedRuns = runs.filter((run) => run.runDate);
-    if (datedRuns.length > 0) {
-      return datedRuns.reduce((latest, current) =>
-        current.runDate > latest.runDate ? current : latest
-      ).runIndex;
-    }
-    return runs.find((run) => !run.runDate)?.runIndex ?? runs[0]?.runIndex ?? null;
-  }, [runs]);
 
   const handleFieldChange = (testId, key, value) => {
     setItems((prev) =>
@@ -362,21 +337,6 @@ export default function App() {
     }
   };
 
-  const handleRunChange = (item, runIndex, value) => {
-    const runStatuses = [...(item.runStatuses ?? [])];
-    runStatuses[runIndex - 1] = value;
-    setItems((prev) =>
-      prev.map((row) =>
-        row.testId === item.testId ? { ...row, runStatuses } : row
-      )
-    );
-    sendUpdate(item.testId, {
-      runIndex,
-      runStatus: value === '' ? null : value,
-      runDate: value === '' ? null : new Date().toISOString().slice(0, 10)
-    });
-  };
-
   const handleGeneralStatusChange = (item, value) => {
     handleFieldChange(item.testId, 'generalStatus', value);
     sendUpdate(item.testId, { generalStatus: value === '' ? null : value });
@@ -424,7 +384,7 @@ export default function App() {
     }
   };
 
-  const columns = [ACTION_COLUMN, ...FIELD_DEFINITIONS, ...runColumns];
+  const columns = [ACTION_COLUMN, ...FIELD_DEFINITIONS];
 
   const getColumnWidth = (column) => {
     if (column.key === ACTION_COLUMN.key) {
@@ -483,14 +443,10 @@ export default function App() {
                 {columns.map((column, idx) => {
                   const width = getColumnWidth(column);
                   const letter = columnLetter(idx);
-                  const runColumnClass = column.runIndex
-                    ? `run-column-header ${column.runIndex === activeRunIndex ? 'run-column-active' : 'run-column-inactive'}`
-                    : '';
                   return (
                     <th
                       key={column.key}
                       style={{ width: `${width}px`, minWidth: `${width}px` }}
-                      className={runColumnClass}
                     >
                       <div className="header-content">
                         <span className="column-letter">{letter}</span>
@@ -567,19 +523,6 @@ export default function App() {
                       </td>
                     );
                   })}
-                  {runColumns.map((column) => {
-                    const width = columnConfig[column.key] ?? 120;
-                    const runColumnClass = `run-column-cell ${column.runIndex === activeRunIndex ? 'run-column-active' : 'run-column-inactive'}`;
-                    return (
-                      <td
-                        key={`new-${index}-${column.key}`}
-                        style={{ width: `${width}px`, minWidth: `${width}px` }}
-                        className={`empty-cell ${runColumnClass}`}
-                      >
-                        —
-                      </td>
-                    );
-                  })}
                 </tr>
               ))}
               {sortedItems.map((item, rowIndex) => (
@@ -640,33 +583,6 @@ export default function App() {
                         ) : (
                           <span className="readonly-value">{value}</span>
                         )}
-                      </td>
-                    );
-                  })}
-                  {runColumns.map((column) => {
-                    const width = columnConfig[column.key] ?? 120;
-                    const current = item.runStatuses?.[column.runIndex - 1] ?? '';
-                    const isActiveRun = column.runIndex === activeRunIndex;
-                    const runColumnClass = `run-column-cell ${isActiveRun ? 'run-column-active' : 'run-column-inactive'}`;
-                    return (
-                      <td
-                        key={column.key}
-                        style={{ width: `${width}px`, minWidth: `${width}px` }}
-                        className={runColumnClass}
-                      >
-                        <select
-                          value={current}
-                          onChange={(e) => handleRunChange(item, column.runIndex, e.target.value)}
-                          className="cell-select"
-                          disabled={!isActiveRun || saving}
-                        >
-                          <option value="">—</option>
-                          {STATUS_OPTIONS.map((status) => (
-                            <option key={status} value={status}>
-                              {status}
-                            </option>
-                          ))}
-                        </select>
                       </td>
                     );
                   })}

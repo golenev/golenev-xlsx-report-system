@@ -237,8 +237,7 @@ body {
 }
 
 .cell-input,
-.cell-textarea,
-.cell-select {
+.cell-textarea {
   width: 100%;
   box-sizing: border-box;
   border: none;
@@ -250,18 +249,13 @@ body {
 }
 
 .cell-input:focus,
-.cell-textarea:focus,
-.cell-select:focus {
+.cell-textarea:focus {
   background-color: #e8f0fe;
 }
 
 .cell-textarea {
   resize: vertical;
   min-height: 80px;
-}
-
-.cell-select {
-  height: 32px;
 }
 
 .readonly-value {
@@ -366,37 +360,6 @@ body {
 .status-option-label {
   font-size: 12px;
   color: #3c4043;
-}
-
-.empty-cell {
-  text-align: center;
-  font-size: 13px;
-  color: #9aa0a6;
-}
-
-.run-column-header,
-.run-column-cell {
-  transition: filter 0.2s ease, opacity 0.2s ease;
-}
-
-.run-column-active {
-  filter: none;
-  opacity: 1;
-}
-
-.run-column-inactive {
-  filter: blur(0.35px);
-  opacity: 0.65;
-}
-
-.run-column-inactive select,
-.run-column-inactive .cell-select {
-  pointer-events: none;
-}
-
-.run-column-inactive .cell-select,
-.run-column-inactive select:disabled {
-  background-color: #f5f5f5;
 }
 
 tbody tr:nth-child(odd) .row-index-cell {

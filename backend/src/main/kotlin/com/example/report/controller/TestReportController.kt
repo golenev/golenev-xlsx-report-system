@@ -55,10 +55,4 @@ class TestReportController(
 
     @GetMapping("/config/columns")
     fun getColumnConfig() = columnConfigService.getConfig()
-
-    @PostMapping("/tests/runs/reset")
-    fun resetRuns() {
-        testReportService.resetRuns()
-    }
-
 }
