@@ -39,11 +39,20 @@ data class TestReportEntity(
     @Column(name = "notes", columnDefinition = "text")
     var notes: String? = null,
 
-    @Column(name = "regression_status")
-    var regressionStatus: String? = null,
+    @Column(name = "run_1_status")
+    var run1Status: String? = null,
 
-    @Column(name = "regression_date")
-    var regressionDate: LocalDate? = null,
+    @Column(name = "run_2_status")
+    var run2Status: String? = null,
+
+    @Column(name = "run_3_status")
+    var run3Status: String? = null,
+
+    @Column(name = "run_4_status")
+    var run4Status: String? = null,
+
+    @Column(name = "run_5_status")
+    var run5Status: String? = null,
 
     @Column(name = "updated_at")
     var updatedAt: OffsetDateTime? = null

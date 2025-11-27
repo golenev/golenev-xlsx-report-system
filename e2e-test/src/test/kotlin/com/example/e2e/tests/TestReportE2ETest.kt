@@ -1,21 +1,18 @@
 package com.example.e2e.tests
 
 import com.example.e2e.db.DatabaseCleaner
-import com.example.e2e.db.RegressionTable
 import com.example.e2e.db.TestReportTable
 import com.example.e2e.db.dbReportExec
 import com.example.e2e.dto.GeneralTestStatus
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
-import com.example.e2e.dto.RegressionState
 import com.example.e2e.service.ReportService
 import com.example.e2e.utils.step
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.deleteWhere
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -26,24 +23,24 @@ class TestReportE2ETest {
     private val reportService = ReportService()
 
     @AfterEach
-    fun cleanDb() {
+    fun cleaDb () {
         dbReportExec {
-            TestReportTable.deleteAll()
-            RegressionTable.deleteAll()
+            TestReportTable.deleteWhere {
+                (TestReportTable.testId inList listOf("4856", "11123"))
+            }
         }
     }
 
     @Test
-    @DisplayName("Регресс запускается, завершается и сохраняет jsonb-запись")
-    fun regressionLifecycleCreatesHistoryRecord() {
-        val regressionDate = step("Выбираем дату регресса") { LocalDate.now() }
+    @DisplayName("Создаем запись через batch и проверяем отображение в отчете")
+    fun createAndReadReportThroughApi() {
+        val today = step("Определяем дату запуска теста") { LocalDate.now() }
 
-        step("Очищаем данные за выбранную дату") {
-            DatabaseCleaner.deleteReportsByDate(regressionDate)
-            DatabaseCleaner.deleteRegressionByDate(regressionDate)
+        step("Удаляем отчеты за выбранную дату") {
+            DatabaseCleaner.deleteReportsByDate(today)
         }
 
-        val batchRequest = step("Формируем batch-запрос с тестами регресса") {
+        val batchRequest = step("Формируем batch-запрос с двумя тестами") {
             TestBatchRequest(
                 items = listOf(
                     TestUpsertItem(
@@ -51,20 +48,22 @@ class TestReportE2ETest {
                         category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Smoke отчет 1",
                         scenario = "Короткий сценарий 1",
-                        readyDate = regressionDate.toString(),
+                        readyDate = today.toString(),
                         generalStatus = GeneralTestStatus.QUEUE.value,
-                        regressionStatus = "FAILED",
-                        regressionDate = regressionDate.toString(),
+                        runIndex = 1,
+                        runStatus = "PASSED",
+                        runDate = today.toString(),
                     ),
                     TestUpsertItem(
                         testId = "11123",
                         category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Smoke отчет 2",
                         scenario = "Короткий сценарий 2",
-                        readyDate = regressionDate.toString(),
+                        readyDate = today.toString(),
                         generalStatus = GeneralTestStatus.QUEUE.value,
-                        regressionStatus = "PASSED",
-                        regressionDate = regressionDate.toString(),
+                        runIndex = 1,
+                        runStatus = "FAILED",
+                        runDate = today.toString(),
                     ),
                 ),
             )
@@ -74,46 +73,41 @@ class TestReportE2ETest {
             reportService.sendBatch(batchRequest)
         }
 
-        val reportBeforeCompletion = step("Запрашиваем отчет о тестах до завершения регресса") {
+        val report = step("Запрашиваем отчет о тестах") {
             reportService.getReport()
         }
 
-        step("Проверяем состояние регресса и записи") {
-            reportBeforeCompletion.regression.state shouldBe RegressionState.ACTIVE
-            val itemsById = reportBeforeCompletion.items.associateBy { it.testId }
-            itemsById.keys.shouldContainExactlyInAnyOrder("4856", "11123")
-            itemsById.values.forEach { item ->
-                item.regressionStatus.shouldNotBeNull()
-                item.regressionDate shouldBe regressionDate
-                item.regression.shouldNotBeNull()
-            }
+        step("Проверяем количество записей за выбранную дату") {
+            report.items.filter { it.readyDate == today }.shouldHaveSize(2)
         }
 
-        step("Завершаем регресс через API") {
-            reportService.completeRegression()
+        val itemsById = step("Группируем записи отчета по testId") {
+            report.items.associateBy { it.testId }
         }
 
-        val reportAfterCompletion = step("Повторно читаем отчет") { reportService.getReport() }
-
-        step("Регресс завершен, записи очищены, но дата завершения проставлена") {
-            reportAfterCompletion.regression.state shouldBe RegressionState.IDLE
-            reportAfterCompletion.regression.lastCompletedAt shouldBe regressionDate.toString()
-
-            reportAfterCompletion.items.forEach { item ->
-                item.regressionStatus.shouldBeNull()
-                item.regressionDate.shouldBeNull()
-                item.regression.shouldBeNull()
-            }
+        step("Проверяем первую запись") {
+            val firstItem = itemsById["4856"].shouldNotBeNull()
+            firstItem.category shouldBe "E2E_FOR_AUTOTEST"
+            firstItem.shortTitle shouldBe "Smoke отчет 1"
+            firstItem.readyDate shouldBe today
+            firstItem.generalStatus shouldBe GeneralTestStatus.QUEUE.value
+            firstItem.runStatuses.first() shouldBe "PASSED"
+            firstItem.updatedAt.shouldNotBeNull()
         }
 
-        step("Проверяем сохраненный jsonb-пейлоад регресса") {
-            val savedPayload = dbReportExec {
-                RegressionTable.selectAll().single()[RegressionTable.payload]
-            }
-            val payloadNode = jacksonObjectMapper().readTree(savedPayload)
-            payloadNode["items"].size() shouldBe 2
-            payloadNode["items"][0]["testId"].asText() shouldBe "4856"
-            payloadNode["items"][1]["testId"].asText() shouldBe "11123"
+        step("Проверяем вторую запись") {
+            val secondItem = itemsById["11123"].shouldNotBeNull()
+            secondItem.category shouldBe "E2E_FOR_AUTOTEST"
+            secondItem.shortTitle shouldBe "Smoke отчет 2"
+            secondItem.readyDate shouldBe today
+            secondItem.generalStatus shouldBe GeneralTestStatus.QUEUE.value
+            secondItem.runStatuses.first() shouldBe "FAILED"
+            secondItem.updatedAt.shouldNotBeNull()
+        }
+
+        step("Проверяем дату первого прогона") {
+            val firstRun = report.runs.first { it.runIndex == 1 }
+            firstRun.runDate shouldBe today
         }
     }
 }

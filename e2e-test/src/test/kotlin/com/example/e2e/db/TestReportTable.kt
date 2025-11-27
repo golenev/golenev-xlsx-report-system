@@ -18,8 +18,11 @@ object TestReportTable : Table("test_report") {
     val generalStatus = text("general_status").nullable()
     val scenario = text("scenario").nullable()
     val notes = text("notes").nullable()
-    val regressionStatus = text("regression_status").nullable()
-    val regressionDate = date("regression_date").nullable()
+    val run1Status = text("run_1_status").nullable()
+    val run2Status = text("run_2_status").nullable()
+    val run3Status = text("run_3_status").nullable()
+    val run4Status = text("run_4_status").nullable()
+    val run5Status = text("run_5_status").nullable()
     val updatedAt = timestampWithTimeZone("updated_at").nullable()
 
     override val primaryKey = PrimaryKey(id)
@@ -35,8 +38,11 @@ data class TestReportRow(
     val generalStatus: String?,
     val scenario: String?,
     val notes: String?,
-    val regressionStatus: String?,
-    val regressionDate: LocalDate?,
+    val run1Status: String?,
+    val run2Status: String?,
+    val run3Status: String?,
+    val run4Status: String?,
+    val run5Status: String?,
     val updatedAt: OffsetDateTime?,
 )
 
@@ -50,15 +56,10 @@ fun mapToTestReport(row: ResultRow): TestReportRow = TestReportRow(
     generalStatus = row[TestReportTable.generalStatus],
     scenario = row[TestReportTable.scenario],
     notes = row[TestReportTable.notes],
-    regressionStatus = row[TestReportTable.regressionStatus],
-    regressionDate = row[TestReportTable.regressionDate],
+    run1Status = row[TestReportTable.run1Status],
+    run2Status = row[TestReportTable.run2Status],
+    run3Status = row[TestReportTable.run3Status],
+    run4Status = row[TestReportTable.run4Status],
+    run5Status = row[TestReportTable.run5Status],
     updatedAt = row[TestReportTable.updatedAt],
 )
-
-object RegressionTable : Table("regressions") {
-    val id = long("id").autoIncrement()
-    val regressionDate = date("regression_date")
-    val payload = text("payload")
-
-    override val primaryKey = PrimaryKey(id)
-}
