@@ -139,7 +139,7 @@ VITE_API_BASE_URL="http://example.com:18080" npm run dev
 
 ## Конфигурация колонок
 
-SPA получает ширины колонок и настройки колонки регресса вместе с данными из backend (`/api/tests`). Сам JSON лежит в `config/column-config.json`. Чтобы изменить значения:
+SPA получает ширины колонок вместе с данными из backend (`/api/tests`). Сам JSON лежит в `config/column-config.json`. Чтобы изменить значения:
 
 1. Обновите `config/column-config.json` (общий конфиг).
 2. При необходимости обновите `backend/src/main/resources/config/column-config.json` (копия для backend).
@@ -167,61 +167,18 @@ GET /api/tests
       "generalStatus": "Ready",
       "scenario": "Detailed test steps…",
       "notes": "any info",
-      "regressionStatus": "PASSED",
-      "regressionDate": "2025-11-16",
-      "regression": {
-        "status": "PASSED",
-        "completedAt": "2025-11-16"
-      },
+      "runStatuses": ["PASSED", "FAILED", null, null, null],
       "updatedAt": "2024-04-01T12:15:00Z"
     }
   ],
+  "runs": [
+    { "runIndex": 1, "runDate": "2024-03-30" }
+  ],
   "columnConfig": {
-    "columns": {
-      "testId": 180
-    },
-    "regressionColumn": {
-      "key": "regressionStatus",
-      "label": "Regression",
-      "width": 160,
-      "saveOnBlur": false
-    }
-  },
-  "regression": {
-    "state": "ACTIVE",
-    "lastCompletedAt": "2025-11-10"
+    "testId": 180
   }
 }
 ```
-
-### Upsert одного теста
-
-```
-POST /api/tests
-Content-Type: application/json
-```
-
-Тело запроса:
-
-```json
-{
-  "testId": "TC-001",
-  "category": "Delivery",
-  "shortTitle": "Успешная авторизация",
-  "issueLink": "https://youtrack/.../ABC-1",
-  "readyDate": "2025-11-15",
-  "generalStatus": "Ready",
-  "scenario": "Detailed test steps…",
-  "notes": "any info",
-  "regressionStatus": "PASSED",
-  "regressionDate": "2025-11-16"
-}
-```
-
-- `testId` — обязательный уникальный ключ. Если запись существует, поля обновляются (идемпотентно).
-- `readyDate`, `regressionDate` передаются в формате `YYYY-MM-DD`.
-- Вместо плоских `regressionStatus`/`regressionDate` можно отправить вложенный объект `regression: { "status": "PASSED", "completedAt": "2025-11-16" }`.
-- Поля, отсутствующие в запросе, остаются без изменений.
 
 ### Пакетный upsert автотестов
 
@@ -244,15 +201,41 @@ Content-Type: application/json
       "generalStatus": "Ready",
       "scenario": "Detailed test steps…",
       "notes": "any info",
-      "regressionStatus": "PASSED",
-      "regressionDate": "2025-11-16"
+      "runIndex": 3,
+      "runStatus": "PASSED",
+      "runDate": "2025-11-16"
     }
   ]
 }
 ```
 
-- Правила такие же, как и для одиночного запроса: ключом служит `testId`, остальные поля опциональны.
-- Батч удобен для интеграции с автотестами.
+- `testId` — уникальный ключ. Если запись существует, поля обновляются (идемпотентно).
+- `runIndex` опционально (1–5). Если указан, статус и дата прогона обновляются.
+- Поля, отсутствующие в запросе, остаются без изменений.
+
+### Частичное обновление из UI
+
+```
+PATCH /api/tests/{testId}
+Content-Type: application/json
+```
+
+Пример тела:
+
+```json
+{
+  "generalStatus": "In Progress"
+}
+```
+
+Для обновления результата прогона вручную:
+
+```json
+{
+  "runIndex": 2,
+  "runStatus": "FAILED"
+}
+```
 
 ### Экспорт Excel
 
@@ -267,18 +250,23 @@ GET /api/tests/export/excel
 Используйте endpoint `/api/tests/batch` для пакетной передачи результатов.
 
 - Подготавливайте батч по уникальным `testId`.
-- Указывайте только изменившиеся поля. Если нужно обновить регресс, передайте `regressionStatus` (`PASSED`/`FAILED`/`NOT RUN`) и, при необходимости, `regressionDate` или `regression.completedAt`.
-- Поле `readyDate` необязательно: при первом сохранении оно ставится автоматически, если не передано.
+- Указывайте только изменившиеся поля.
+- Для обновления статуса прогона передавайте `runStatus` (`PASSED`/`FAILED`).
+- `runDate` опционален. Если не указать, дата автоматически проставляется текущей.
+- Колонка Run для записи выбирается автоматически:
+  - если передан `runDate`, система ищет колонку с такой датой, иначе использует первую пустую колонку слева направо;
+  - если даты нет, берётся колонка с самой ранней установленной датой либо первая пустая.
+  Это та же логика, что и в UI: одновременно редактируется только одна активная колонка.
 
-### Сброс данных регресса
+### Очистка Run-колонок и дат
 
-Технический endpoint для полного сброса статусов регресса и истории:
+Технический endpoint для полного сброса результатов прогонов и дат в заголовках Run:
 
 ```
 POST /api/tests/runs/reset
 ```
 
-Стирает `regressionStatus` и `regressionDate` у всех тестов и очищает историю предыдущих регрессов.
+Стирает статусы Run 1–5 у всех тестов и обнуляет даты в шапке столбцов.
 
 ### Пример Kotlin-клиента (Spring WebClient)
 
@@ -293,8 +281,8 @@ data class TestItem(
     val testId: String,
     val category: String? = null,
     val shortTitle: String? = null,
-    val regressionStatus: String? = null,
-    val regressionDate: String? = null,
+    val runIndex: Int? = null,
+    val runStatus: String? = null,
 )
 
 val client = WebClient.builder()
@@ -304,7 +292,7 @@ val client = WebClient.builder()
 suspend fun sendResults() {
     val payload = TestUpsertRequest(
         items = listOf(
-            TestItem(testId = "TC-001", regressionStatus = "PASSED", regressionDate = "2025-11-16"),
+            TestItem(testId = "TC-001", runIndex = 1, runStatus = "PASSED"),
             TestItem(testId = "TC-002", category = "Payments"),
         ),
     )
@@ -323,7 +311,7 @@ suspend fun sendResults() {
 - Таблица стилизована под Google Sheets: сетка, нумерация строк, буквенные заголовки.
 - Фиксированные ширины колонок из конфигурации.
 - Inline-редактирование: поля сохраняются по `blur`.
-- Выпадающий список для статуса регресса (PASSED/FAILED/NOT RUN) с поведением `blur`/`change` из конфига.
+- Выпадающие списки для Run Result N (PASSED/FAILED/NOT RUN).
 - Автосохранение и отображение статуса «Saving…».
 - Кнопка экспорта «Export to Excel».
 
@@ -346,15 +334,17 @@ CREATE TABLE test_report (
     general_status text,
     scenario    text,
     notes       text,
-    regression_status text,
-    regression_date   date,
+    run_1_status text,
+    run_2_status text,
+    run_3_status text,
+    run_4_status text,
+    run_5_status text,
     updated_at  timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE regressions (
-    id              bigserial PRIMARY KEY,
-    regression_date date NOT NULL UNIQUE,
-    payload         jsonb NOT NULL
+CREATE TABLE test_run_metadata (
+    run_index int PRIMARY KEY,
+    run_date  date
 );
 ```
 

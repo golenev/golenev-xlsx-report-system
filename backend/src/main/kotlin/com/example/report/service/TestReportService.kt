@@ -1,18 +1,15 @@
 package com.example.report.service
 
-import com.example.report.dto.RegressionDataDto
-import com.example.report.dto.RegressionState
-import com.example.report.dto.RegressionStateDto
 import com.example.report.dto.TestBatchRequest
 import com.example.report.dto.TestReportItemDto
 import com.example.report.dto.TestReportResponse
+import com.example.report.dto.TestRunMetaDto
 import com.example.report.dto.TestUpsertItem
-import com.example.report.entity.RegressionEntity
 import com.example.report.entity.TestReportEntity
+import com.example.report.entity.TestRunMetadataEntity
 import com.example.report.model.GeneralTestStatus
-import com.example.report.repository.RegressionRepository
 import com.example.report.repository.TestReportRepository
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.example.report.repository.TestRunMetadataRepository
 import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -23,21 +20,20 @@ import java.time.OffsetDateTime
 @Service
 class TestReportService(
     private val testReportRepository: TestReportRepository,
-    private val regressionRepository: RegressionRepository,
-    private val columnConfigService: ColumnConfigService,
-    private val objectMapper: ObjectMapper
+    private val testRunMetadataRepository: TestRunMetadataRepository,
+    private val columnConfigService: ColumnConfigService
 ) {
 
     fun getReport(): TestReportResponse {
         val items = testReportRepository.findAll()
             .sortedWith { a, b -> compareTestIds(a.testId, b.testId) }
             .map { it.toDto() }
-        val columnConfig = columnConfigService.getConfig()
-        return TestReportResponse(
-            items = items,
-            columnConfig = columnConfig,
-            regression = getRegressionState()
-        )
+        val runs = (1..5).map { index ->
+            val meta = testRunMetadataRepository.findById(index).orElse(TestRunMetadataEntity(index, null))
+            TestRunMetaDto(runIndex = index, runDate = meta.runDate)
+        }
+        val columns = columnConfigService.getConfig().columns
+        return TestReportResponse(items = items, runs = runs, columnConfig = columns)
     }
 
     @Transactional
@@ -66,49 +62,21 @@ class TestReportService(
     fun resetRuns() {
         val reports = testReportRepository.findAll()
         reports.forEach {
-            it.regressionStatus = null
-            it.regressionDate = null
+            it.run1Status = null
+            it.run2Status = null
+            it.run3Status = null
+            it.run4Status = null
+            it.run5Status = null
             it.updatedAt = OffsetDateTime.now()
         }
         testReportRepository.saveAll(reports)
-        regressionRepository.deleteAll()
-    }
-
-    fun getRegressionState(): RegressionStateDto {
-        val hasActiveRegression = testReportRepository.existsByRegressionStatusIsNotNull()
-        val lastCompleted = regressionRepository.findFirstByOrderByRegressionDateDesc()
-        return RegressionStateDto(
-            state = if (hasActiveRegression) RegressionState.ACTIVE else RegressionState.IDLE,
-            lastCompletedAt = lastCompleted?.regressionDate?.toString()
-        )
-    }
-
-    @Transactional
-    fun completeRegression(): RegressionStateDto {
-        val reports = testReportRepository.findAll()
-        val regressionDate = reports.mapNotNull { it.regressionDate }.maxOrNull() ?: LocalDate.now()
-        val payloadItems = reports
-            .sortedWith { a, b -> compareTestIds(a.testId, b.testId) }
-            .map { it.toDto() }
-        val payloadJson = objectMapper.writeValueAsString(mapOf("items" to payloadItems))
-
-        val entity = regressionRepository.findByRegressionDate(regressionDate)
-            .orElse(RegressionEntity(regressionDate = regressionDate, payload = payloadJson))
-        entity.payload = payloadJson
-        regressionRepository.save(entity)
-
-        val now = OffsetDateTime.now()
-        reports.forEach {
-            it.regressionStatus = null
-            it.regressionDate = null
-            it.updatedAt = now
-        }
-        testReportRepository.saveAll(reports)
-
-        return RegressionStateDto(RegressionState.IDLE, regressionDate.toString())
+        testRunMetadataRepository.deleteAll()
     }
 
     private fun upsertSingle(item: ValidatedUpsert) {
+        val runMetadata = preloadRunMetadata()
+        val runTarget = resolveRunTarget(item, runMetadata)
+
         val applyUpdates: TestReportEntity.() -> Unit = {
             this.category = item.category
             this.shortTitle = item.shortTitle
@@ -120,8 +88,21 @@ class TestReportService(
             }
             this.generalStatus = item.generalStatus
             item.notes?.let { this.notes = it }
-            this.regressionStatus = item.regressionStatus
-            this.regressionDate = item.regressionDate
+
+            runTarget?.let { (runIndex, runDate) ->
+                when (runIndex) {
+                    1 -> this.run1Status = item.runStatus?.uppercase()
+                    2 -> this.run2Status = item.runStatus?.uppercase()
+                    3 -> this.run3Status = item.runStatus?.uppercase()
+                    4 -> this.run4Status = item.runStatus?.uppercase()
+                    5 -> this.run5Status = item.runStatus?.uppercase()
+                    else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "runIndex must be between 1 and 5")
+                }
+
+                val meta = runMetadata[runIndex] ?: TestRunMetadataEntity(runIndex = runIndex)
+                meta.runDate = runDate
+                testRunMetadataRepository.save(meta)
+            }
         }
 
         val existing = testReportRepository.findByTestId(item.testId)
@@ -146,8 +127,6 @@ class TestReportService(
         val scenario = item.scenario?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("scenario")
         val generalStatusRaw =
             item.generalStatus?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("generalStatus")
-        val regressionStatus = parseRegressionStatus(item)
-        val regressionDate = parseRegressionDate(item)
 
         return ValidatedUpsert(
             testId = normalizedId,
@@ -157,8 +136,9 @@ class TestReportService(
             issueLink = item.issueLink?.takeIf { it.isNotBlank() }?.trim(),
             generalStatus = validateGeneralStatus(generalStatusRaw),
             notes = item.notes,
-            regressionStatus = regressionStatus,
-            regressionDate = regressionDate
+            runIndex = item.runIndex,
+            runStatus = item.runStatus?.takeIf { it.isNotBlank() }?.trim()?.uppercase(),
+            runDate = item.runDate?.takeIf { it.isNotBlank() }?.trim()?.let { LocalDate.parse(it) }
         )
     }
 
@@ -171,39 +151,15 @@ class TestReportService(
         generalStatus = generalStatus,
         scenario = scenario,
         notes = notes,
-        regressionStatus = regressionStatus,
-        regressionDate = regressionDate,
-        regression = buildRegressionDto(),
+        runStatuses = listOf(run1Status, run2Status, run3Status, run4Status, run5Status),
         updatedAt = updatedAt?.toString()
     )
-
-    private fun TestReportEntity.buildRegressionDto(): RegressionDataDto? {
-        if (regressionStatus == null && regressionDate == null) return null
-        return RegressionDataDto(
-            status = regressionStatus,
-            completedAt = regressionDate?.toString()
-        )
-    }
 
     private fun validateGeneralStatus(generalStatus: String): String {
         return try {
             GeneralTestStatus.requireValid(generalStatus) ?: requiredFieldMissing("generalStatus")
         } catch (ex: IllegalArgumentException) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid status")
-        }
-    }
-
-    private fun parseRegressionStatus(item: TestUpsertItem): String? {
-        val preferred = item.regression?.status?.takeIf { it.isNotBlank() }?.trim()
-        val legacy = item.regressionStatus?.takeIf { it.isNotBlank() }?.trim()
-        return (preferred ?: legacy)?.uppercase()
-    }
-
-    private fun parseRegressionDate(item: TestUpsertItem): LocalDate? {
-        val rawDate = item.regression?.completedAt ?: item.regressionDate
-        val normalized = rawDate?.takeIf { it.isNotBlank() }?.trim() ?: return null
-        return runCatching { LocalDate.parse(normalized) }.getOrElse {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid regressionDate format")
         }
     }
 
@@ -227,9 +183,57 @@ class TestReportService(
         val issueLink: String?,
         val generalStatus: String,
         val notes: String?,
-        val regressionStatus: String?,
-        val regressionDate: LocalDate?
+        val runIndex: Int?,
+        val runStatus: String?,
+        val runDate: LocalDate?
     )
+
+    private fun resolveRunTarget(item: ValidatedUpsert, metadata: Map<Int, TestRunMetadataEntity>): RunTarget? {
+        val normalizedIndex = item.runIndex
+        if (normalizedIndex != null) {
+            val targetMeta = metadata[normalizedIndex]
+            val resolvedDate = item.runDate ?: targetMeta?.runDate ?: if (item.runStatus != null) LocalDate.now() else null
+            return RunTarget(normalizedIndex, resolvedDate)
+        }
+
+        if (item.runStatus == null) {
+            return null
+        }
+
+        if (item.runDate != null) {
+            val existingByDate = metadata.values.firstOrNull { it.runDate == item.runDate }
+            if (existingByDate != null) {
+                return RunTarget(existingByDate.runIndex, existingByDate.runDate)
+            }
+
+            val firstEmpty = (1..5).firstOrNull { metadata[it]?.runDate == null }
+            if (firstEmpty != null) {
+                return RunTarget(firstEmpty, item.runDate)
+            }
+        }
+
+        val activeIndex = determineActiveRunIndex(metadata)
+        val activeMeta = metadata[activeIndex]
+        val runDate = item.runDate ?: activeMeta?.runDate ?: LocalDate.now()
+        return RunTarget(activeIndex, runDate)
+    }
+
+    private fun determineActiveRunIndex(metadata: Map<Int, TestRunMetadataEntity>): Int {
+        val dated = metadata.values.filter { it.runDate != null }
+        return dated.minByOrNull { it.runDate!! }?.runIndex
+            ?: (1..5).firstOrNull { metadata[it]?.runDate == null }
+            ?: 1
+    }
+
+    private fun preloadRunMetadata(): Map<Int, TestRunMetadataEntity> {
+        val existing = testRunMetadataRepository.findAll().associateBy { it.runIndex }.toMutableMap()
+        (1..5).forEach { index ->
+            existing.putIfAbsent(index, TestRunMetadataEntity(runIndex = index))
+        }
+        return existing
+    }
+
+    private data class RunTarget(val index: Int, val runDate: LocalDate?)
 
     private fun compareTestIds(a: String, b: String): Int {
         val left = ParsedTestId.from(a)
