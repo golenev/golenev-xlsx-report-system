@@ -8,6 +8,8 @@ const GENERAL_STATUS_OPTIONS = [
   { value: 'Неактуально', color: '#f2e6ff', textColor: '#6b3fa0' },
   { value: 'Фронт', color: '#e0f7f4', textColor: '#0f766e' }
 ];
+
+const REGRESSION_STATUS_OPTIONS = ['PASSED', 'FAILED', 'SKIPPED'];
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 const FIELD_DEFINITIONS = [
@@ -20,6 +22,15 @@ const FIELD_DEFINITIONS = [
   { key: 'scenario', label: 'Detailed Scenario', editable: true, type: 'textarea' },
   { key: 'notes', label: 'Notes', editable: true, type: 'textarea' }
 ];
+
+const REGRESSION_COLUMN = {
+  key: 'regressionStatus',
+  label: 'Regress Run',
+  editable: true,
+  type: 'regression'
+};
+
+const TABLE_COLUMNS = [...FIELD_DEFINITIONS, REGRESSION_COLUMN];
 
 const ACTION_COLUMN = { key: 'actions', label: '', type: 'actions', editable: false };
 
@@ -151,6 +162,24 @@ function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true }
   );
 }
 
+function RegressionStatusSelect({ value, onChange, disabled }) {
+  return (
+    <select
+      className="regression-select"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+    >
+      <option value="">—</option>
+      {REGRESSION_STATUS_OPTIONS.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 export default function App() {
   const [items, setItems] = useState([]);
   const [columnConfig, setColumnConfig] = useState({});
@@ -159,6 +188,14 @@ export default function App() {
   const [error, setError] = useState(null);
   const [newItems, setNewItems] = useState([]);
   const [popup, setPopup] = useState(null);
+  const [regressionState, setRegressionState] = useState({
+    status: 'IDLE',
+    regressionDate: null,
+    results: {}
+  });
+  const [regressionResults, setRegressionResults] = useState({});
+  const [regressionLoading, setRegressionLoading] = useState(true);
+  const [regressionSaving, setRegressionSaving] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -178,9 +215,30 @@ export default function App() {
     }
   };
 
+  const loadRegressionState = async () => {
+    setRegressionLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(withBase('/api/regressions/current'));
+      if (!response.ok) {
+        throw new Error('Failed to load regression state');
+      }
+      const data = await response.json();
+      setRegressionState(data);
+      setRegressionResults(data.results ?? {});
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRegressionLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadRegressionState();
   }, []);
+
+  const isRegressionRunning = regressionState.status === 'RUNNING';
 
   const handleFieldChange = (testId, key, value) => {
     setItems((prev) =>
@@ -283,6 +341,96 @@ export default function App() {
     return [...items].sort(compareTestIds);
   }, [items]);
 
+  const missingRegressionStatuses = useMemo(() => {
+    if (!isRegressionRunning) {
+      return false;
+    }
+    return sortedItems.some((item) => !(regressionResults[item.testId] || '').trim());
+  }, [isRegressionRunning, regressionResults, sortedItems]);
+
+  const handleRegressionStatusChange = (testId, value) => {
+    const normalized = (value || '').toUpperCase();
+    setRegressionResults((prev) => ({ ...prev, [testId]: normalized }));
+  };
+
+  const handleStartRegression = async () => {
+    setRegressionSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(withBase('/api/regressions/start'), { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('Failed to start regression');
+      }
+      const data = await response.json();
+      setRegressionState(data);
+      setRegressionResults({});
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRegressionSaving(false);
+    }
+  };
+
+  const handleStopRegression = async () => {
+    if (!isRegressionRunning) {
+      return;
+    }
+
+    if (missingRegressionStatuses) {
+      setPopup({
+        title: 'Не все статусы заполнены',
+        message: 'Перед остановкой регресса заполните результаты для всех тест-кейсов.'
+      });
+      return;
+    }
+
+    setRegressionSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(withBase('/api/regressions/stop'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ results: regressionResults })
+      });
+      if (!response.ok) {
+        let message = 'Failed to stop regression';
+        try {
+          const data = await response.json();
+          message = data.message || data.detail || message;
+        } catch (parseError) {
+          const text = await response.text();
+          message = text || message;
+        }
+        throw new Error(message);
+      }
+      const data = await response.json();
+      setRegressionState(data);
+      setRegressionResults({});
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRegressionSaving(false);
+    }
+  };
+
+  const handleCancelRegression = async () => {
+    setRegressionSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(withBase('/api/regressions/cancel'), { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('Failed to cancel regression');
+      }
+      const data = await response.json();
+      setRegressionState(data);
+      setRegressionResults({});
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRegressionSaving(false);
+    }
+  };
+
   const closePopup = () => setPopup(null);
 
   const handleCreate = async (index) => {
@@ -384,7 +532,7 @@ export default function App() {
     }
   };
 
-  const columns = [ACTION_COLUMN, ...FIELD_DEFINITIONS];
+  const columns = [ACTION_COLUMN, ...TABLE_COLUMNS];
 
   const getColumnWidth = (column) => {
     if (column.key === ACTION_COLUMN.key) {
@@ -448,9 +596,48 @@ export default function App() {
                       key={column.key}
                       style={{ width: `${width}px`, minWidth: `${width}px` }}
                     >
-                      <div className="header-content">
-                        <span className="column-letter">{letter}</span>
-                        <span>{column.label}</span>
+                      <div
+                        className={`header-content ${
+                          column.key === 'regressionStatus' ? 'regression-header-content' : ''
+                        }`}
+                      >
+                        <div className="header-title">
+                          <span className="column-letter">{letter}</span>
+                          <span>{column.label}</span>
+                        </div>
+                        {column.key === 'regressionStatus' && (
+                          <div className="regression-actions">
+                            {isRegressionRunning ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="danger-btn"
+                                  onClick={handleStopRegression}
+                                  disabled={regressionSaving}
+                                >
+                                  Stop regress
+                                </button>
+                                <button
+                                  type="button"
+                                  className="secondary-btn"
+                                  onClick={handleCancelRegression}
+                                  disabled={regressionSaving}
+                                >
+                                  Отменить регресс
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                type="button"
+                                className="success-btn"
+                                onClick={handleStartRegression}
+                                disabled={loading || saving || regressionSaving || regressionLoading}
+                              >
+                                Would you run regress
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </th>
                   );
@@ -486,13 +673,14 @@ export default function App() {
                   >
                     —
                   </td>
-                  {FIELD_DEFINITIONS.map((column) => {
+                  {TABLE_COLUMNS.map((column) => {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
                     return (
                       <td
                         key={`new-${index}-${column.key}`}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
+                        className={column.type === 'regression' ? 'regression-cell locked' : undefined}
                       >
                         {column.type === 'textarea' ? (
                           <textarea
@@ -512,6 +700,10 @@ export default function App() {
                             value={value}
                             onChange={(newValue) => handleNewFieldChange(index, column.key, newValue)}
                           />
+                        ) : column.type === 'regression' ? (
+                          <div className="regression-cell-content">
+                            <RegressionStatusSelect value="" onChange={() => {}} disabled />
+                          </div>
                         ) : (
                           <input
                             type="text"
@@ -541,15 +733,32 @@ export default function App() {
                       ✕
                     </button>
                   </td>
-                  {FIELD_DEFINITIONS.map((column) => {
+                  {TABLE_COLUMNS.map((column) => {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
+                    const isRegressionColumn = column.type === 'regression';
+                    const regressionValue = regressionResults[item.testId] ?? '';
+                    const cellClassName = isRegressionColumn
+                      ? `regression-cell ${isRegressionRunning ? '' : 'locked'}`.trim()
+                      : undefined;
+
                     return (
                       <td
                         key={column.key}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
+                        className={cellClassName}
                       >
-                        {column.editable ? (
+                        {isRegressionColumn ? (
+                          <div className="regression-cell-content">
+                            <RegressionStatusSelect
+                              value={regressionValue}
+                              onChange={(newValue) =>
+                                handleRegressionStatusChange(item.testId, newValue)
+                              }
+                              disabled={!isRegressionRunning || regressionSaving}
+                            />
+                          </div>
+                        ) : column.editable ? (
                           column.type === 'textarea' ? (
                             <textarea
                               value={value}
