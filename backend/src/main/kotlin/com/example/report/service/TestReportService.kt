@@ -86,7 +86,13 @@ class TestReportService(
     @Transactional
     fun completeRegression(): RegressionStateDto {
         val reports = testReportRepository.findAll()
-        val regressionDate = reports.mapNotNull { it.regressionDate }.maxOrNull() ?: LocalDate.now()
+        val regressionDate = reports
+            .mapNotNull { it.regressionDate }
+            .maxOrNull()
+            ?: throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Regression is not started",
+            )
         val payloadItems = reports
             .sortedWith { a, b -> compareTestIds(a.testId, b.testId) }
             .map { it.toDto() }
