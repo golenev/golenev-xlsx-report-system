@@ -16,7 +16,7 @@ class MainPage {
     private val headerTitle: SelenideElement = element("h1")
     private val addRowButton: SelenideElement = `$$`("button.secondary-btn").first()
     private val newRow: SelenideElement = element("tr.new-row")
-
+    private val tableRowSelectorPattern = "tbody tr[data-test-id='tr-data-test-id-%s']"
     private val newRowInputs: ElementsCollection = newRow.`$$`("input.cell-input")
     private val newRowTextAreas: ElementsCollection = newRow.`$$`("textarea.cell-textarea")
     private val generalStatusDropdown: SelenideElement = newRow.`$$`("div.status-dropdown").first()
@@ -34,27 +34,27 @@ class MainPage {
 
     fun fillTestId(testId: String) = step("Заполняем поле Test ID значением $testId") {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
-        newRowInputs.first().setValue(testId)
+        newRowInputs.first().type(testId)
     }
 
     fun fillCategory(category: String) = step("Заполняем поле Category / Feature значением $category") {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(2))
-        newRowInputs[1].setValue(category)
+        newRowInputs[1].type(category)
     }
 
     fun fillShortTitle(shortTitle: String) = step("Заполняем поле Short Title значением $shortTitle") {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(3))
-        newRowInputs[2].setValue(shortTitle)
+        newRowInputs[2].type(shortTitle)
     }
 
     fun fillIssueLink(issueLink: String) = step("Заполняем поле YouTrack Issue Link значением $issueLink") {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(4))
-        newRowInputs[3].setValue(issueLink)
+        newRowInputs[3].type(issueLink)
     }
 
     fun fillReadyDate(readyDate: String) = step("Заполняем поле Ready Date значением $readyDate") {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(5))
-        newRowInputs[4].setValue(readyDate)
+        newRowInputs[4].type(readyDate)
     }
 
     fun selectGeneralStatus(status: String) = step("Выбираем значение General Test Status: $status") {
@@ -65,7 +65,7 @@ class MainPage {
 
     fun fillDetailedScenario(scenario: String) = step("Заполняем поле Detailed Scenario значением $scenario") {
         newRowTextAreas.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
-        newRowTextAreas.first().setValue(scenario)
+        newRowTextAreas.first().type(scenario)
     }
 
     fun saveNewRow() = step("Сохраняем новую строку") {
@@ -85,8 +85,6 @@ class MainPage {
     fun shouldNotSeeTestCase(testId: String) = step("Проверяем, что тест-кейс $testId удалён из таблицы") {
         tableRowByTestId(testId).should(disappear)
     }
-
-    private val tableRowSelectorPattern = "tbody tr[data-test-id='tr-data-test-id-%s']"
 
     private fun tableRowByTestId(testId: String): SelenideElement =
         element(tableRowSelectorPattern.format(testId))
