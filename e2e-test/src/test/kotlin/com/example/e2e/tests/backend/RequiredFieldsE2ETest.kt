@@ -1,4 +1,4 @@
-package com.example.e2e.tests
+package com.example.e2e.tests.backend
 
 import com.example.e2e.dto.ErrorResponse
 import com.example.e2e.dto.GeneralTestStatus

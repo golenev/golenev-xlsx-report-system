@@ -52,11 +52,6 @@ class MainPage {
         newRowInputs[3].type(issueLink)
     }
 
-    fun fillReadyDate(readyDate: String) = step("Заполняем поле Ready Date значением $readyDate") {
-        newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(5))
-        newRowInputs[4].type(readyDate)
-    }
-
     fun selectGeneralStatus(status: String) = step("Выбираем значение General Test Status: $status") {
         generalStatusDropdown.shouldBe(visible)
         generalStatusDropdown.find("summary").click()

@@ -1,4 +1,4 @@
-package com.example.e2e.ui.tests
+package com.example.e2e.tests.ui
 
 import com.example.e2e.ui.config.DriverConfig
 import com.example.e2e.ui.pages.MainPage
@@ -23,7 +23,7 @@ class MainPageTest {
     @Test
     @DisplayName("Создание и удаление тест-кейса на главной странице")
     fun shouldCreateAndDeleteTestCase() {
-        val testId = "UI-${'$'}{System.currentTimeMillis()}"
+        val testId = "UI-4565"
         val category = "UI smoke"
         val shortTitle = "Smoke title"
         val issueLink = "https://youtrack.test/issue/SMK-1"
@@ -37,7 +37,6 @@ class MainPageTest {
         mainPage.fillCategory(category)
         mainPage.fillShortTitle(shortTitle)
         mainPage.fillIssueLink(issueLink)
-        mainPage.fillReadyDate(readyDate)
         mainPage.selectGeneralStatus(generalStatus)
         mainPage.fillDetailedScenario(detailedScenario)
         mainPage.saveNewRow()
