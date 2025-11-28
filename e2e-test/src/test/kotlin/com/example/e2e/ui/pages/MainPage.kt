@@ -14,7 +14,7 @@ import com.example.e2e.utils.step
 class MainPage {
 
     private val headerTitle: SelenideElement = element("h1")
-    private val addRowButton: SelenideElement = $$("button.secondary-btn").first()
+    private val addRowButton: SelenideElement = `$$`("button.secondary-btn").first()
     private val newRow: SelenideElement = element("tr.new-row")
 
     private val newRowInputs: ElementsCollection
@@ -38,6 +38,11 @@ class MainPage {
         newRowInputs.first().setValue(testId)
     }
 
+    fun fillCategory(category: String) = step("Заполняем поле Category / Feature значением $category") {
+        newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(2))
+        newRowInputs[1].setValue(category)
+    }
+
     fun saveNewRow() = step("Сохраняем новую строку") {
         newRowSaveButton.shouldBe(enabled).click()
         newRow.shouldBe(hidden)
@@ -57,5 +62,5 @@ class MainPage {
     }
 
     private fun tableRowByTestId(testId: String): SelenideElement =
-        element("tbody tr[data-test-id='tr-data-test-id-${'$'}testId']")
+        element("tbody tr[data-test-id='tr-data-test-id-${testId}']")
 }

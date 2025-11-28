@@ -24,10 +24,12 @@ class MainPageTest {
     @DisplayName("Создание и удаление тест-кейса на главной странице")
     fun shouldCreateAndDeleteTestCase() {
         val testId = "UI-${'$'}{System.currentTimeMillis()}"
+        val category = "UI smoke"
 
         mainPage.open()
         mainPage.startNewRow()
         mainPage.fillTestId(testId)
+        mainPage.fillCategory(category)
         mainPage.saveNewRow()
         mainPage.shouldSeeTestCase(testId)
         mainPage.deleteTestCase(testId)
