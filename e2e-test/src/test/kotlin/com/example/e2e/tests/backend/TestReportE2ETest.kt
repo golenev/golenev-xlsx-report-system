@@ -1,4 +1,4 @@
-package com.example.e2e.tests
+package com.example.e2e.tests.backend
 
 import com.example.e2e.db.DatabaseCleaner
 import com.example.e2e.db.TestReportTable
@@ -26,7 +26,7 @@ class TestReportE2ETest {
     fun cleaDb () {
         dbReportExec {
             TestReportTable.deleteWhere {
-                (TestReportTable.testId inList listOf("4856", "11123"))
+                (testId inList listOf("4856", "11123"))
             }
         }
     }
