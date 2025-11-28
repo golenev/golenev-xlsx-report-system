@@ -27,7 +27,6 @@ class MainPageTest {
         val category = "UI smoke"
         val shortTitle = "Smoke title"
         val issueLink = "https://youtrack.test/issue/SMK-1"
-        val readyDate = "2024-01-01"
         val generalStatus = "Готово"
         val detailedScenario = "Пользователь создаёт и удаляет тест-кейс"
 
