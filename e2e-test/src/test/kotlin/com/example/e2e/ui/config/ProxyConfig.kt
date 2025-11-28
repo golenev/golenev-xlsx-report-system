@@ -13,42 +13,35 @@ import java.util.function.Predicate
 object ProxyConfig {
 
     @Step("Подготовка прокси сервера")
-    fun setUpProxy(uniqueTestName: String) {
+    fun setUpProxy() {
         Configuration.proxyEnabled = true
     }
 
     @Step("Перехватываем запрос {0} и асинхронно возвращаем из него тело")
     fun interceptRequestBody(
         endpoint: String,
-        additionalMatcher: Predicate<String> = Predicate { true },
         run: () -> Unit,
     ): String {
         if (!WebDriverRunner.hasWebDriverStarted()) {
             open()
         }
-        val selenideProxyServer = getSelenideProxy()
         val future = CompletableFuture<String>()
         val filterName = "requestProxy.dataGetter-${UUID.randomUUID()}"
-
-        selenideProxyServer.addRequestFilter(filterName) { _, httpMessageContents, httpMessageInfo ->
+        getSelenideProxy().addRequestFilter(filterName) { _, httpMessageContents, httpMessageInfo ->
             val isEndpointMatch = httpMessageInfo.url.contains(endpoint)
-            val isAdditionalMatch = additionalMatcher.test(httpMessageInfo.url)
             val isPostMethod = httpMessageInfo.originalRequest.method().name().equals("post", true)
-
-            if (isEndpointMatch && isAdditionalMatch && isPostMethod) {
+            if (isEndpointMatch && isPostMethod) {
                 future.complete(httpMessageContents.textContents)
             }
             null
         }
-
         run()
-
-        return future.get(5, TimeUnit.SECONDS)
+        return future.get()
     }
 }
 
-class ProxyInitializer(private val uniqueTestName: String) : Runnable {
+class ProxyInitializer() : Runnable {
     override fun run() {
-        ProxyConfig.setUpProxy(uniqueTestName)
+        ProxyConfig.setUpProxy()
     }
 }

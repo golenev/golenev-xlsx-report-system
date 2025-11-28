@@ -35,7 +35,7 @@ class MainPageTest {
     @BeforeEach
     fun setUpProxy(testInfo: TestInfo) {
         step("Запускаем прокси для теста ${testInfo.displayName}") {
-            proxyThread = Thread(ProxyInitializer(testInfo.displayName)).also {
+            proxyThread = Thread(ProxyInitializer()).also {
                 it.start()
                 it.join()
             }
@@ -60,15 +60,16 @@ class MainPageTest {
         val generalStatus = "Готово"
         val detailedScenario = "Пользователь создаёт и удаляет тест-кейс"
 
+        mainPage.open()
+        mainPage.startNewRow()
+        mainPage.fillTestId(testId)
+        mainPage.fillCategory(category)
+        mainPage.fillShortTitle(shortTitle)
+        mainPage.fillIssueLink(issueLink)
+        mainPage.selectGeneralStatus(generalStatus)
+        mainPage.fillDetailedScenario(detailedScenario)
+
         val requestBody = ProxyConfig.interceptRequestBody(Paths.REPORTS.path) {
-            mainPage.open()
-            mainPage.startNewRow()
-            mainPage.fillTestId(testId)
-            mainPage.fillCategory(category)
-            mainPage.fillShortTitle(shortTitle)
-            mainPage.fillIssueLink(issueLink)
-            mainPage.selectGeneralStatus(generalStatus)
-            mainPage.fillDetailedScenario(detailedScenario)
             mainPage.saveNewRow()
         }
 
