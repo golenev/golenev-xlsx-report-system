@@ -5,6 +5,8 @@ import com.codeborne.selenide.Selenide.open
 import com.codeborne.selenide.WebDriverRunner
 import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import io.qameta.allure.Step
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -18,25 +20,24 @@ object ProxyConfig {
     }
 
     @Step("Перехватываем запрос {0} и асинхронно возвращаем из него тело")
-    fun interceptRequestBody(
+     fun interceptRequestBody(
         endpoint: String,
         run: () -> Unit,
-    ): String {
+    ): String = runBlocking {
         if (!WebDriverRunner.hasWebDriverStarted()) {
             open()
         }
-        val future = CompletableFuture<String>()
-        val filterName = "requestProxy.dataGetter-${UUID.randomUUID()}"
-        getSelenideProxy().addRequestFilter(filterName) { _, httpMessageContents, httpMessageInfo ->
+        val deferredBody = CompletableDeferred<String>()
+        getSelenideProxy().addRequestFilter(UUID.randomUUID().toString()) { _, httpMessageContents, httpMessageInfo ->
             val isEndpointMatch = httpMessageInfo.url.contains(endpoint)
-            val isPostMethod = httpMessageInfo.originalRequest.method().name().equals("post", true)
-            if (isEndpointMatch && isPostMethod) {
-                future.complete(httpMessageContents.textContents)
+            val isPostMethod = httpMessageInfo.originalRequest.method().name().equals("post", ignoreCase = true)
+            if (isEndpointMatch && isPostMethod && deferredBody.isActive) {
+                deferredBody.complete(httpMessageContents.textContents)
             }
-            null
+            null // не модифицируем запрос
         }
         run()
-        return future.get()
+        deferredBody.await()
     }
 }
 
