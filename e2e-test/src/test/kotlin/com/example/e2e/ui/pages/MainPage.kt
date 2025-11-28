@@ -17,17 +17,10 @@ class MainPage {
     private val addRowButton: SelenideElement = `$$`("button.secondary-btn").first()
     private val newRow: SelenideElement = element("tr.new-row")
 
-    private val newRowInputs: ElementsCollection
-        get() = newRow.$$("input.cell-input")
-
-    private val newRowTextAreas: ElementsCollection
-        get() = newRow.$$("textarea.cell-textarea")
-
-    private val generalStatusDropdown: SelenideElement
-        get() = newRow.`$$`("div.status-dropdown").first()
-
-    private val newRowSaveButton: SelenideElement
-        get() = newRow.find("button.save-btn")
+    private val newRowInputs: ElementsCollection = newRow.`$$`("input.cell-input")
+    private val newRowTextAreas: ElementsCollection = newRow.`$$`("textarea.cell-textarea")
+    private val generalStatusDropdown: SelenideElement = newRow.`$$`("div.status-dropdown").first()
+    private val newRowSaveButton: SelenideElement = newRow.find("button.save-btn")
 
     fun open() = step("Открываем главную страницу") {
         open("/")

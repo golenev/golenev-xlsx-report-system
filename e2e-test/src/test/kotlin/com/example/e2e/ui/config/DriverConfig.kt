@@ -16,7 +16,7 @@ object DriverConfig {
         Configuration.pageLoadStrategy = "normal"
         Configuration.headless = false
         Configuration.screenshots = true
-        Configuration.baseUrl = System.getProperty("baseUrl", "http://localhost:5173")
+        Configuration.baseUrl = System.getProperty("baseUrl", "http://localhost:18080")
 
         SelenideLogger.addListener("AllureSelenide", AllureSelenide())
 
