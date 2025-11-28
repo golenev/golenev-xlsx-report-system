@@ -4,8 +4,8 @@ import com.codeborne.selenide.Configuration
 import com.codeborne.selenide.WebDriverRunner
 import com.codeborne.selenide.logevents.SelenideLogger
 import io.qameta.allure.selenide.AllureSelenide
+import org.openqa.selenium.MutableCapabilities
 import org.openqa.selenium.chrome.ChromeOptions
-import org.openqa.selenium.remote.MutableCapabilities
 
 object DriverConfig {
 

@@ -718,7 +718,7 @@ export default function App() {
                 </tr>
               ))}
               {sortedItems.map((item, rowIndex) => (
-                <tr key={item.testId}>
+                <tr key={item.testId} data-test-id={`tr-data-test-id-${item.testId}`}>
                   <td className="row-index-cell">{rowIndex + 1}</td>
                   <td
                     className="action-cell"

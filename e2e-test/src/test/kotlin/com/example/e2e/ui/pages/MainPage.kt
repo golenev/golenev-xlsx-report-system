@@ -9,7 +9,7 @@ import com.codeborne.selenide.Condition.visible
 import com.codeborne.selenide.ElementsCollection
 import com.codeborne.selenide.Selenide.*
 import com.codeborne.selenide.SelenideElement
-import io.qameta.allure.Allure.step
+import com.example.e2e.utils.step
 
 class MainPage {
 
@@ -56,9 +56,6 @@ class MainPage {
         tableRowByTestId(testId).should(disappear)
     }
 
-    private fun tableRowByTestId(testId: String): SelenideElement {
-        val existingRows = $$("tbody tr:not(.new-row)")
-        existingRows.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(0))
-        return existingRows.findBy(text(testId))
-    }
+    private fun tableRowByTestId(testId: String): SelenideElement =
+        element("tbody tr[data-test-id='tr-data-test-id-${'$'}testId']")
 }

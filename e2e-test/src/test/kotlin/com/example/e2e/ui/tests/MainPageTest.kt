@@ -2,7 +2,7 @@ package com.example.e2e.ui.tests
 
 import com.example.e2e.ui.config.DriverConfig
 import com.example.e2e.ui.pages.MainPage
-import io.qameta.allure.Allure.step
+import com.example.e2e.utils.step
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
