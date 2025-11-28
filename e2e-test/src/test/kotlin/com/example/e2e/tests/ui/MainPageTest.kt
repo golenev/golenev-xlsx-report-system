@@ -1,14 +1,16 @@
 package com.example.e2e.tests.ui
 
+import com.example.e2e.dto.TestUpsertItem
+import com.example.e2e.http.Paths
 import com.example.e2e.ui.config.DriverConfig
 import com.example.e2e.ui.config.ProxyConfig
 import com.example.e2e.ui.config.ProxyInitializer
 import com.example.e2e.ui.pages.MainPage
-import com.example.e2e.dto.TestUpsertItem
-import com.example.e2e.http.Paths
 import com.example.e2e.utils.JsonUtils
 import com.example.e2e.utils.step
 import com.codeborne.selenide.Selenide.closeWebDriver
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -16,7 +18,6 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInfo
-import org.junit.jupiter.api.Assertions.assertEquals
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MainPageTest {
@@ -72,12 +73,17 @@ class MainPageTest {
         }
 
         val createdTest = JsonUtils.parse(requestBody, TestUpsertItem::class.java)
-        assertEquals(testId, createdTest.testId)
-        assertEquals(category, createdTest.category)
-        assertEquals(shortTitle, createdTest.shortTitle)
-        assertEquals(issueLink, createdTest.issueLink)
-        assertEquals(generalStatus, createdTest.generalStatus)
-        assertEquals(detailedScenario, createdTest.scenario)
+
+        step("Проверяем, что запрос на сохранение тест-кейса содержит корректные данные") {
+            assertSoftly {
+                createdTest.testId shouldBe testId
+                createdTest.category shouldBe category
+                createdTest.shortTitle shouldBe shortTitle
+                createdTest.issueLink shouldBe issueLink
+                createdTest.generalStatus shouldBe generalStatus
+                createdTest.scenario shouldBe detailedScenario
+            }
+        }
 
         mainPage.shouldSeeTestCase(testId)
         mainPage.deleteTestCase(testId)
