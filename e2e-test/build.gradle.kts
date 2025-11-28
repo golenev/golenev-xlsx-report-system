@@ -16,6 +16,7 @@ repositories {
 dependencies {
     val exposedVersion = "0.49.0"
     val allureVersion = "2.25.0"
+    val selenideVersion = "7.12.1"
 
     testImplementation(kotlin("stdlib"))
     testImplementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
@@ -32,6 +33,10 @@ dependencies {
     testImplementation("io.qameta.allure:allure-junit5:$allureVersion")
     testImplementation("io.qameta.allure:allure-rest-assured:$allureVersion")
     testImplementation("io.qameta.allure:allure-junit5:2.29.1")
+    testImplementation("io.qameta.allure:allure-selenide:2.29.1")
+
+    testImplementation("com.codeborne:selenide:$selenideVersion")
+    testImplementation("com.codeborne:selenide-proxy:7.12.1")
 
 
     testImplementation("io.kotest:kotest-assertions-core:5.9.1")
