@@ -25,11 +25,21 @@ class MainPageTest {
     fun shouldCreateAndDeleteTestCase() {
         val testId = "UI-${'$'}{System.currentTimeMillis()}"
         val category = "UI smoke"
+        val shortTitle = "Smoke title"
+        val issueLink = "https://youtrack.test/issue/SMK-1"
+        val readyDate = "2024-01-01"
+        val generalStatus = "Готово"
+        val detailedScenario = "Пользователь создаёт и удаляет тест-кейс"
 
         mainPage.open()
         mainPage.startNewRow()
         mainPage.fillTestId(testId)
         mainPage.fillCategory(category)
+        mainPage.fillShortTitle(shortTitle)
+        mainPage.fillIssueLink(issueLink)
+        mainPage.fillReadyDate(readyDate)
+        mainPage.selectGeneralStatus(generalStatus)
+        mainPage.fillDetailedScenario(detailedScenario)
         mainPage.saveNewRow()
         mainPage.shouldSeeTestCase(testId)
         mainPage.deleteTestCase(testId)

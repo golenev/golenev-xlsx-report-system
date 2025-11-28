@@ -20,6 +20,12 @@ class MainPage {
     private val newRowInputs: ElementsCollection
         get() = newRow.$$("input.cell-input")
 
+    private val newRowTextAreas: ElementsCollection
+        get() = newRow.$$("textarea.cell-textarea")
+
+    private val generalStatusDropdown: SelenideElement
+        get() = newRow.`$$`("div.status-dropdown").first()
+
     private val newRowSaveButton: SelenideElement
         get() = newRow.find("button.save-btn")
 
@@ -41,6 +47,32 @@ class MainPage {
     fun fillCategory(category: String) = step("Заполняем поле Category / Feature значением $category") {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(2))
         newRowInputs[1].setValue(category)
+    }
+
+    fun fillShortTitle(shortTitle: String) = step("Заполняем поле Short Title значением $shortTitle") {
+        newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(3))
+        newRowInputs[2].setValue(shortTitle)
+    }
+
+    fun fillIssueLink(issueLink: String) = step("Заполняем поле YouTrack Issue Link значением $issueLink") {
+        newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(4))
+        newRowInputs[3].setValue(issueLink)
+    }
+
+    fun fillReadyDate(readyDate: String) = step("Заполняем поле Ready Date значением $readyDate") {
+        newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(5))
+        newRowInputs[4].setValue(readyDate)
+    }
+
+    fun selectGeneralStatus(status: String) = step("Выбираем значение General Test Status: $status") {
+        generalStatusDropdown.shouldBe(visible)
+        generalStatusDropdown.find("summary").click()
+        generalStatusDropdown.findAll("button.status-option").findBy(text(status)).click()
+    }
+
+    fun fillDetailedScenario(scenario: String) = step("Заполняем поле Detailed Scenario значением $scenario") {
+        newRowTextAreas.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
+        newRowTextAreas.first().setValue(scenario)
     }
 
     fun saveNewRow() = step("Сохраняем новую строку") {
