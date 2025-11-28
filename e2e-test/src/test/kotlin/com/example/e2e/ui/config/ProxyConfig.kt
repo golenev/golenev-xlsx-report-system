@@ -1,9 +1,9 @@
 package com.example.e2e.ui.config
 
 import com.codeborne.selenide.Configuration
-import com.codeborne.selenide.Selenide.getSelenideProxy
 import com.codeborne.selenide.Selenide.open
 import com.codeborne.selenide.WebDriverRunner
+import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import io.qameta.allure.Step
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -15,10 +15,6 @@ object ProxyConfig {
     @Step("Подготовка прокси сервера")
     fun setUpProxy(uniqueTestName: String) {
         Configuration.proxyEnabled = true
-
-        if (!WebDriverRunner.hasWebDriverStarted()) {
-            open()
-        }
     }
 
     @Step("Перехватываем запрос {0} и асинхронно возвращаем из него тело")
@@ -27,6 +23,9 @@ object ProxyConfig {
         additionalMatcher: Predicate<String> = Predicate { true },
         run: () -> Unit,
     ): String {
+        if (!WebDriverRunner.hasWebDriverStarted()) {
+            open()
+        }
         val selenideProxyServer = getSelenideProxy()
         val future = CompletableFuture<String>()
         val filterName = "requestProxy.dataGetter-${UUID.randomUUID()}"
@@ -34,7 +33,7 @@ object ProxyConfig {
         selenideProxyServer.addRequestFilter(filterName) { _, httpMessageContents, httpMessageInfo ->
             val isEndpointMatch = httpMessageInfo.url.contains(endpoint)
             val isAdditionalMatch = additionalMatcher.test(httpMessageInfo.url)
-            val isPostMethod = httpMessageInfo.originalRequest().method().name().equals("post", true)
+            val isPostMethod = httpMessageInfo.originalRequest.method().name().equals("post", true)
 
             if (isEndpointMatch && isAdditionalMatch && isPostMethod) {
                 future.complete(httpMessageContents.textContents)
