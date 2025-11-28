@@ -86,6 +86,8 @@ class MainPage {
         tableRowByTestId(testId).should(disappear)
     }
 
+    private val tableRowSelectorPattern = "tbody tr[data-test-id='tr-data-test-id-%s']"
+
     private fun tableRowByTestId(testId: String): SelenideElement =
-        element("tbody tr[data-test-id='tr-data-test-id-${testId}']")
+        element(tableRowSelectorPattern.format(testId))
 }
