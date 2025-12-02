@@ -1,5 +1,6 @@
 package com.example.e2e.tests.ui
 
+import com.example.e2e.dto.Priority
 import com.example.e2e.ui.pages.MainPage
 import com.example.e2e.utils.step
 import io.qameta.allure.AllureId
@@ -21,6 +22,7 @@ class ReadyDateUiTests {
         val shortTitle = "Ready date auto"
         val issueLink = "https://youtrack.test/issue/READY-1"
         val generalStatus = "Готово"
+        val priority = Priority.MEDIUM.value
         val detailedScenario = "Проверка автоматического заполнения Ready Date"
 
         val today = step("Определяем сегодняшнюю дату") { LocalDate.now().toString() }
@@ -32,6 +34,7 @@ class ReadyDateUiTests {
         step("Заполняем поле Short Title значением $shortTitle") { mainPage.fillShortTitle(shortTitle) }
         step("Заполняем поле YouTrack Issue Link значением $issueLink") { mainPage.fillIssueLink(issueLink) }
         step("Выбираем значение General Test Status: $generalStatus") { mainPage.selectGeneralStatus(generalStatus) }
+        step("Выбираем значение Priority: $priority") { mainPage.selectPriority(priority) }
         step("Заполняем поле Detailed Scenario значением $detailedScenario") { mainPage.fillDetailedScenario(detailedScenario) }
 
         step("Сохраняем новую строку без указания Ready Date") { mainPage.saveNewRow() }

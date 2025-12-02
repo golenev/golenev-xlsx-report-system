@@ -4,6 +4,7 @@ import com.example.e2e.db.DatabaseCleaner
 import com.example.e2e.db.TestReportTable
 import com.example.e2e.db.dbReportExec
 import com.example.e2e.dto.GeneralTestStatus
+import com.example.e2e.dto.Priority
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
@@ -49,6 +50,7 @@ class ReadyDateE2ETest {
                         category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Ready date auto set",
                         generalStatus = GeneralTestStatus.QUEUE.value,
+                        priority = Priority.HIGH.value,
                         scenario = "Сценарий 1. шаг 1 шаг 2 шаг 3",
                         runStatus = "PASSED",
                     ),
@@ -77,6 +79,7 @@ class ReadyDateE2ETest {
                         testId = "123",
                         readyDate = today.minusDays(5).toString(),
                         generalStatus = GeneralTestStatus.DONE.value,
+                        priority = Priority.MEDIUM.value,
                         notes = "Updated notes",
                         scenario = "Сценарий 2. шаг 1 шаг 2 шаг 3",
                         category = "E2E_FOR_AUTOTEST",

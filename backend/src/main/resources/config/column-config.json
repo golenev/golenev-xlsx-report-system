@@ -6,6 +6,7 @@
     "issueLink": 180,
     "readyDate": 140,
     "generalStatus": 140,
+    "priority": 140,
     "scenario": 300,
     "notes": 220,
     "regressionStatus": 180

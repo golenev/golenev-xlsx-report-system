@@ -85,6 +85,7 @@ class RegressionService(
                     "issueLink" to it.issueLink,
                     "readyDate" to it.readyDate?.toString(),
                     "generalStatus" to it.generalStatus,
+                    "priority" to it.priority,
                     "scenario" to it.scenario,
                     "notes" to it.notes,
                     "regressionStatus" to results[it.testId]

@@ -19,6 +19,7 @@ class ExcelExportService(
         "issueLink",
         "readyDate",
         "generalStatus",
+        "priority",
         "scenario",
         "notes"
     )
@@ -52,6 +53,7 @@ class ExcelExportService(
             "YouTrack Issue Link",
             "Ready Date",
             "General Test Status",
+            "Priority",
             "Detailed Scenario",
             "Notes"
         )
@@ -76,6 +78,7 @@ class ExcelExportService(
                 item.issueLink,
                 item.readyDate?.toString(),
                 item.generalStatus,
+                item.priority,
                 item.scenario,
                 item.notes
             )

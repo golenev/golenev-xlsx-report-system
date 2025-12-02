@@ -6,6 +6,7 @@ import com.example.report.dto.TestReportResponse
 import com.example.report.dto.TestUpsertItem
 import com.example.report.entity.TestReportEntity
 import com.example.report.model.GeneralTestStatus
+import com.example.report.model.Priority
 import com.example.report.repository.TestReportRepository
 import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
@@ -30,15 +31,22 @@ class TestReportService(
 
     @Transactional
     fun upsertTest(request: TestUpsertItem) {
-        val validated = validateAndNormalize(request)
-        upsertSingle(validated)
+        val normalizedId = normalizeTestId(request.testId)
+        val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
+        val validated = validateAndNormalize(request, existing, normalizedId)
+        upsertSingle(validated, existing)
     }
 
     @Transactional
     fun upsertBatch(request: TestBatchRequest) {
         request.items
-            .map { validateAndNormalize(it) }
-            .forEach { upsertSingle(it) }
+            .map { item ->
+                val normalizedId = normalizeTestId(item.testId)
+                val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
+                val validated = validateAndNormalize(item, existing, normalizedId)
+                validated to existing
+            }
+            .forEach { (validated, existing) -> upsertSingle(validated, existing) }
     }
 
     @Transactional
@@ -50,23 +58,23 @@ class TestReportService(
         testReportRepository.delete(entity)
     }
 
-    private fun upsertSingle(item: ValidatedUpsert) {
-        val existing = testReportRepository.findByTestId(item.testId)
-        if (existing.isPresent) {
-            val entity = existing.get()
+    private fun upsertSingle(item: ValidatedUpsert, existing: TestReportEntity?) {
+        if (existing != null) {
+            val entity = existing
             entity.category = item.category
             entity.shortTitle = item.shortTitle
             entity.scenario = item.scenario
 
             item.issueLink?.let { entity.issueLink = it }
             entity.generalStatus = item.generalStatus
+            entity.priority = item.priority
             item.notes?.let { entity.notes = it }
             entity.updatedAt = OffsetDateTime.now()
             testReportRepository.save(entity)
             return
         }
 
-        val newEntity = TestReportEntity(testId = item.testId)
+        val newEntity = TestReportEntity(testId = item.testId, priority = item.priority)
         newEntity.category = item.category
         newEntity.shortTitle = item.shortTitle
         newEntity.scenario = item.scenario
@@ -79,13 +87,38 @@ class TestReportService(
         testReportRepository.save(newEntity)
     }
 
-    private fun validateAndNormalize(item: TestUpsertItem): ValidatedUpsert {
-        val normalizedId = normalizeTestId(item.testId)
-        val category = item.category?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("category")
-        val shortTitle = item.shortTitle?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("shortTitle")
-        val scenario = item.scenario?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("scenario")
+    private fun validateAndNormalize(
+        item: TestUpsertItem,
+        existing: TestReportEntity?,
+        normalizedId: String
+    ): ValidatedUpsert {
+        val category = item.category
+            ?.takeIf { it.isNotBlank() }
+            ?.trim()
+            ?: existing?.category?.takeIf { it.isNotBlank() }
+            ?: requiredFieldMissing("category")
+        val shortTitle = item.shortTitle
+            ?.takeIf { it.isNotBlank() }
+            ?.trim()
+            ?: existing?.shortTitle?.takeIf { it.isNotBlank() }
+            ?: requiredFieldMissing("shortTitle")
+        val scenario = item.scenario
+            ?.takeIf { it.isNotBlank() }
+            ?.trim()
+            ?: existing?.scenario?.takeIf { it.isNotBlank() }
+            ?: requiredFieldMissing("scenario")
         val generalStatusRaw =
-            item.generalStatus?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("generalStatus")
+            item.generalStatus
+                ?.takeIf { it.isNotBlank() }
+                ?.trim()
+                ?: existing?.generalStatus?.takeIf { it.isNotBlank() }
+                ?: requiredFieldMissing("generalStatus")
+        val priorityRaw =
+            item.priority
+                ?.takeIf { it.isNotBlank() }
+                ?.trim()
+                ?: existing?.priority?.takeIf { it.isNotBlank() }
+                ?: requiredFieldMissing("priority")
 
         return ValidatedUpsert(
             testId = normalizedId,
@@ -94,6 +127,7 @@ class TestReportService(
             scenario = scenario,
             issueLink = item.issueLink?.takeIf { it.isNotBlank() }?.trim(),
             generalStatus = validateGeneralStatus(generalStatusRaw),
+            priority = validatePriority(priorityRaw),
             notes = item.notes,
             readyDate = item.readyDate
                 ?.takeIf { it.isNotBlank() }
@@ -109,6 +143,7 @@ class TestReportService(
         issueLink = issueLink,
         readyDate = readyDate,
         generalStatus = generalStatus,
+        priority = priority,
         scenario = scenario,
         notes = notes,
         updatedAt = updatedAt?.toString()
@@ -119,6 +154,14 @@ class TestReportService(
             GeneralTestStatus.requireValid(generalStatus) ?: requiredFieldMissing("generalStatus")
         } catch (ex: IllegalArgumentException) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid status")
+        }
+    }
+
+    private fun validatePriority(priority: String): String {
+        return try {
+            Priority.requireValid(priority) ?: requiredFieldMissing("priority")
+        } catch (ex: IllegalArgumentException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid priority")
         }
     }
 
@@ -141,6 +184,7 @@ class TestReportService(
         val scenario: String,
         val issueLink: String?,
         val generalStatus: String,
+        val priority: String,
         val notes: String?,
         val readyDate: LocalDate?
     )

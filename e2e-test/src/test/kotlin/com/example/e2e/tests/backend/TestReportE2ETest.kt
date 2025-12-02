@@ -75,6 +75,7 @@ class TestReportE2ETest {
                 reportItem.shortTitle shouldBe it.shortTitle
                 reportItem.readyDate shouldBe today
                 reportItem.generalStatus shouldBe it.generalStatus
+                reportItem.priority shouldBe it.priority
                 reportItem.updatedAt.shouldNotBeNull()
             }
         }
