@@ -27,6 +27,11 @@ class MainPage {
         headerTitle.shouldHave(text("Test Report"))
     }
 
+    fun refreshCurrentPage() = step("Перезагружаем текущую страницу") {
+        com.codeborne.selenide.Selenide.refresh()
+        headerTitle.shouldHave(text("Test Report"))
+    }
+
     fun startNewRow() = step("Нажимаем кнопку Add Row") {
         addRowButton.shouldBe(enabled).click()
         newRow.shouldBe(visible)

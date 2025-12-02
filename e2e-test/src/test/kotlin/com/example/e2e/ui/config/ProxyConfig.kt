@@ -20,7 +20,7 @@ object ProxyConfig {
     }
 
     @Step("Перехватываем запрос {0} и асинхронно возвращаем из него тело")
-     fun interceptRequestBody(
+    fun interceptRequestBody(
         endpoint: String,
         run: () -> Unit,
     ): String = runBlocking {
@@ -38,6 +38,45 @@ object ProxyConfig {
         }
         run()
         deferredBody.await()
+    }
+
+    @Step("Перехватываем ответ {0} и асинхронно возвращаем его тело")
+    fun interceptResponseBody(
+        endpoint: String,
+        run: () -> Unit,
+    ): String = runBlocking {
+        if (!WebDriverRunner.hasWebDriverStarted()) {
+            open()
+        }
+        val deferredBody = CompletableDeferred<String>()
+        getSelenideProxy().addResponseFilter(UUID.randomUUID().toString()) { _, httpMessageContents, httpMessageInfo ->
+            val isEndpointMatch = httpMessageInfo.url.contains(endpoint)
+            if (isEndpointMatch && deferredBody.isActive) {
+                deferredBody.complete(httpMessageContents.textContents)
+            }
+        }
+        run()
+        deferredBody.await()
+    }
+
+    @Step("Перехватываем ответ {0} и подставляем переданное тело")
+    fun replaceResponseBody(
+        endpoint: String,
+        responseBody: String,
+        run: () -> Unit,
+    ) {
+        if (!WebDriverRunner.hasWebDriverStarted()) {
+            open()
+        }
+
+        getSelenideProxy().addResponseFilter(UUID.randomUUID().toString()) { _, httpMessageContents, httpMessageInfo ->
+            val isEndpointMatch = httpMessageInfo.url.contains(endpoint)
+            if (isEndpointMatch) {
+                httpMessageContents.textContents = responseBody
+            }
+        }
+
+        run()
     }
 }
 

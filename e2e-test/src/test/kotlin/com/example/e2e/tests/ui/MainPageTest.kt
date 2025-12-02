@@ -1,5 +1,8 @@
 package com.example.e2e.tests.ui
 
+import com.example.e2e.dto.GeneralTestStatus
+import com.example.e2e.dto.TestReportItemDto
+import com.example.e2e.dto.TestReportResponse
 import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.http.Paths
 import com.example.e2e.ui.config.DriverConfig
@@ -89,5 +92,39 @@ class MainPageTest {
         mainPage.shouldSeeTestCase(testId)
         mainPage.deleteTestCase(testId)
         mainPage.shouldNotSeeTestCase(testId)
+    }
+
+    @Test
+    @DisplayName("Отображение тест-кейса из подменённого ответа")
+    fun shouldDisplayTestCaseFromReplacedResponse() {
+        val injectedTestId = "UI-9999"
+        val injectedCategory = "Proxy smoke"
+        val injectedShortTitle = "Injected via proxy"
+        val injectedScenario = "Просмотр тест-кейса из подменённого ответа"
+
+        val initialResponse = ProxyConfig.interceptResponseBody(Paths.REPORTS.path) {
+            mainPage.open()
+        }
+
+        val reportResponse = JsonUtils.parse(initialResponse, TestReportResponse::class.java)
+        val injectedTestCase = TestReportItemDto(
+            testId = injectedTestId,
+            category = injectedCategory,
+            shortTitle = injectedShortTitle,
+            issueLink = "https://youtrack.test/issue/INJECT-1",
+            readyDate = null,
+            generalStatus = GeneralTestStatus.DONE.value,
+            scenario = injectedScenario,
+            notes = "Добавлено через прокси",
+            updatedAt = null,
+        )
+        val modifiedResponse = reportResponse.copy(items = reportResponse.items + injectedTestCase)
+
+        mainPage.shouldNotSeeTestCase(injectedTestId)
+
+        ProxyConfig.replaceResponseBody(Paths.REPORTS.path, JsonUtils.toJson(modifiedResponse)) {
+            mainPage.refreshCurrentPage()
+            mainPage.shouldSeeTestCase(injectedTestId)
+        }
     }
 }
