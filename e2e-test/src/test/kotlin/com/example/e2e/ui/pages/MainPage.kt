@@ -5,6 +5,7 @@ import com.codeborne.selenide.Condition.disappear
 import com.codeborne.selenide.Condition.enabled
 import com.codeborne.selenide.Condition.hidden
 import com.codeborne.selenide.Condition.text
+import com.codeborne.selenide.Condition.value
 import com.codeborne.selenide.Condition.visible
 import com.codeborne.selenide.ElementsCollection
 import com.codeborne.selenide.Selenide.*
@@ -85,6 +86,11 @@ class MainPage {
 
     fun shouldNotSeeTestCase(testId: String) {
         tableRowByTestId(testId).should(disappear)
+    }
+
+    fun shouldHaveReadyDate(testId: String, expectedDate: String) {
+        val row = tableRowByTestId(testId).shouldBe(visible)
+        row.find("input[type='date']").shouldBe(visible).shouldHave(value(expectedDate))
     }
 
     private fun tableRowByTestId(testId: String): SelenideElement =

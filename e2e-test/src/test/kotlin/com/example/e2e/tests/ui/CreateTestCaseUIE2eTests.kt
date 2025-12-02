@@ -1,5 +1,6 @@
 package com.example.e2e.tests.ui
 
+import com.codeborne.selenide.Selenide.closeWebDriver
 import com.example.e2e.dto.GeneralTestStatus
 import com.example.e2e.dto.TestReportItemDto
 import com.example.e2e.dto.TestReportResponse
@@ -11,21 +12,14 @@ import com.example.e2e.ui.config.ProxyInitializer
 import com.example.e2e.ui.pages.MainPage
 import com.example.e2e.utils.JsonUtils
 import com.example.e2e.utils.step
-import com.codeborne.selenide.Selenide.closeWebDriver
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.DisplayName
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.TestInfo
+import org.junit.jupiter.api.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@DisplayName("UI: Работа с главной страницей")
-class MainPageTest {
+@DisplayName("UI: Создание записей на главной странице")
+class CreateTestCaseUIE2eTests {
 
     private val mainPage = MainPage()
     private var proxyThread: Thread? = null
@@ -139,4 +133,5 @@ class MainPageTest {
             step("Проверяем, что тест-кейс отображается после подмены") { mainPage.shouldSeeTestCase(injectedTestId) }
         }
     }
+
 }
