@@ -688,7 +688,7 @@ export default function App() {
                                   value={releaseNameDraft}
                                   onChange={(e) => setReleaseNameDraft(e.target.value)}
                                   placeholder="Release name"
-                                  className="cell-input"
+                                  className="cell-input release-input"
                                   disabled={regressionSaving}
                                 />
                                 <button
