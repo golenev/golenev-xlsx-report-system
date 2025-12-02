@@ -14,6 +14,7 @@ import com.example.e2e.utils.step
 import com.codeborne.selenide.Selenide.closeWebDriver
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
+import io.qameta.allure.AllureId
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInfo
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@DisplayName("UI: Работа с главной страницей")
 class MainPageTest {
 
     private val mainPage = MainPage()
@@ -54,6 +56,7 @@ class MainPageTest {
     }
 
     @Test
+    @AllureId("1")
     @DisplayName("Создание и удаление тест-кейса на главной странице")
     fun shouldCreateAndDeleteTestCase() {
         val testId = "UI-4565"
@@ -63,17 +66,19 @@ class MainPageTest {
         val generalStatus = "Готово"
         val detailedScenario = "Пользователь создаёт и удаляет тест-кейс"
 
-        mainPage.open()
-        mainPage.startNewRow()
-        mainPage.fillTestId(testId)
-        mainPage.fillCategory(category)
-        mainPage.fillShortTitle(shortTitle)
-        mainPage.fillIssueLink(issueLink)
-        mainPage.selectGeneralStatus(generalStatus)
-        mainPage.fillDetailedScenario(detailedScenario)
+        step("Открываем главную страницу") { mainPage.open() }
+        step("Начинаем создание новой строки") { mainPage.startNewRow() }
+        step("Заполняем поле Test ID значением $testId") { mainPage.fillTestId(testId) }
+        step("Заполняем поле Category / Feature значением $category") { mainPage.fillCategory(category) }
+        step("Заполняем поле Short Title значением $shortTitle") { mainPage.fillShortTitle(shortTitle) }
+        step("Заполняем поле YouTrack Issue Link значением $issueLink") { mainPage.fillIssueLink(issueLink) }
+        step("Выбираем значение General Test Status: $generalStatus") { mainPage.selectGeneralStatus(generalStatus) }
+        step("Заполняем поле Detailed Scenario значением $detailedScenario") { mainPage.fillDetailedScenario(detailedScenario) }
 
-        val requestBody = ProxyConfig.interceptRequestBody(Paths.REPORTS.path) {
-            mainPage.saveNewRow()
+        val requestBody = step("Сохраняем новую строку и перехватываем запрос") {
+            ProxyConfig.interceptRequestBody(Paths.REPORTS.path) {
+                step("Сохраняем новую строку") { mainPage.saveNewRow() }
+            }
         }
 
         val createdTest = JsonUtils.parse(requestBody, TestUpsertItem::class.java)
@@ -89,12 +94,13 @@ class MainPageTest {
             }
         }
 
-        mainPage.shouldSeeTestCase(testId)
-        mainPage.deleteTestCase(testId)
-        mainPage.shouldNotSeeTestCase(testId)
+        step("Проверяем, что созданный тест-кейс отображается в таблице") { mainPage.shouldSeeTestCase(testId) }
+        step("Удаляем созданный тест-кейс") { mainPage.deleteTestCase(testId) }
+        step("Убеждаемся, что тест-кейс удалён") { mainPage.shouldNotSeeTestCase(testId) }
     }
 
     @Test
+    @AllureId("2")
     @DisplayName("Отображение тест-кейса из подменённого ответа")
     fun shouldDisplayTestCaseFromReplacedResponse() {
         val injectedTestId = "UI-9999"
@@ -102,29 +108,35 @@ class MainPageTest {
         val injectedShortTitle = "Injected via proxy"
         val injectedScenario = "Просмотр тест-кейса из подменённого ответа"
 
-        val initialResponse = ProxyConfig.interceptResponseBody(Paths.REPORTS.path) {
-            mainPage.open()
+        val initialResponse = step("Открываем главную страницу и перехватываем первый ответ") {
+            ProxyConfig.interceptResponseBody(Paths.REPORTS.path) {
+                step("Открываем главную страницу") { mainPage.open() }
+            }
         }
 
         val reportResponse = JsonUtils.parse(initialResponse, TestReportResponse::class.java)
-        val injectedTestCase = TestReportItemDto(
-            testId = injectedTestId,
-            category = injectedCategory,
-            shortTitle = injectedShortTitle,
-            issueLink = "https://youtrack.test/issue/INJECT-1",
-            readyDate = null,
-            generalStatus = GeneralTestStatus.DONE.value,
-            scenario = injectedScenario,
-            notes = "Добавлено через прокси",
-            updatedAt = null,
-        )
-        val modifiedResponse = reportResponse.copy(items = reportResponse.items + injectedTestCase)
+        val injectedTestCase = step("Готовим тестовый кейс для подмены ответа") {
+            TestReportItemDto(
+                testId = injectedTestId,
+                category = injectedCategory,
+                shortTitle = injectedShortTitle,
+                issueLink = "https://youtrack.test/issue/INJECT-1",
+                readyDate = null,
+                generalStatus = GeneralTestStatus.DONE.value,
+                scenario = injectedScenario,
+                notes = "Добавлено через прокси",
+                updatedAt = null,
+            )
+        }
+        val modifiedResponse = step("Формируем подменённый ответ с новым кейсом") {
+            reportResponse.copy(items = reportResponse.items + injectedTestCase)
+        }
 
-        mainPage.shouldNotSeeTestCase(injectedTestId)
+        step("Проверяем, что тест-кейс отсутствует до подмены") { mainPage.shouldNotSeeTestCase(injectedTestId) }
 
         ProxyConfig.replaceResponseBody(Paths.REPORTS.path, JsonUtils.toJson(modifiedResponse)) {
-            mainPage.refreshCurrentPage()
-            mainPage.shouldSeeTestCase(injectedTestId)
+            step("Обновляем страницу после подмены ответа") { mainPage.refreshCurrentPage() }
+            step("Проверяем, что тест-кейс отображается после подмены") { mainPage.shouldSeeTestCase(injectedTestId) }
         }
     }
 }
