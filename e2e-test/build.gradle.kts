@@ -17,6 +17,7 @@ dependencies {
     val exposedVersion = "0.49.0"
     val allureVersion = "2.25.0"
     val selenideVersion = "7.12.1"
+    val fakerVersion = "2.2.2"
 
     testImplementation(kotlin("stdlib"))
     testImplementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
@@ -37,6 +38,7 @@ dependencies {
 
     testImplementation("com.codeborne:selenide:$selenideVersion")
     testImplementation("com.codeborne:selenide-proxy:7.12.1")
+    testImplementation("net.datafaker:datafaker:$fakerVersion")
 
 
     testImplementation("io.kotest:kotest-assertions-core:5.9.1")

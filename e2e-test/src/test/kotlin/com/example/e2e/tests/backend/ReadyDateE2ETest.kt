@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 class ReadyDateE2ETest {
 
