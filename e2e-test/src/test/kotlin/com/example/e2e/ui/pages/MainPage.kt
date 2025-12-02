@@ -2,6 +2,7 @@ package com.example.e2e.ui.pages
 
 import com.codeborne.selenide.CollectionCondition
 import com.codeborne.selenide.Condition.disappear
+import com.codeborne.selenide.Condition.disabled
 import com.codeborne.selenide.Condition.enabled
 import com.codeborne.selenide.Condition.hidden
 import com.codeborne.selenide.Condition.text
@@ -24,6 +25,14 @@ class MainPage {
     private val generalStatusDropdown: SelenideElement = newRow.`$$`("div.status-dropdown").first()
     private val prioritySelect: SelenideElement = newRow.find("select.cell-input")
     private val newRowSaveButton: SelenideElement = newRow.find("button.save-btn")
+
+    fun shouldDisableAddRow() {
+        addRowButton.shouldBe(disabled)
+    }
+
+    fun shouldEnableAddRow() {
+        addRowButton.shouldBe(enabled)
+    }
 
     fun open() {
         open("/")
@@ -98,6 +107,25 @@ class MainPage {
         row.find("input[type='date']").shouldBe(visible).shouldHave(value(expectedDate))
     }
 
+    fun updateCategory(testId: String, newValue: String) {
+        categoryInput(testId).shouldBe(enabled).setValue(newValue)
+    }
+
+    fun focusOnCategory(testId: String) {
+        categoryInput(testId).shouldBe(visible).click()
+    }
+
+    fun blurFocusedElement() {
+        executeJavaScript<Unit>("document.activeElement && document.activeElement.blur()")
+    }
+
     private fun tableRowByTestId(testId: String): SelenideElement =
         element(tableRowSelectorPattern.format(testId))
+
+    private fun categoryInput(testId: String): SelenideElement {
+        val row = tableRowByTestId(testId).shouldBe(visible)
+        val inputs = row.findAll("input.cell-input")
+        inputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
+        return inputs.first()
+    }
 }
