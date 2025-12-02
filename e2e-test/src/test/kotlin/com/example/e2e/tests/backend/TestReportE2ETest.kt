@@ -10,6 +10,7 @@ import com.example.e2e.utils.step
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.qameta.allure.AllureId
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.junit.jupiter.api.AfterEach
@@ -33,6 +34,7 @@ class TestReportE2ETest {
         }
     }
 
+    @AllureId("169")
     @Test
     @DisplayName("Создаем запись через batch и проверяем отображение в отчете")
     fun createAndReadReportThroughApi() {

@@ -9,6 +9,7 @@ import com.example.e2e.utils.step
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.qameta.allure.AllureId
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -19,6 +20,7 @@ class RequiredFieldsE2ETest {
 
     private val reportService = ReportService()
 
+    @AllureId("168")
     @ParameterizedTest
     @MethodSource("missingFieldProvider")
     @DisplayName("Отсутствующие обязательные поля приводят к 400")

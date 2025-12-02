@@ -9,13 +9,13 @@ import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
 import com.example.e2e.utils.step
 import io.kotest.matchers.shouldBe
+import io.qameta.allure.AllureId
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.deleteWhere
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 class ReadyDateE2ETest {
 
@@ -30,6 +30,7 @@ class ReadyDateE2ETest {
         }
     }
 
+    @AllureId("167")
     @Test
     @DisplayName("Готовая дата выставляется автоматически и не изменяется после обновления")
     fun readyDateIsAutoAssignedAndImmutable() {

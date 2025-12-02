@@ -56,7 +56,7 @@ class MainPageTest {
     }
 
     @Test
-    @AllureId("1")
+    @AllureId("165")
     @DisplayName("Создание и удаление тест-кейса на главной странице")
     fun shouldCreateAndDeleteTestCase() {
         val testId = "UI-4565"
@@ -100,7 +100,7 @@ class MainPageTest {
     }
 
     @Test
-    @AllureId("2")
+    @AllureId("166")
     @DisplayName("Отображение тест-кейса из подменённого ответа")
     fun shouldDisplayTestCaseFromReplacedResponse() {
         val injectedTestId = "UI-9999"
