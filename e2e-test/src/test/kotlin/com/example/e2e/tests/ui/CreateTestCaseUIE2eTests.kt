@@ -2,6 +2,7 @@ package com.example.e2e.tests.ui
 
 import com.codeborne.selenide.Selenide.closeWebDriver
 import com.example.e2e.dto.GeneralTestStatus
+import com.example.e2e.dto.Priority
 import com.example.e2e.dto.TestReportItemDto
 import com.example.e2e.dto.TestReportResponse
 import com.example.e2e.dto.TestUpsertItem
@@ -58,6 +59,7 @@ class CreateTestCaseUIE2eTests {
         val shortTitle = "Smoke title"
         val issueLink = "https://youtrack.test/issue/SMK-1"
         val generalStatus = "Готово"
+        val priority = Priority.HIGH.value
         val detailedScenario = "Пользователь создаёт и удаляет тест-кейс"
 
         step("Открываем главную страницу") { mainPage.open() }
@@ -67,6 +69,7 @@ class CreateTestCaseUIE2eTests {
         step("Заполняем поле Short Title значением $shortTitle") { mainPage.fillShortTitle(shortTitle) }
         step("Заполняем поле YouTrack Issue Link значением $issueLink") { mainPage.fillIssueLink(issueLink) }
         step("Выбираем значение General Test Status: $generalStatus") { mainPage.selectGeneralStatus(generalStatus) }
+        step("Выбираем значение Priority: $priority") { mainPage.selectPriority(priority) }
         step("Заполняем поле Detailed Scenario значением $detailedScenario") { mainPage.fillDetailedScenario(detailedScenario) }
 
         val requestBody = step("Сохраняем новую строку и перехватываем запрос") {
@@ -84,6 +87,7 @@ class CreateTestCaseUIE2eTests {
                 createdTest.shortTitle shouldBe shortTitle
                 createdTest.issueLink shouldBe issueLink
                 createdTest.generalStatus shouldBe generalStatus
+                createdTest.priority shouldBe priority
                 createdTest.scenario shouldBe detailedScenario
             }
         }
@@ -101,6 +105,7 @@ class CreateTestCaseUIE2eTests {
         val injectedCategory = "Proxy smoke"
         val injectedShortTitle = "Injected via proxy"
         val injectedScenario = "Просмотр тест-кейса из подменённого ответа"
+        val injectedPriority = Priority.MEDIUM.value
 
         val initialResponse = step("Открываем главную страницу и перехватываем первый ответ") {
             ProxyConfig.interceptResponseBody(Paths.REPORTS.path) {
@@ -117,6 +122,7 @@ class CreateTestCaseUIE2eTests {
                 issueLink = "https://youtrack.test/issue/INJECT-1",
                 readyDate = null,
                 generalStatus = GeneralTestStatus.DONE.value,
+                priority = injectedPriority,
                 scenario = injectedScenario,
                 notes = "Добавлено через прокси",
                 updatedAt = null,

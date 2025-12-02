@@ -22,6 +22,7 @@ class MainPage {
     private val newRowInputs: ElementsCollection = newRow.`$$`("input.cell-input")
     private val newRowTextAreas: ElementsCollection = newRow.`$$`("textarea.cell-textarea")
     private val generalStatusDropdown: SelenideElement = newRow.`$$`("div.status-dropdown").first()
+    private val prioritySelect: SelenideElement = newRow.find("select.cell-input")
     private val newRowSaveButton: SelenideElement = newRow.find("button.save-btn")
 
     fun open() {
@@ -63,6 +64,10 @@ class MainPage {
         generalStatusDropdown.shouldBe(visible)
         generalStatusDropdown.find("summary").click()
         generalStatusDropdown.findAll("button.status-option").findBy(text(status)).click()
+    }
+
+    fun selectPriority(priority: String) {
+        prioritySelect.shouldBe(visible).selectOption(priority)
     }
 
     fun fillDetailedScenario(scenario: String) {

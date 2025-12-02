@@ -33,6 +33,9 @@ data class TestReportEntity(
     @Column(name = "general_status")
     var generalStatus: String? = null,
 
+    @Column(name = "priority", nullable = false)
+    var priority: String,
+
     @Column(name = "scenario", columnDefinition = "text")
     var scenario: String? = null,
 

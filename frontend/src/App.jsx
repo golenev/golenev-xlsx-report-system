@@ -10,6 +10,7 @@ const GENERAL_STATUS_OPTIONS = [
 ];
 
 const REGRESSION_STATUS_OPTIONS = ['PASSED', 'FAILED', 'SKIPPED'];
+const PRIORITY_OPTIONS = ['Critical', 'Blocker', 'High', 'Medium', 'Low', 'Trivial'];
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 const FIELD_DEFINITIONS = [
@@ -19,6 +20,7 @@ const FIELD_DEFINITIONS = [
   { key: 'issueLink', label: 'YouTrack Issue Link', editable: true, type: 'text' },
   { key: 'readyDate', label: 'Ready Date', editable: true, type: 'date' },
   { key: 'generalStatus', label: 'General Test Status', editable: true, type: 'generalStatus' },
+  { key: 'priority', label: 'Priority', editable: true, type: 'priority' },
   { key: 'scenario', label: 'Detailed Scenario', editable: true, type: 'textarea' },
   { key: 'notes', label: 'Notes', editable: true, type: 'textarea' }
 ];
@@ -36,7 +38,7 @@ const ACTION_COLUMN = { key: 'actions', label: '', type: 'actions', editable: fa
 
 function createEmptyItem() {
   return FIELD_DEFINITIONS.reduce((acc, field) => {
-    acc[field.key] = '';
+    acc[field.key] = field.key === 'priority' ? PRIORITY_OPTIONS[3] : '';
     return acc;
   }, {});
 }
@@ -172,6 +174,23 @@ function RegressionStatusSelect({ value, onChange, disabled }) {
     >
       <option value="">—</option>
       {REGRESSION_STATUS_OPTIONS.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function PrioritySelect({ value, onChange, disabled = false }) {
+  return (
+    <select
+      className="cell-input"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+    >
+      {PRIORITY_OPTIONS.map((option) => (
         <option key={option} value={option}>
           {option}
         </option>
@@ -490,6 +509,11 @@ export default function App() {
     sendUpdate(item.testId, { generalStatus: value === '' ? null : value });
   };
 
+  const handlePriorityChange = (item, value) => {
+    handleFieldChange(item.testId, 'priority', value);
+    sendUpdate(item.testId, { priority: value });
+  };
+
   const handleDelete = async (testId) => {
     if (!window.confirm(`Delete test ${testId}?`)) {
       return;
@@ -700,6 +724,11 @@ export default function App() {
                             value={value}
                             onChange={(newValue) => handleNewFieldChange(index, column.key, newValue)}
                           />
+                        ) : column.type === 'priority' ? (
+                          <PrioritySelect
+                            value={value || PRIORITY_OPTIONS[3]}
+                            onChange={(newValue) => handleNewFieldChange(index, column.key, newValue)}
+                          />
                         ) : column.type === 'regression' ? (
                           <div className="regression-cell-content">
                             <RegressionStatusSelect value="" onChange={() => {}} disabled />
@@ -778,6 +807,12 @@ export default function App() {
                             <StatusDropdown
                               value={value}
                               onChange={(newValue) => handleGeneralStatusChange(item, newValue)}
+                              disabled={saving}
+                            />
+                          ) : column.type === 'priority' ? (
+                            <PrioritySelect
+                              value={value || PRIORITY_OPTIONS[3]}
+                              onChange={(newValue) => handlePriorityChange(item, newValue)}
                               disabled={saving}
                             />
                           ) : (

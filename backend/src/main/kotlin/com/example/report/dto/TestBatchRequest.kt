@@ -14,6 +14,7 @@ data class TestUpsertItem(
     val issueLink: String? = null,
     val readyDate: String? = null,
     val generalStatus: String? = null,
+    val priority: String? = null,
     val scenario: String? = null,
     val notes: String? = null
 )

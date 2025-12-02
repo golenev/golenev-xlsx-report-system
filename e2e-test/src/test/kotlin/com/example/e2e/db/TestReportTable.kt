@@ -16,6 +16,7 @@ object TestReportTable : Table("test_report") {
     val issueLink = text("issue_link").nullable()
     val readyDate = date("ready_date").nullable()
     val generalStatus = text("general_status").nullable()
+    val priority = text("priority")
     val scenario = text("scenario").nullable()
     val notes = text("notes").nullable()
     val run1Status = text("run_1_status").nullable()
@@ -36,6 +37,7 @@ data class TestReportRow(
     val issueLink: String?,
     val readyDate: LocalDate?,
     val generalStatus: String?,
+    val priority: String,
     val scenario: String?,
     val notes: String?,
     val run1Status: String?,
@@ -54,6 +56,7 @@ fun mapToTestReport(row: ResultRow): TestReportRow = TestReportRow(
     issueLink = row[TestReportTable.issueLink],
     readyDate = row[TestReportTable.readyDate],
     generalStatus = row[TestReportTable.generalStatus],
+    priority = row[TestReportTable.priority],
     scenario = row[TestReportTable.scenario],
     notes = row[TestReportTable.notes],
     run1Status = row[TestReportTable.run1Status],

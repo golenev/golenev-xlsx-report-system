@@ -1,0 +1,2 @@
+ALTER TABLE test_report
+    ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'Medium';

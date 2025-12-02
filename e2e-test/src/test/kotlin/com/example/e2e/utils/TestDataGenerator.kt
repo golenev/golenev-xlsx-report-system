@@ -1,6 +1,7 @@
 package com.example.e2e.utils
 
 import com.example.e2e.dto.GeneralTestStatus
+import com.example.e2e.dto.Priority
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
@@ -24,6 +25,7 @@ object TestDataGenerator {
                 issueLink = faker.internet().url(),
                 readyDate = readyDate.toString(),
                 generalStatus = GeneralTestStatus.entries.map { it.value }.random(),
+                priority = Priority.random().value,
                 scenario = "${faker.chuckNorris().fact()}\\n2 ${faker.chuckNorris().fact()}\\n3 ${
                     faker.chuckNorris().fact()
                 }\\n4",
