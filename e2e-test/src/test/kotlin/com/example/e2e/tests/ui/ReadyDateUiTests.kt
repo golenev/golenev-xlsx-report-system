@@ -1,17 +1,28 @@
 package com.example.e2e.tests.ui
 
 import com.example.e2e.dto.Priority
+import com.example.e2e.ui.config.DriverConfig
 import com.example.e2e.ui.pages.MainPage
 import com.example.e2e.utils.step
 import io.qameta.allure.AllureId
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.time.LocalDate
 
-@DisplayName("UI: Автоматическое проставление Ready Date при добалвении тест кейса")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@DisplayName("UI: Автоматическое проставление Ready Date при добавлении тест кейса")
 class ReadyDateUiTests {
 
     private val mainPage = MainPage()
+
+    @BeforeAll
+    fun setUp() {
+        step("Настраиваем драйвер Selenide") {
+            DriverConfig.setup()
+        }
+    }
 
     @Test
     @AllureId("170")

@@ -1,16 +1,27 @@
 package com.example.e2e.tests.ui
 
 import com.example.e2e.dto.Priority
+import com.example.e2e.ui.config.DriverConfig
 import com.example.e2e.ui.pages.MainPage
 import com.example.e2e.utils.step
 import io.qameta.allure.AllureId
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("UI: Блокировка кнопки Add Row при редактировании")
 class AddRowLockingUiTests {
 
     private val mainPage = MainPage()
+
+    @BeforeAll
+    fun setUp() {
+        step("Настраиваем драйвер Selenide") {
+            DriverConfig.setup()
+        }
+    }
 
     @Test
     @AllureId("171")
@@ -41,6 +52,10 @@ class AddRowLockingUiTests {
             mainPage.fillDetailedScenario(detailedScenario)
         }
 
+        step("Кнопка Add Row всё ещё заблокирована во время добавления новой строки") {
+            mainPage.shouldDisableAddRow()
+        }
+
         step("Сохраняем новую строку") { mainPage.saveNewRow() }
         step("Кнопка Add Row разблокирована после сохранения") { mainPage.shouldEnableAddRow() }
         step("Проверяем, что тест-кейс отображается в таблице") { mainPage.shouldSeeTestCase(testId) }
@@ -54,8 +69,8 @@ class AddRowLockingUiTests {
             mainPage.shouldDisableAddRow()
         }
 
-        step("Завершаем редактирование и убираем фокус") {
-            mainPage.blurFocusedElement()
+        step("Убираем фокус из инпута, чтобы выполнился гет запрос в фоне") {
+            mainPage.unFocus()
         }
 
         step("Кнопка Add Row снова доступна после завершения редактирования") {

@@ -9,8 +9,13 @@ import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.value
 import com.codeborne.selenide.Condition.visible
 import com.codeborne.selenide.ElementsCollection
-import com.codeborne.selenide.Selenide.*
+import com.codeborne.selenide.Selenide
+import com.codeborne.selenide.Selenide.`$`
+import com.codeborne.selenide.Selenide.`$$`
+import com.codeborne.selenide.Selenide.element
 import com.codeborne.selenide.SelenideElement
+import com.example.e2e.utils.CENTER
+import com.example.e2e.utils.typeOf
 import org.junit.jupiter.api.DisplayName
 
 @DisplayName("UI: Главная страница")
@@ -27,7 +32,9 @@ class MainPage {
     private val newRowSaveButton: SelenideElement = newRow.find("button.save-btn")
 
     fun shouldDisableAddRow() {
-        addRowButton.shouldBe(disabled)
+        addRowButton
+            .scrollIntoView(CENTER)
+            .shouldBe(disabled)
     }
 
     fun shouldEnableAddRow() {
@@ -35,7 +42,7 @@ class MainPage {
     }
 
     fun open() {
-        open("/")
+        Selenide.open("/")
         headerTitle.shouldHave(text("Test Report"))
     }
 
@@ -51,22 +58,22 @@ class MainPage {
 
     fun fillTestId(testId: String) {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
-        newRowInputs.first().type(testId)
+        newRowInputs.first().typeOf(testId)
     }
 
     fun fillCategory(category: String) {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(2))
-        newRowInputs[1].type(category)
+        newRowInputs[1].typeOf(category)
     }
 
     fun fillShortTitle(shortTitle: String) {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(3))
-        newRowInputs[2].type(shortTitle)
+        newRowInputs[2].typeOf(shortTitle)
     }
 
     fun fillIssueLink(issueLink: String) {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(4))
-        newRowInputs[3].type(issueLink)
+        newRowInputs[3].typeOf(issueLink)
     }
 
     fun selectGeneralStatus(status: String) {
@@ -81,7 +88,7 @@ class MainPage {
 
     fun fillDetailedScenario(scenario: String) {
         newRowTextAreas.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
-        newRowTextAreas.first().type(scenario)
+        newRowTextAreas.first().typeOf(scenario)
     }
 
     fun saveNewRow() {
@@ -90,7 +97,7 @@ class MainPage {
     }
 
     fun shouldSeeTestCase(testId: String) {
-        tableRowByTestId(testId).shouldBe(visible)
+        tableRowByTestId(testId).scrollIntoView(CENTER).shouldBe(visible)
     }
 
     fun deleteTestCase(testId: String) {
@@ -108,15 +115,15 @@ class MainPage {
     }
 
     fun updateCategory(testId: String, newValue: String) {
-        categoryInput(testId).shouldBe(enabled).setValue(newValue)
+        categoryInput(testId).shouldBe(enabled).typeOf(newValue)
+    }
+
+    fun unFocus() {
+        `$`("body").click()
     }
 
     fun focusOnCategory(testId: String) {
         categoryInput(testId).shouldBe(visible).click()
-    }
-
-    fun blurFocusedElement() {
-        executeJavaScript<Unit>("document.activeElement && document.activeElement.blur()")
     }
 
     private fun tableRowByTestId(testId: String): SelenideElement =
