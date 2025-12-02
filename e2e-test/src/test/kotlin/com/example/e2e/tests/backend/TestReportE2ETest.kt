@@ -10,6 +10,7 @@ import com.example.e2e.utils.step
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.qameta.allure.AllureId
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.junit.jupiter.api.AfterEach
@@ -33,6 +34,7 @@ class TestReportE2ETest {
         }
     }
 
+    @AllureId("169")
     @Test
     @DisplayName("Создаем запись через batch и проверяем отображение в отчете")
     fun createAndReadReportThroughApi() {
@@ -66,14 +68,13 @@ class TestReportE2ETest {
         val itemsById = report.items.associateBy { it.testId }
 
         step("Проверяем все записи из batch-запроса") {
-            batchRequest.items.forEach { source ->
-                val testId = source.testId.shouldNotBeNull()
+            batchRequest.items.forEach {
+                val testId = it.testId.shouldNotBeNull()
                 val reportItem = itemsById[testId].shouldNotBeNull()
-
-                reportItem.category shouldBe source.category
-                reportItem.shortTitle shouldBe source.shortTitle
+                reportItem.category shouldBe it.category
+                reportItem.shortTitle shouldBe it.shortTitle
                 reportItem.readyDate shouldBe today
-                reportItem.generalStatus shouldBe source.generalStatus
+                reportItem.generalStatus shouldBe it.generalStatus
                 reportItem.updatedAt.shouldNotBeNull()
             }
         }

@@ -9,8 +9,9 @@ import com.codeborne.selenide.Condition.visible
 import com.codeborne.selenide.ElementsCollection
 import com.codeborne.selenide.Selenide.*
 import com.codeborne.selenide.SelenideElement
-import com.example.e2e.utils.step
+import org.junit.jupiter.api.DisplayName
 
+@DisplayName("UI: Главная страница")
 class MainPage {
 
     private val headerTitle: SelenideElement = element("h1")
@@ -22,67 +23,67 @@ class MainPage {
     private val generalStatusDropdown: SelenideElement = newRow.`$$`("div.status-dropdown").first()
     private val newRowSaveButton: SelenideElement = newRow.find("button.save-btn")
 
-    fun open() = step("Открываем главную страницу") {
+    fun open() {
         open("/")
         headerTitle.shouldHave(text("Test Report"))
     }
 
-    fun refreshCurrentPage() = step("Перезагружаем текущую страницу") {
+    fun refreshCurrentPage() {
         com.codeborne.selenide.Selenide.refresh()
         headerTitle.shouldHave(text("Test Report"))
     }
 
-    fun startNewRow() = step("Нажимаем кнопку Add Row") {
+    fun startNewRow() {
         addRowButton.shouldBe(enabled).click()
         newRow.shouldBe(visible)
     }
 
-    fun fillTestId(testId: String) = step("Заполняем поле Test ID значением $testId") {
+    fun fillTestId(testId: String) {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
         newRowInputs.first().type(testId)
     }
 
-    fun fillCategory(category: String) = step("Заполняем поле Category / Feature значением $category") {
+    fun fillCategory(category: String) {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(2))
         newRowInputs[1].type(category)
     }
 
-    fun fillShortTitle(shortTitle: String) = step("Заполняем поле Short Title значением $shortTitle") {
+    fun fillShortTitle(shortTitle: String) {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(3))
         newRowInputs[2].type(shortTitle)
     }
 
-    fun fillIssueLink(issueLink: String) = step("Заполняем поле YouTrack Issue Link значением $issueLink") {
+    fun fillIssueLink(issueLink: String) {
         newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(4))
         newRowInputs[3].type(issueLink)
     }
 
-    fun selectGeneralStatus(status: String) = step("Выбираем значение General Test Status: $status") {
+    fun selectGeneralStatus(status: String) {
         generalStatusDropdown.shouldBe(visible)
         generalStatusDropdown.find("summary").click()
         generalStatusDropdown.findAll("button.status-option").findBy(text(status)).click()
     }
 
-    fun fillDetailedScenario(scenario: String) = step("Заполняем поле Detailed Scenario значением $scenario") {
+    fun fillDetailedScenario(scenario: String) {
         newRowTextAreas.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
         newRowTextAreas.first().type(scenario)
     }
 
-    fun saveNewRow() = step("Сохраняем новую строку") {
+    fun saveNewRow() {
         newRowSaveButton.shouldBe(enabled).click()
         newRow.shouldBe(hidden)
     }
 
-    fun shouldSeeTestCase(testId: String) = step("Проверяем, что тест-кейс $testId отображается в таблице") {
+    fun shouldSeeTestCase(testId: String) {
         tableRowByTestId(testId).shouldBe(visible)
     }
 
-    fun deleteTestCase(testId: String) = step("Удаляем тест-кейс $testId") {
+    fun deleteTestCase(testId: String) {
         val row = tableRowByTestId(testId).shouldBe(visible)
         row.find("button.delete-btn").click()
     }
 
-    fun shouldNotSeeTestCase(testId: String) = step("Проверяем, что тест-кейс $testId удалён из таблицы") {
+    fun shouldNotSeeTestCase(testId: String) {
         tableRowByTestId(testId).should(disappear)
     }
 

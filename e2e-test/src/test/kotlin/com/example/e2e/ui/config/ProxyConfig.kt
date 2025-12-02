@@ -7,11 +7,11 @@ import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import io.qameta.allure.Step
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.util.UUID
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
-import java.util.function.Predicate
+import org.junit.jupiter.api.DisplayName
 
+@DisplayName("UI: Конфигурация прокси")
 object ProxyConfig {
 
     @Step("Подготовка прокси сервера")
@@ -24,20 +24,22 @@ object ProxyConfig {
         endpoint: String,
         run: () -> Unit,
     ): String = runBlocking {
-        if (!WebDriverRunner.hasWebDriverStarted()) {
-            open()
-        }
-        val deferredBody = CompletableDeferred<String>()
-        getSelenideProxy().addRequestFilter(UUID.randomUUID().toString()) { _, httpMessageContents, httpMessageInfo ->
-            val isEndpointMatch = httpMessageInfo.url.contains(endpoint)
-            val isPostMethod = httpMessageInfo.originalRequest.method().name().equals("post", ignoreCase = true)
-            if (isEndpointMatch && isPostMethod && deferredBody.isActive) {
-                deferredBody.complete(httpMessageContents.textContents)
+        withTimeout(15_000) {
+            if (!WebDriverRunner.hasWebDriverStarted()) {
+                open()
             }
-            null // не модифицируем запрос
+            val deferredBody = CompletableDeferred<String>()
+            getSelenideProxy().addRequestFilter(UUID.randomUUID().toString()) { _, httpMessageContents, httpMessageInfo ->
+                val isEndpointMatch = httpMessageInfo.url.contains(endpoint)
+                val isPostMethod = httpMessageInfo.originalRequest.method().name().equals("post", ignoreCase = true)
+                if (isEndpointMatch && isPostMethod && deferredBody.isActive) {
+                    deferredBody.complete(httpMessageContents.textContents)
+                }
+                null // не модифицируем запрос
+            }
+            run()
+            deferredBody.await()
         }
-        run()
-        deferredBody.await()
     }
 
     @Step("Перехватываем ответ {0} и асинхронно возвращаем его тело")
@@ -45,18 +47,20 @@ object ProxyConfig {
         endpoint: String,
         run: () -> Unit,
     ): String = runBlocking {
-        if (!WebDriverRunner.hasWebDriverStarted()) {
-            open()
-        }
-        val deferredBody = CompletableDeferred<String>()
-        getSelenideProxy().addResponseFilter(UUID.randomUUID().toString()) { _, httpMessageContents, httpMessageInfo ->
-            val isEndpointMatch = httpMessageInfo.url.contains(endpoint)
-            if (isEndpointMatch && deferredBody.isActive) {
-                deferredBody.complete(httpMessageContents.textContents)
+        withTimeout(15_000) {
+            if (!WebDriverRunner.hasWebDriverStarted()) {
+                open()
             }
+            val deferredBody = CompletableDeferred<String>()
+            getSelenideProxy().addResponseFilter(UUID.randomUUID().toString()) { _, httpMessageContents, httpMessageInfo ->
+                val isEndpointMatch = httpMessageInfo.url.contains(endpoint)
+                if (isEndpointMatch && deferredBody.isActive) {
+                    deferredBody.complete(httpMessageContents.textContents)
+                }
+            }
+            run()
+            deferredBody.await()
         }
-        run()
-        deferredBody.await()
     }
 
     @Step("Перехватываем ответ {0} и подставляем переданное тело")
@@ -80,6 +84,7 @@ object ProxyConfig {
     }
 }
 
+@DisplayName("UI: Инициализация прокси")
 class ProxyInitializer() : Runnable {
     override fun run() {
         ProxyConfig.setUpProxy()
