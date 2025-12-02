@@ -1,6 +1,6 @@
-package com.example.e2e.tests.ui
+package com.example.e2e.tests.ui.proxy
 
-import com.codeborne.selenide.Selenide.closeWebDriver
+import com.codeborne.selenide.Selenide
 import com.example.e2e.dto.GeneralTestStatus
 import com.example.e2e.dto.Priority
 import com.example.e2e.dto.TestReportItemDto
@@ -16,7 +16,13 @@ import com.example.e2e.utils.step
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
+import org.junit.jupiter.api.TestInstance
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("UI: Создание записей на главной странице")
@@ -25,15 +31,10 @@ class CreateTestCaseUIE2eTests {
     private val mainPage = MainPage()
     private var proxyThread: Thread? = null
 
-    @BeforeAll
-    fun setUp() {
-        step("Настраиваем драйвер Selenide") {
-            DriverConfig.setup()
-        }
-    }
-
     @BeforeEach
     fun setUpProxy(testInfo: TestInfo) {
+        DriverConfig.setup()
+
         step("Запускаем прокси для теста ${testInfo.displayName}") {
             proxyThread = Thread(ProxyInitializer()).also {
                 it.start()
@@ -45,7 +46,7 @@ class CreateTestCaseUIE2eTests {
     @AfterEach
     fun tearDown() {
         step("Закрываем драйвер и прокси") {
-            closeWebDriver()
+            Selenide.closeWebDriver()
             proxyThread = null
         }
     }
@@ -70,7 +71,11 @@ class CreateTestCaseUIE2eTests {
         step("Заполняем поле YouTrack Issue Link значением $issueLink") { mainPage.fillIssueLink(issueLink) }
         step("Выбираем значение General Test Status: $generalStatus") { mainPage.selectGeneralStatus(generalStatus) }
         step("Выбираем значение Priority: $priority") { mainPage.selectPriority(priority) }
-        step("Заполняем поле Detailed Scenario значением $detailedScenario") { mainPage.fillDetailedScenario(detailedScenario) }
+        step("Заполняем поле Detailed Scenario значением $detailedScenario") {
+            mainPage.fillDetailedScenario(
+                detailedScenario
+            )
+        }
 
         val requestBody = step("Сохраняем новую строку и перехватываем запрос") {
             ProxyConfig.interceptRequestBody(Paths.REPORTS.path) {

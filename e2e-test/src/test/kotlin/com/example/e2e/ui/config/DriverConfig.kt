@@ -11,7 +11,7 @@ object DriverConfig {
 
     fun setup() {
         Configuration.browserSize = "1920x1080"
-        Configuration.timeout = 17_000
+        Configuration.timeout = 6_000
         Configuration.fastSetValue = true
         Configuration.pageLoadStrategy = "normal"
         Configuration.headless = false

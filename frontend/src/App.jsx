@@ -114,7 +114,7 @@ function StatusChip({ option }) {
   );
 }
 
-function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true }) {
+function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true, onFocus, onBlur }) {
   const selectedOption = GENERAL_STATUS_OPTIONS.find((option) => option.value === value);
 
   const handleSelect = (optionValue, event) => {
@@ -127,7 +127,7 @@ function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true }
   };
 
   return (
-    <div className="status-dropdown">
+    <div className="status-dropdown" onFocusCapture={onFocus} onBlurCapture={onBlur}>
       <details className="status-dropdown-toggle">
         <summary>
           <StatusChip option={selectedOption} />
@@ -164,13 +164,15 @@ function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true }
   );
 }
 
-function RegressionStatusSelect({ value, onChange, disabled }) {
+function RegressionStatusSelect({ value, onChange, disabled, onFocus, onBlur }) {
   return (
     <select
       className="regression-select"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
+      onFocus={onFocus}
+      onBlur={onBlur}
     >
       <option value="">—</option>
       {REGRESSION_STATUS_OPTIONS.map((option) => (
@@ -182,13 +184,15 @@ function RegressionStatusSelect({ value, onChange, disabled }) {
   );
 }
 
-function PrioritySelect({ value, onChange, disabled = false }) {
+function PrioritySelect({ value, onChange, disabled = false, onFocus, onBlur }) {
   return (
     <select
       className="cell-input"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
+      onFocus={onFocus}
+      onBlur={onBlur}
     >
       {PRIORITY_OPTIONS.map((option) => (
         <option key={option} value={option}>
@@ -218,6 +222,7 @@ export default function App() {
   const [regressionSaving, setRegressionSaving] = useState(false);
   const [releaseNameDraft, setReleaseNameDraft] = useState('');
   const [showReleaseNameInput, setShowReleaseNameInput] = useState(false);
+  const [editingExistingCount, setEditingExistingCount] = useState(0);
 
   const loadData = async () => {
     setLoading(true);
@@ -264,6 +269,15 @@ export default function App() {
   }, []);
 
   const isRegressionRunning = regressionState.status === 'RUNNING';
+  const isEditingExistingRow = editingExistingCount > 0;
+
+  const incrementEditingExisting = () => {
+    setEditingExistingCount((count) => count + 1);
+  };
+
+  const decrementEditingExisting = () => {
+    setEditingExistingCount((count) => Math.max(0, count - 1));
+  };
 
   const handleFieldChange = (testId, key, value) => {
     setItems((prev) =>
@@ -321,6 +335,7 @@ export default function App() {
   };
 
   const handleBlur = (item, key) => {
+    decrementEditingExisting();
     const value = item[key];
     const sanitizedValue = value === '' ? null : value;
     const payload = { [key]: sanitizedValue };
@@ -622,7 +637,13 @@ export default function App() {
             type="button"
             onClick={startNewRow}
             className="secondary-btn"
-            disabled={loading || saving || hasPristineNewRow}
+            disabled={
+              loading ||
+                saving ||
+                hasPristineNewRow ||
+                newItems.length > 0 ||
+                isEditingExistingRow
+            }
           >
             Add Row
           </button>
@@ -843,6 +864,8 @@ export default function App() {
                                 handleRegressionStatusChange(item.testId, newValue)
                               }
                               disabled={!isRegressionRunning || regressionSaving}
+                              onFocus={incrementEditingExisting}
+                              onBlur={decrementEditingExisting}
                             />
                           </div>
                         ) : column.editable ? (
@@ -851,6 +874,7 @@ export default function App() {
                               value={value}
                               onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
                               onBlur={() => handleBlur(item, column.key)}
+                              onFocus={incrementEditingExisting}
                               className="cell-textarea"
                             />
                           ) : column.type === 'date' ? (
@@ -859,6 +883,7 @@ export default function App() {
                               value={value ? value : ''}
                               onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
                               onBlur={() => handleBlur(item, column.key)}
+                              onFocus={incrementEditingExisting}
                               className="cell-input"
                             />
                           ) : column.type === 'generalStatus' ? (
@@ -866,12 +891,16 @@ export default function App() {
                               value={value}
                               onChange={(newValue) => handleGeneralStatusChange(item, newValue)}
                               disabled={saving}
+                              onFocus={incrementEditingExisting}
+                              onBlur={decrementEditingExisting}
                             />
                           ) : column.type === 'priority' ? (
                             <PrioritySelect
                               value={value || PRIORITY_OPTIONS[3]}
                               onChange={(newValue) => handlePriorityChange(item, newValue)}
                               disabled={saving}
+                              onFocus={incrementEditingExisting}
+                              onBlur={decrementEditingExisting}
                             />
                           ) : (
                             <input
@@ -879,6 +908,7 @@ export default function App() {
                               value={value}
                               onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
                               onBlur={() => handleBlur(item, column.key)}
+                              onFocus={incrementEditingExisting}
                               className="cell-input"
                             />
                           )
