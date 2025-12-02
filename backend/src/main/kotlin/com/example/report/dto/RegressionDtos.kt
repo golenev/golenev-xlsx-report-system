@@ -1,6 +1,7 @@
 package com.example.report.dto
 
 import com.example.report.model.RegressionStatus
+import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 
 private val allowedRegressionResults = setOf("PASSED", "FAILED", "SKIPPED")
@@ -23,8 +24,14 @@ data class RegressionStopRequest(
     val results: Map<String, String>,
 )
 
+data class RegressionStartRequest(
+    @field:NotBlank
+    val releaseName: String,
+)
+
 data class RegressionStateResponse(
     val status: RegressionStatus,
     val regressionDate: String?,
     val results: Map<String, String> = emptyMap(),
+    val releaseName: String? = null,
 )

@@ -1,5 +1,6 @@
 package com.example.report.service
 
+import com.example.report.dto.RegressionStartRequest
 import com.example.report.dto.RegressionStateResponse
 import com.example.report.dto.RegressionStopRequest
 import com.example.report.dto.validateRegressionResults
@@ -21,33 +22,36 @@ class RegressionService(
 
     fun getTodayState(): RegressionStateResponse {
         val today = LocalDate.now()
-        val entity = regressionRepository.findByRegressionDate(today)
-            .orElse(null)
-        if (entity == null) {
-            return RegressionStateResponse(RegressionStatus.IDLE, today.toString())
-        }
+        val entity = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
+            ?: return RegressionStateResponse(RegressionStatus.IDLE, today.toString())
 
-        return if (entity.status == RegressionStatus.COMPLETED) {
-            RegressionStateResponse(RegressionStatus.COMPLETED, entity.regressionDate.toString())
-        } else {
-            entity.toResponse()
-        }
+        return entity.toResponse()
     }
 
     @Transactional
-    fun startRegression(): RegressionStateResponse {
+    fun startRegression(request: RegressionStartRequest): RegressionStateResponse {
         val today = LocalDate.now()
-        val existing = regressionRepository.findByRegressionDate(today).orElse(null)
+        val trimmedReleaseName = request.releaseName.trim()
 
-        if (existing != null) {
-            existing.status = RegressionStatus.RUNNING
-            regressionRepository.save(existing)
-            return existing.toResponse(emptyMap())
+        val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
+        if (running != null) {
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Regression is already running for release ${running.releaseName}",
+            )
+        }
+
+        if (regressionRepository.findByReleaseName(trimmedReleaseName).isPresent) {
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Regression with release name $trimmedReleaseName already exists",
+            )
         }
 
         val entity = RegressionEntity(
             status = RegressionStatus.RUNNING,
             regressionDate = today,
+            releaseName = trimmedReleaseName,
             payload = emptyMap(),
         )
         regressionRepository.save(entity)
@@ -56,7 +60,8 @@ class RegressionService(
 
     @Transactional
     fun stopRegression(request: RegressionStopRequest): RegressionStateResponse {
-        val today = LocalDate.now()
+        val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "No running regression to stop")
         val results = try {
             validateRegressionResults(request.results)
         } catch (ex: IllegalArgumentException) {
@@ -75,8 +80,9 @@ class RegressionService(
         }
 
         val payload = mapOf(
-            "regressionDate" to today.toString(),
+            "regressionDate" to running.regressionDate.toString(),
             "status" to RegressionStatus.COMPLETED.name,
+            "releaseName" to running.releaseName,
             "tests" to tests.map {
                 mapOf(
                     "testId" to it.testId,
@@ -93,22 +99,17 @@ class RegressionService(
             }
         )
 
-        val entity = regressionRepository.findByRegressionDate(today)
-            .orElseGet {
-                RegressionEntity(status = RegressionStatus.RUNNING, regressionDate = today)
-            }
+        running.status = RegressionStatus.COMPLETED
+        running.payload = payload
+        regressionRepository.save(running)
 
-        entity.status = RegressionStatus.COMPLETED
-        entity.payload = payload
-        regressionRepository.save(entity)
-
-        return entity.toResponse(emptyMap())
+        return running.toResponse(emptyMap())
     }
 
     @Transactional
     fun cancelRegression(): RegressionStateResponse {
         val today = LocalDate.now()
-        val existing = regressionRepository.findByRegressionDate(today).orElse(null)
+        val existing = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
             ?: return RegressionStateResponse(RegressionStatus.IDLE, today.toString())
 
         if (existing.payload.isNullOrEmpty()) {
@@ -131,6 +132,7 @@ class RegressionService(
             status = status,
             regressionDate = regressionDate.toString(),
             results = effectiveResults,
+            releaseName = releaseName,
         )
     }
 

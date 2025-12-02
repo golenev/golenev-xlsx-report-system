@@ -2,6 +2,7 @@ package com.example.report.controller
 
 import com.example.report.dto.TestUpsertItem
 import com.example.report.dto.TestBatchRequest
+import com.example.report.dto.RegressionStartRequest
 import com.example.report.dto.RegressionStopRequest
 import com.example.report.service.ColumnConfigService
 import com.example.report.service.ExcelExportService
@@ -63,7 +64,8 @@ class TestReportController(
     fun getCurrentRegression() = regressionService.getTodayState()
 
     @PostMapping("/regressions/start")
-    fun startRegression() = regressionService.startRegression()
+    fun startRegression(@Valid @RequestBody request: RegressionStartRequest) =
+        regressionService.startRegression(request)
 
     @PostMapping("/regressions/stop")
     fun stopRegression(@Valid @RequestBody request: RegressionStopRequest) =

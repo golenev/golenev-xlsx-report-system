@@ -277,6 +277,18 @@ body {
   gap: 8px;
 }
 
+.regression-start-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.regression-start-form .cell-input {
+  background-color: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+}
+
 .column-letter {
   font-size: 11px;
   color: #5f6368;
