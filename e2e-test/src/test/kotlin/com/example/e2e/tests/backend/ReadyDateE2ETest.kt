@@ -95,7 +95,7 @@ class ReadyDateE2ETest {
         }
 
         step("Готовая дата осталась прежней, остальные поля обновлены") {
-            updatedItem.readyDate.toString() shouldBe updateRequest.items.first().readyDate
+            updatedItem.readyDate shouldBe createdItem.readyDate
             updatedItem.generalStatus shouldBe GeneralTestStatus.DONE.value
             updatedItem.notes shouldBe "Updated notes"
         }
