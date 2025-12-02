@@ -31,15 +31,22 @@ class TestReportService(
 
     @Transactional
     fun upsertTest(request: TestUpsertItem) {
-        val validated = validateAndNormalize(request)
-        upsertSingle(validated)
+        val normalizedId = normalizeTestId(request.testId)
+        val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
+        val validated = validateAndNormalize(request, existing, normalizedId)
+        upsertSingle(validated, existing)
     }
 
     @Transactional
     fun upsertBatch(request: TestBatchRequest) {
         request.items
-            .map { validateAndNormalize(it) }
-            .forEach { upsertSingle(it) }
+            .map { item ->
+                val normalizedId = normalizeTestId(item.testId)
+                val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
+                val validated = validateAndNormalize(item, existing, normalizedId)
+                validated to existing
+            }
+            .forEach { (validated, existing) -> upsertSingle(validated, existing) }
     }
 
     @Transactional
@@ -51,10 +58,9 @@ class TestReportService(
         testReportRepository.delete(entity)
     }
 
-    private fun upsertSingle(item: ValidatedUpsert) {
-        val existing = testReportRepository.findByTestId(item.testId)
-        if (existing.isPresent) {
-            val entity = existing.get()
+    private fun upsertSingle(item: ValidatedUpsert, existing: TestReportEntity?) {
+        if (existing != null) {
+            val entity = existing
             entity.category = item.category
             entity.shortTitle = item.shortTitle
             entity.scenario = item.scenario
@@ -81,15 +87,38 @@ class TestReportService(
         testReportRepository.save(newEntity)
     }
 
-    private fun validateAndNormalize(item: TestUpsertItem): ValidatedUpsert {
-        val normalizedId = normalizeTestId(item.testId)
-        val category = item.category?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("category")
-        val shortTitle = item.shortTitle?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("shortTitle")
-        val scenario = item.scenario?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("scenario")
+    private fun validateAndNormalize(
+        item: TestUpsertItem,
+        existing: TestReportEntity?,
+        normalizedId: String
+    ): ValidatedUpsert {
+        val category = item.category
+            ?.takeIf { it.isNotBlank() }
+            ?.trim()
+            ?: existing?.category?.takeIf { it.isNotBlank() }
+            ?: requiredFieldMissing("category")
+        val shortTitle = item.shortTitle
+            ?.takeIf { it.isNotBlank() }
+            ?.trim()
+            ?: existing?.shortTitle?.takeIf { it.isNotBlank() }
+            ?: requiredFieldMissing("shortTitle")
+        val scenario = item.scenario
+            ?.takeIf { it.isNotBlank() }
+            ?.trim()
+            ?: existing?.scenario?.takeIf { it.isNotBlank() }
+            ?: requiredFieldMissing("scenario")
         val generalStatusRaw =
-            item.generalStatus?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("generalStatus")
+            item.generalStatus
+                ?.takeIf { it.isNotBlank() }
+                ?.trim()
+                ?: existing?.generalStatus?.takeIf { it.isNotBlank() }
+                ?: requiredFieldMissing("generalStatus")
         val priorityRaw =
-            item.priority?.takeIf { it.isNotBlank() }?.trim() ?: requiredFieldMissing("priority")
+            item.priority
+                ?.takeIf { it.isNotBlank() }
+                ?.trim()
+                ?: existing?.priority?.takeIf { it.isNotBlank() }
+                ?: requiredFieldMissing("priority")
 
         return ValidatedUpsert(
             testId = normalizedId,
