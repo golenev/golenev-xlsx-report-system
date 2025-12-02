@@ -17,6 +17,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
+@DisplayName("Автоматическое определение и появление даты готовности для нового теста")
 class ReadyDateE2ETest {
 
     private val reportService = ReportService()
@@ -49,9 +50,7 @@ class ReadyDateE2ETest {
                         shortTitle = "Ready date auto set",
                         generalStatus = GeneralTestStatus.QUEUE.value,
                         scenario = "Сценарий 1. шаг 1 шаг 2 шаг 3",
-                        runIndex = 1,
                         runStatus = "PASSED",
-                        readyDate = today.toString()
                     ),
                 ),
             )
@@ -76,7 +75,7 @@ class ReadyDateE2ETest {
                     TestUpsertItem(
                         shortTitle = "Ready date auto set",
                         testId = "123",
-                        readyDate = "2000-01-01",
+                        readyDate = today.minusDays(5).toString(),
                         generalStatus = GeneralTestStatus.DONE.value,
                         notes = "Updated notes",
                         scenario = "Сценарий 2. шаг 1 шаг 2 шаг 3",

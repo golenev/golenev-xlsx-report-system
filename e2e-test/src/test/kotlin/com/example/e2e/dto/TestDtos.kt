@@ -18,7 +18,6 @@ data class TestUpsertItem(
     val generalStatus: String? = null,
     val scenario: String? = null,
     val notes: String? = null,
-    val runIndex: Int? = null,
     val runStatus: String? = null,
     val runDate: String? = null,
 )

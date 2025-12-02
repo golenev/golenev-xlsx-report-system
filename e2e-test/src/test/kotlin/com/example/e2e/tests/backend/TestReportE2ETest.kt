@@ -68,14 +68,13 @@ class TestReportE2ETest {
         val itemsById = report.items.associateBy { it.testId }
 
         step("Проверяем все записи из batch-запроса") {
-            batchRequest.items.forEach { source ->
-                val testId = source.testId.shouldNotBeNull()
+            batchRequest.items.forEach {
+                val testId = it.testId.shouldNotBeNull()
                 val reportItem = itemsById[testId].shouldNotBeNull()
-
-                reportItem.category shouldBe source.category
-                reportItem.shortTitle shouldBe source.shortTitle
+                reportItem.category shouldBe it.category
+                reportItem.shortTitle shouldBe it.shortTitle
                 reportItem.readyDate shouldBe today
-                reportItem.generalStatus shouldBe source.generalStatus
+                reportItem.generalStatus shouldBe it.generalStatus
                 reportItem.updatedAt.shouldNotBeNull()
             }
         }
