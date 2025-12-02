@@ -51,28 +51,30 @@ class TestReportService(
     }
 
     private fun upsertSingle(item: ValidatedUpsert) {
-        val applyUpdates: TestReportEntity.() -> Unit = {
-            this.category = item.category
-            this.shortTitle = item.shortTitle
-            this.scenario = item.scenario
-
-            item.issueLink?.let { this.issueLink = it }
-            this.generalStatus = item.generalStatus
-            item.notes?.let { this.notes = it }
-            this.readyDate = item.readyDate ?: this.readyDate
-        }
-
         val existing = testReportRepository.findByTestId(item.testId)
         if (existing.isPresent) {
             val entity = existing.get()
-            applyUpdates(entity)
+            entity.category = item.category
+            entity.shortTitle = item.shortTitle
+            entity.scenario = item.scenario
+
+            item.issueLink?.let { entity.issueLink = it }
+            entity.generalStatus = item.generalStatus
+            item.notes?.let { entity.notes = it }
             entity.updatedAt = OffsetDateTime.now()
             testReportRepository.save(entity)
             return
         }
 
         val newEntity = TestReportEntity(testId = item.testId)
-        applyUpdates(newEntity)
+        newEntity.category = item.category
+        newEntity.shortTitle = item.shortTitle
+        newEntity.scenario = item.scenario
+        newEntity.readyDate = item.readyDate ?: LocalDate.now()
+
+        item.issueLink?.let { newEntity.issueLink = it }
+        newEntity.generalStatus = item.generalStatus
+        item.notes?.let { newEntity.notes = it }
         newEntity.updatedAt = OffsetDateTime.now()
         testReportRepository.save(newEntity)
     }
