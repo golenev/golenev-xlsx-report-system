@@ -210,11 +210,14 @@ export default function App() {
   const [regressionState, setRegressionState] = useState({
     status: 'IDLE',
     regressionDate: null,
-    results: {}
+    results: {},
+    releaseName: null
   });
   const [regressionResults, setRegressionResults] = useState({});
   const [regressionLoading, setRegressionLoading] = useState(true);
   const [regressionSaving, setRegressionSaving] = useState(false);
+  const [releaseNameDraft, setReleaseNameDraft] = useState('');
+  const [showReleaseNameInput, setShowReleaseNameInput] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -245,6 +248,9 @@ export default function App() {
       const data = await response.json();
       setRegressionState(data);
       setRegressionResults(data.results ?? {});
+      if (data.status !== 'RUNNING') {
+        setShowReleaseNameInput(false);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -373,16 +379,35 @@ export default function App() {
   };
 
   const handleStartRegression = async () => {
+    const trimmedReleaseName = releaseNameDraft.trim();
+    if (!trimmedReleaseName) {
+      setError('Release name is required');
+      return;
+    }
     setRegressionSaving(true);
     setError(null);
     try {
-      const response = await fetch(withBase('/api/regressions/start'), { method: 'POST' });
+      const response = await fetch(withBase('/api/regressions/start'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ releaseName: trimmedReleaseName })
+      });
       if (!response.ok) {
-        throw new Error('Failed to start regression');
+        let message = 'Failed to start regression';
+        try {
+          const data = await response.json();
+          message = data.message || data.detail || message;
+        } catch (parseError) {
+          const text = await response.text();
+          message = text || message;
+        }
+        throw new Error(message);
       }
       const data = await response.json();
       setRegressionState(data);
       setRegressionResults({});
+      setShowReleaseNameInput(false);
+      setReleaseNameDraft('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -425,6 +450,8 @@ export default function App() {
       const data = await response.json();
       setRegressionState(data);
       setRegressionResults({});
+      setShowReleaseNameInput(false);
+      setReleaseNameDraft('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -443,6 +470,8 @@ export default function App() {
       const data = await response.json();
       setRegressionState(data);
       setRegressionResults({});
+      setShowReleaseNameInput(false);
+      setReleaseNameDraft('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -639,7 +668,9 @@ export default function App() {
                                   onClick={handleStopRegression}
                                   disabled={regressionSaving}
                                 >
-                                  Stop regress
+                                  {`Regression on release-version ${
+                                    regressionState.releaseName || '—'
+                                  } is in progress. Stop it ?`}
                                 </button>
                                 <button
                                   type="button"
@@ -650,11 +681,38 @@ export default function App() {
                                   Отменить регресс
                                 </button>
                               </>
+                            ) : showReleaseNameInput ? (
+                              <div className="regression-start-form">
+                                <input
+                                  type="text"
+                                  value={releaseNameDraft}
+                                  onChange={(e) => setReleaseNameDraft(e.target.value)}
+                                  placeholder="Release name"
+                                  className="cell-input release-input"
+                                  disabled={regressionSaving}
+                                />
+                                <button
+                                  type="button"
+                                  className="success-btn"
+                                  onClick={handleStartRegression}
+                                  disabled={regressionSaving || !releaseNameDraft.trim()}
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  className="secondary-btn"
+                                  onClick={() => setShowReleaseNameInput(false)}
+                                  disabled={regressionSaving}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
                             ) : (
                               <button
                                 type="button"
-                                className="success-btn"
-                                onClick={handleStartRegression}
+                                className="danger-btn"
+                                onClick={() => setShowReleaseNameInput(true)}
                                 disabled={loading || saving || regressionSaving || regressionLoading}
                               >
                                 Would you run regress

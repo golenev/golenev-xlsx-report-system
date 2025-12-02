@@ -24,8 +24,11 @@ data class RegressionEntity(
     @Column(nullable = false)
     var status: RegressionStatus,
 
-    @Column(name = "regression_date", nullable = false, unique = true)
+    @Column(name = "regression_date", nullable = false)
     var regressionDate: LocalDate,
+
+    @Column(name = "release_name", nullable = false, unique = true)
+    var releaseName: String,
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

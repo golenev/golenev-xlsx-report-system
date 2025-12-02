@@ -277,6 +277,39 @@ body {
   gap: 8px;
 }
 
+.regression-start-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.regression-start-form .cell-input {
+  background-color: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+}
+
+.release-input {
+  min-width: 260px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background: linear-gradient(180deg, #fdfefe 0%, #f6f8fb 100%);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  transition: box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+.release-input:focus {
+  border-color: #409cff;
+  background: #f9fbff;
+  box-shadow:
+    0 3px 8px rgba(64, 156, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
 .column-letter {
   font-size: 11px;
   color: #5f6368;
