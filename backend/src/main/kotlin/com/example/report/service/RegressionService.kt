@@ -3,6 +3,8 @@ package com.example.report.service
 import com.example.report.dto.RegressionStartRequest
 import com.example.report.dto.RegressionStateResponse
 import com.example.report.dto.RegressionStopRequest
+import com.example.report.dto.RegressionReleaseSummary
+import com.example.report.dto.RegressionSnapshotResponse
 import com.example.report.dto.validateRegressionResults
 import com.example.report.entity.RegressionEntity
 import com.example.report.model.RegressionStatus
@@ -18,6 +20,7 @@ import java.time.LocalDate
 class RegressionService(
     private val regressionRepository: RegressionRepository,
     private val testReportRepository: TestReportRepository,
+    private val excelExportService: ExcelExportService,
 ) {
 
     fun getTodayState(): RegressionStateResponse {
@@ -120,6 +123,42 @@ class RegressionService(
         existing.status = RegressionStatus.COMPLETED
         regressionRepository.save(existing)
         return existing.toResponse(emptyMap())
+    }
+
+    fun listReleases(): List<RegressionReleaseSummary> {
+        return regressionRepository.findAllByOrderByRegressionDateDesc()
+            .map {
+                RegressionReleaseSummary(
+                    id = it.id,
+                    name = it.releaseName,
+                    regressionDate = it.regressionDate.toString(),
+                    status = it.status,
+                )
+            }
+    }
+
+    fun getRegressionSnapshot(regressionId: Long): RegressionSnapshotResponse {
+        val entity = regressionRepository.findById(regressionId)
+            .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Regression $regressionId not found") }
+
+        val snapshotPayload: Map<String, Any?> = entity.payload?.toMap().orEmpty()
+        return RegressionSnapshotResponse(
+            id = entity.id,
+            name = entity.releaseName,
+            status = entity.status,
+            regressionDate = entity.regressionDate.toString(),
+            snapshot = snapshotPayload,
+        )
+    }
+
+    fun getRegressionSnapshotWorkbook(regressionId: Long): ByteArray {
+        val entity = regressionRepository.findById(regressionId)
+            .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Regression $regressionId not found") }
+        val snapshotPayload: Map<String, Any?> = entity.payload?.toMap().orEmpty()
+        if (snapshotPayload.isEmpty()) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Regression snapshot is empty")
+        }
+        return excelExportService.generateWorkbookFromSnapshot(snapshotPayload)
     }
 
     private fun RegressionEntity.toResponse(results: Map<String, String>? = null): RegressionStateResponse {

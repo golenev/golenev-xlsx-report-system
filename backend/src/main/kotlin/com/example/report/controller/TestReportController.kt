@@ -73,4 +73,20 @@ class TestReportController(
 
     @PostMapping("/regressions/cancel")
     fun cancelRegression() = regressionService.cancelRegression()
+
+    @GetMapping("/regressions/releases")
+    fun getRegressionReleases() = regressionService.listReleases()
+
+    @GetMapping("/regressions/{regressionId}")
+    fun getRegressionSnapshot(@PathVariable regressionId: Long) =
+        regressionService.getRegressionSnapshot(regressionId)
+
+    @GetMapping("/regressions/{regressionId}/snapshot.xlsx")
+    fun downloadRegressionSnapshot(@PathVariable regressionId: Long): ResponseEntity<ByteArray> {
+        val body = regressionService.getRegressionSnapshotWorkbook(regressionId)
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=regression-$regressionId.xlsx")
+            .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .body(body)
+    }
 }

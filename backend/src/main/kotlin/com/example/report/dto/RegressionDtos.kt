@@ -35,3 +35,18 @@ data class RegressionStateResponse(
     val results: Map<String, String> = emptyMap(),
     val releaseName: String? = null,
 )
+
+data class RegressionReleaseSummary(
+    val id: Long,
+    val name: String,
+    val regressionDate: String?,
+    val status: RegressionStatus,
+)
+
+data class RegressionSnapshotResponse(
+    val id: Long,
+    val name: String,
+    val status: RegressionStatus,
+    val regressionDate: String?,
+    val snapshot: Map<String, Any?>,
+)

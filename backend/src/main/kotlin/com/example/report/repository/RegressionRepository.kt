@@ -9,4 +9,6 @@ interface RegressionRepository : JpaRepository<RegressionEntity, Long> {
     fun findByReleaseName(releaseName: String): Optional<RegressionEntity>
 
     fun findFirstByStatusOrderByRegressionDateDesc(status: RegressionStatus): RegressionEntity?
+
+    fun findAllByOrderByRegressionDateDesc(): List<RegressionEntity>
 }
