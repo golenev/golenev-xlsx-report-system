@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import ReleaseAnalyticsWidget from './ReleaseAnalyticsWidget.tsx';
 const GENERAL_STATUS_OPTIONS = [
   { value: 'Очередь', color: '#e0e8ff', textColor: '#294a9a' },
   { value: 'В работе', color: '#fff4e0', textColor: '#9a5b29' },
@@ -653,6 +654,7 @@ export default function App() {
           {saving && <span className="status">Saving…</span>}
         </div>
       </header>
+      <ReleaseAnalyticsWidget />
       {error && <div className="error-banner">{error}</div>}
       {loading ? (
         <div className="loader">Loading…</div>
