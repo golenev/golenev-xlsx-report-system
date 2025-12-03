@@ -138,12 +138,6 @@ export default function ReleaseAnalyticsWidget() {
     return Object.values(groups).sort((a, b) => b.total - a.total);
   }, [metrics.tests]);
 
-  const failures = useMemo(() => {
-    return metrics.tests.filter(
-      (test) => test.regressionStatus === 'FAILED' || test.regressionStatus === 'SKIPPED'
-    );
-  }, [metrics.tests]);
-
   const collapsedSummary = useMemo(() => {
     const releaseName = regression?.name || '—';
     const automation = metrics.automationPercent;
@@ -219,6 +213,22 @@ export default function ReleaseAnalyticsWidget() {
     maintainAspectRatio: false
   }), []);
 
+  const passFailDonutData = useMemo(() => {
+    const passed = metrics.passedCount;
+    const failed = metrics.failedCount;
+    return {
+      labels: ['Passed', 'Failed'],
+      datasets: [
+        {
+          data: [passed, failed],
+          backgroundColor: ['#10b981', '#ef4444'],
+          borderWidth: 0,
+          cutout: '70%'
+        }
+      ]
+    };
+  }, [metrics.failedCount, metrics.passedCount]);
+
   const renderSkeleton = (lines = 3) => (
     <div className="analytics-skeleton">
       {Array.from({ length: lines }).map((_, idx) => (
@@ -271,6 +281,24 @@ export default function ReleaseAnalyticsWidget() {
           </div>
         </div>
         <div className="analytics-card">
+          <div className="donut-wrapper secondary">
+            <div className="donut-chart small">
+              <Doughnut data={passFailDonutData} options={donutOptions} />
+              <div className="donut-center">
+                <div className="donut-value">{metrics.totalTests ? Math.round((metrics.passedCount / metrics.totalTests) * 100) : 0}%</div>
+                <div className="donut-label">Pass vs Fail</div>
+              </div>
+            </div>
+            <div className="donut-legend">
+              <div className="legend-item">
+                <span className="legend-dot passed" /> Passed — {metrics.passedCount}
+              </div>
+              <div className="legend-item">
+                <span className="legend-dot failed" /> Failed — {metrics.failedCount}
+              </div>
+            </div>
+          </div>
+
           <div className="analytics-subtitle">Categories</div>
           <div className="categories-list">
             {categories.map((category) => {
@@ -289,50 +317,7 @@ export default function ReleaseAnalyticsWidget() {
             })}
             {categories.length === 0 && <div className="empty-placeholder">Нет данных по категориям</div>}
           </div>
-          <div className="analytics-subtitle">Failures & risks</div>
-          <div className="failures-list">
-            {failures.map((test) => (
-              <div key={test.testId} className="failure-row">
-                <div className="failure-id">#{test.testId}</div>
-                <div className="failure-body">
-                  <div className="failure-title">{test.shortTitle || 'Без названия'}</div>
-                  <div className="failure-meta">
-                    {test.category || 'Без категории'}
-                    {test.issueLink && (
-                      <a className="issue-link" href={test.issueLink} target="_blank" rel="noreferrer">
-                        Issue
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            {failures.length === 0 && <div className="empty-placeholder">Серьёзных рисков не обнаружено</div>}
-          </div>
         </div>
-      </div>
-    );
-  };
-
-  const renderKpi = () => {
-    const chips = [
-      { label: 'Total', value: metrics.totalTests },
-      { label: 'Passed', value: metrics.passedCount },
-      { label: 'Failed', value: metrics.failedCount },
-      { label: 'Skipped', value: metrics.skippedCount },
-      { label: 'Очередь', value: metrics.queuedCount },
-      { label: 'В работе', value: metrics.inProgressCount },
-      { label: 'Готово', value: metrics.readyCount }
-    ];
-
-    return (
-      <div className="kpi-row">
-        {chips.map((chip) => (
-          <div key={chip.label} className="kpi-chip">
-            <div className="kpi-label">{chip.label}</div>
-            <div className="kpi-value">{chip.value}</div>
-          </div>
-        ))}
       </div>
     );
   };
@@ -388,8 +373,6 @@ export default function ReleaseAnalyticsWidget() {
               </button>
             </div>
           )}
-
-          {renderKpi()}
 
           <div className="analytics-content">{renderContent()}</div>
         </div>

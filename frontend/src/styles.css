@@ -561,33 +561,6 @@ tbody tr:nth-child(odd) .row-index-cell {
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.kpi-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.kpi-chip {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 10px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-.kpi-label {
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 4px;
-}
-
-.kpi-value {
-  font-size: 18px;
-  font-weight: 700;
-  color: #111827;
-}
-
 .analytics-content {
   background: linear-gradient(180deg, #f8fafc 0%, #fff 30%);
   border: 1px solid #e5e7eb;
@@ -616,10 +589,20 @@ tbody tr:nth-child(odd) .row-index-cell {
   align-items: center;
 }
 
+.donut-wrapper.secondary {
+  align-items: stretch;
+}
+
 .donut-chart {
   position: relative;
   width: 220px;
   height: 220px;
+}
+
+.donut-chart.small {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
 }
 
 .donut-center {
@@ -670,16 +653,22 @@ tbody tr:nth-child(odd) .row-index-cell {
   background: #e5e7eb;
 }
 
-.categories-list,
-.failures-list {
+.legend-dot.passed {
+  background: #10b981;
+}
+
+.legend-dot.failed {
+  background: #ef4444;
+}
+
+.categories-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin: 10px 0;
 }
 
-.category-row,
-.failure-row {
+.category-row {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 10px;
@@ -704,35 +693,6 @@ tbody tr:nth-child(odd) .row-index-cell {
 .category-meta {
   font-size: 12px;
   color: #6b7280;
-}
-
-.failure-id {
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.failure-title {
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 4px;
-}
-
-.failure-meta {
-  font-size: 12px;
-  color: #6b7280;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.issue-link {
-  color: #2563eb;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.issue-link:hover {
-  text-decoration: underline;
 }
 
 .empty-placeholder {
