@@ -74,13 +74,6 @@ function formatDate(date?: string) {
   return parsed.toLocaleDateString('ru-RU');
 }
 
-function getHealthColor(passed: number, failed: number, skipped: number) {
-  if (failed > 0) return '#f44336';
-  if (skipped > 0) return '#fbc02d';
-  if (passed > 0) return '#4caf50';
-  return '#9e9e9e';
-}
-
 export default function ReleaseAnalyticsWidget() {
   const [expanded, setExpanded] = useState(false);
   const [releases, setReleases] = useState<RegressionReleaseSummary[]>([]);
@@ -117,26 +110,6 @@ export default function ReleaseAnalyticsWidget() {
       automationPercent
     };
   }, [selectedSnapshot?.tests]);
-
-  const categories = useMemo(() => {
-    const groups: Record<
-      string,
-      { name: string; total: number; passed: number; failed: number; skipped: number }
-    > = {};
-
-    metrics.tests.forEach((test) => {
-      const name = test.category || 'Без категории';
-      if (!groups[name]) {
-        groups[name] = { name, total: 0, passed: 0, failed: 0, skipped: 0 };
-      }
-      groups[name].total += 1;
-      if (test.regressionStatus === 'PASSED') groups[name].passed += 1;
-      if (test.regressionStatus === 'FAILED') groups[name].failed += 1;
-      if (test.regressionStatus === 'SKIPPED') groups[name].skipped += 1;
-    });
-
-    return Object.values(groups).sort((a, b) => b.total - a.total);
-  }, [metrics.tests]);
 
   const collapsedSummary = useMemo(() => {
     const releaseName = regression?.name || '—';
@@ -260,62 +233,61 @@ export default function ReleaseAnalyticsWidget() {
     }
 
     return (
-      <div className="analytics-grid">
-        <div className="analytics-card">
-          <div className="donut-wrapper">
-            <div className="donut-chart">
-              <Doughnut data={donutData} options={donutOptions} />
-              <div className="donut-center">
-                <div className="donut-value">{metrics.automationPercent}%</div>
-                <div className="donut-label">Автоматизация</div>
+      <div className="analytics-grid-with-table">
+        <div className="analytics-grid">
+          <div className="analytics-card">
+            <div className="donut-wrapper">
+              <div className="donut-chart">
+                <Doughnut data={donutData} options={donutOptions} />
+                <div className="donut-center">
+                  <div className="donut-value">{metrics.automationPercent}%</div>
+                  <div className="donut-label">Автоматизация</div>
+                </div>
+              </div>
+              <div className="donut-legend">
+                <div className="legend-item">
+                  <span className="legend-dot ready" /> Готово — {metrics.readyCount}
+                </div>
+                <div className="legend-item">
+                  <span className="legend-dot other" /> Остальные — {metrics.totalTests - metrics.readyCount}
+                </div>
               </div>
             </div>
-            <div className="donut-legend">
-              <div className="legend-item">
-                <span className="legend-dot ready" /> Готово — {metrics.readyCount}
+          </div>
+          <div className="analytics-card">
+            <div className="donut-wrapper secondary">
+              <div className="donut-chart small">
+                <Doughnut data={passFailDonutData} options={donutOptions} />
+                <div className="donut-center">
+                  <div className="donut-value">{metrics.totalTests ? Math.round((metrics.passedCount / metrics.totalTests) * 100) : 0}%</div>
+                  <div className="donut-label">Pass vs Fail</div>
+                </div>
               </div>
-              <div className="legend-item">
-                <span className="legend-dot other" /> Остальные — {metrics.totalTests - metrics.readyCount}
+              <div className="donut-legend">
+                <div className="legend-item">
+                  <span className="legend-dot passed" /> Passed — {metrics.passedCount}
+                </div>
+                <div className="legend-item">
+                  <span className="legend-dot failed" /> Failed — {metrics.failedCount}
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="analytics-card">
-          <div className="donut-wrapper secondary">
-            <div className="donut-chart small">
-              <Doughnut data={passFailDonutData} options={donutOptions} />
-              <div className="donut-center">
-                <div className="donut-value">{metrics.totalTests ? Math.round((metrics.passedCount / metrics.totalTests) * 100) : 0}%</div>
-                <div className="donut-label">Pass vs Fail</div>
-              </div>
-            </div>
-            <div className="donut-legend">
-              <div className="legend-item">
-                <span className="legend-dot passed" /> Passed — {metrics.passedCount}
-              </div>
-              <div className="legend-item">
-                <span className="legend-dot failed" /> Failed — {metrics.failedCount}
-              </div>
-            </div>
-          </div>
 
-          <div className="analytics-subtitle">Categories</div>
-          <div className="categories-list">
-            {categories.map((category) => {
-              const color = getHealthColor(category.passed, category.failed, category.skipped);
-              return (
-                <div key={category.name} className="category-row">
-                  <span className="category-indicator" style={{ backgroundColor: color }} />
-                  <div className="category-info">
-                    <div className="category-name">{category.name}</div>
-                    <div className="category-meta">
-                      {category.total} тестов ({category.passed}/{category.failed}/{category.skipped})
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            {categories.length === 0 && <div className="empty-placeholder">Нет данных по категориям</div>}
+        <div className="snapshot-card">
+          <div className="snapshot-header">Снапшот релиза</div>
+          <div className="snapshot-table">
+            <div className="snapshot-row snapshot-head">
+              <div className="snapshot-cell date-col">regression_date</div>
+              <div className="snapshot-cell payload-col">payload</div>
+            </div>
+            <div className="snapshot-row">
+              <div className="snapshot-cell date-col single-line">{regression?.regressionDate || '—'}</div>
+              <div className="snapshot-cell payload-col">
+                <pre className="payload-pre">{regression?.snapshot ? JSON.stringify(regression.snapshot, null, 2) : '—'}</pre>
+              </div>
+            </div>
           </div>
         </div>
       </div>

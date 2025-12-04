@@ -568,6 +568,12 @@ tbody tr:nth-child(odd) .row-index-cell {
   padding: 14px;
 }
 
+.analytics-grid-with-table {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .analytics-grid {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
@@ -659,6 +665,70 @@ tbody tr:nth-child(odd) .row-index-cell {
 
 .legend-dot.failed {
   background: #ef4444;
+}
+
+.snapshot-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.06);
+}
+
+.snapshot-header {
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #0f172a;
+}
+
+.snapshot-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.snapshot-row {
+  display: grid;
+  grid-template-columns: 0.35fr 1fr;
+}
+
+.snapshot-head {
+  background: #f3f4f6;
+  font-weight: 700;
+}
+
+.snapshot-cell {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #111827;
+}
+
+.snapshot-row:last-child .snapshot-cell {
+  border-bottom: none;
+}
+
+.snapshot-cell:last-child {
+  border-right: none;
+}
+
+.single-line {
+  white-space: nowrap;
+}
+
+.payload-pre {
+  margin: 0;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: pre;
+  background: #0b1021;
+  color: #e5e7eb;
+  border-radius: 8px;
+  padding: 10px;
+  max-height: calc(1.35em * 15);
+  overflow: auto;
 }
 
 .categories-list {
