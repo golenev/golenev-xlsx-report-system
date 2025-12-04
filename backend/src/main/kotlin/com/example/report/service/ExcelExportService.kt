@@ -10,7 +10,8 @@ import java.io.ByteArrayOutputStream
 
 @Service
 class ExcelExportService(
-    private val testReportService: TestReportService
+    private val testReportService: TestReportService,
+    private val columnConfigService: ColumnConfigService,
 ) {
     private val columnKeys = listOf(
         "testId",
@@ -25,6 +26,46 @@ class ExcelExportService(
     )
 
     fun generateWorkbook(): ByteArray {
+        val report = testReportService.getReport()
+        val rows = report.items.map {
+            mapOf(
+                "testId" to it.testId,
+                "category" to it.category,
+                "shortTitle" to it.shortTitle,
+                "issueLink" to it.issueLink,
+                "readyDate" to it.readyDate?.toString(),
+                "generalStatus" to it.generalStatus,
+                "priority" to it.priority,
+                "scenario" to it.scenario,
+                "notes" to it.notes,
+            )
+        }
+        return renderWorkbook(rows, report.columnConfig)
+    }
+
+    fun generateWorkbookFromSnapshot(snapshot: Map<String, Any?>): ByteArray {
+        val columnConfig = columnConfigService.getConfig().columns
+        val tests = extractTestsFromSnapshot(snapshot)
+        val rows = tests.map {
+            mapOf(
+                "testId" to it.testId,
+                "category" to it.category,
+                "shortTitle" to it.shortTitle,
+                "issueLink" to it.issueLink,
+                "readyDate" to it.readyDate,
+                "generalStatus" to it.generalStatus,
+                "priority" to it.priority,
+                "scenario" to it.scenario,
+                "notes" to it.notes,
+            )
+        }
+        return renderWorkbook(rows, columnConfig)
+    }
+
+    private fun renderWorkbook(
+        rows: List<Map<String, String?>>,
+        columnConfig: Map<String, Int>
+    ): ByteArray {
         val workbook = XSSFWorkbook()
         val sheet = workbook.createSheet("Test Report")
 
@@ -45,7 +86,6 @@ class ExcelExportService(
             wrapText = true
         }
 
-        val report = testReportService.getReport()
         val headers = listOf(
             "Test ID",
             "Category / Feature",
@@ -64,26 +104,16 @@ class ExcelExportService(
             cell.setCellValue(title)
             cell.cellStyle = headerStyle
             val key = columnKeys.getOrNull(idx)
-            key?.let { report.columnConfig[it] }?.let { width ->
+            key?.let { columnConfig[it] }?.let { width ->
                 sheet.setColumnWidth(idx, width * 40)
             }
         }
 
-        report.items.forEachIndexed { rowIndex, item ->
-            val row = sheet.createRow(rowIndex + 1)
-            val values = listOf(
-                item.testId,
-                item.category,
-                item.shortTitle,
-                item.issueLink,
-                item.readyDate?.toString(),
-                item.generalStatus,
-                item.priority,
-                item.scenario,
-                item.notes
-            )
+        rows.forEachIndexed { rowIndex, row ->
+            val sheetRow = sheet.createRow(rowIndex + 1)
+            val values = columnKeys.map { key -> row[key] }
             values.forEachIndexed { cellIndex, value ->
-                val cell = row.createCell(cellIndex)
+                val cell = sheetRow.createCell(cellIndex)
                 cell.setCellValue(value ?: "")
                 cell.cellStyle = cellStyle
             }
@@ -95,4 +125,35 @@ class ExcelExportService(
             return outputStream.toByteArray()
         }
     }
+
+    private fun extractTestsFromSnapshot(snapshot: Map<String, Any?>): List<SnapshotTest> {
+        val tests = snapshot["tests"] as? List<*> ?: return emptyList()
+        return tests.mapNotNull { entry ->
+            val map = entry as? Map<*, *> ?: return@mapNotNull null
+            val testId = map["testId"] as? String ?: return@mapNotNull null
+            SnapshotTest(
+                testId = testId,
+                category = map["category"] as? String,
+                shortTitle = map["shortTitle"] as? String,
+                issueLink = map["issueLink"] as? String,
+                readyDate = map["readyDate"]?.toString(),
+                generalStatus = map["generalStatus"] as? String,
+                priority = map["priority"]?.toString(),
+                scenario = map["scenario"] as? String,
+                notes = map["notes"] as? String,
+            )
+        }
+    }
+
+    private data class SnapshotTest(
+        val testId: String,
+        val category: String?,
+        val shortTitle: String?,
+        val issueLink: String?,
+        val readyDate: String?,
+        val generalStatus: String?,
+        val priority: String?,
+        val scenario: String?,
+        val notes: String?,
+    )
 }

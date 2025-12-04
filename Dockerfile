@@ -2,7 +2,11 @@
 FROM node:18 AS frontend-build
 WORKDIR /frontend
 COPY frontend/package*.json ./
-RUN npm ci
+# Use npm install instead of npm ci because the lockfile may lag behind the
+# manifest when new frontend dependencies are added (e.g., chart.js, TypeScript
+# typings). npm install will refresh the lockfile during the image build and
+# avoid hard failures from a temporarily out-of-sync package-lock.
+RUN npm install
 COPY frontend/ .
 RUN npm run build
 

@@ -480,3 +480,376 @@ body {
 tbody tr:nth-child(odd) .row-index-cell {
   background-color: #f1f3f4;
 }
+
+/* Release Analytics Widget */
+.release-analytics-widget {
+  margin-bottom: 16px;
+}
+
+.release-analytics-card {
+  background: #fff;
+  border: 1px solid #e0e3eb;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.release-analytics-card:hover {
+  box-shadow: 0 16px 40px rgba(17, 24, 39, 0.12);
+}
+
+.analytics-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.analytics-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.analytics-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.analytics-header-center {
+  display: flex;
+  justify-content: center;
+}
+
+.analytics-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-button {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: #374151;
+}
+
+.icon-button:hover {
+  background: #e5e7eb;
+}
+
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.release-select {
+  width: 100%;
+  max-width: 320px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 14px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.analytics-content {
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 30%);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.analytics-grid-with-table {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 12px;
+}
+
+.analytics-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.06);
+}
+
+.donut-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.donut-wrapper.secondary {
+  align-items: stretch;
+}
+
+.donut-chart {
+  position: relative;
+  width: 220px;
+  height: 220px;
+}
+
+.donut-chart.small {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.donut-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.donut-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.ready {
+  background: #5b8def;
+}
+
+.legend-dot.other {
+  background: #e5e7eb;
+}
+
+.legend-dot.passed {
+  background: #10b981;
+}
+
+.legend-dot.failed {
+  background: #ef4444;
+}
+
+.snapshot-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.06);
+}
+
+.snapshot-header {
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #0f172a;
+}
+
+.snapshot-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  width: 65%;
+  min-width: 720px;
+}
+
+.snapshot-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+}
+
+.snapshot-head {
+  background: #f3f4f6;
+  font-weight: 700;
+}
+
+.snapshot-cell {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #111827;
+}
+
+.snapshot-row:last-child .snapshot-cell {
+  border-bottom: none;
+}
+
+.snapshot-cell:last-child {
+  border-right: none;
+}
+
+.single-line {
+  white-space: nowrap;
+}
+
+.payload-pre {
+  margin: 0;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: pre;
+  background: #0b1021;
+  color: #e5e7eb;
+  border-radius: 8px;
+  padding: 10px;
+  max-height: calc(1.35em * 15);
+  overflow: auto;
+}
+
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.category-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.category-indicator {
+  width: 8px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.category-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.category-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.empty-placeholder {
+  font-size: 13px;
+  color: #9ca3af;
+  padding: 8px 10px;
+}
+
+.release-analytics-collapsed {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.release-analytics-collapsed:hover {
+  background: #f3f4f6;
+  transform: translateY(-1px);
+}
+
+.collapsed-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.collapsed-summary {
+  font-size: 13px;
+  color: #374151;
+}
+
+.collapsed-toggle {
+  color: #6b7280;
+}
+
+.analytics-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.analytics-skeleton-line {
+  height: 12px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
+  animation: shimmer 1.4s ease infinite;
+}
+
+.analytics-loading-block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.analytics-error {
+  background: #fef2f2;
+  border: 1px solid #fecdd3;
+  color: #b91c1c;
+  padding: 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.analytics-error-details {
+  font-size: 12px;
+  color: #991b1b;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -120px 0;
+  }
+  100% {
+    background-position: 120px 0;
+  }
+}
