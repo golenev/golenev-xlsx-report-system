@@ -1,24 +1,14 @@
 package com.example.e2e.ui.pages
 
 import com.codeborne.selenide.CollectionCondition
-import com.codeborne.selenide.Condition.disappear
-import com.codeborne.selenide.Condition.disabled
-import com.codeborne.selenide.Condition.enabled
-import com.codeborne.selenide.Condition.hidden
-import com.codeborne.selenide.Condition.text
-import com.codeborne.selenide.Condition.value
-import com.codeborne.selenide.Condition.visible
+import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.ElementsCollection
 import com.codeborne.selenide.Selenide
-import com.codeborne.selenide.Selenide.`$`
-import com.codeborne.selenide.Selenide.`$$`
-import com.codeborne.selenide.Selenide.element
+import com.codeborne.selenide.Selenide.*
 import com.codeborne.selenide.SelenideElement
 import com.example.e2e.utils.CENTER
 import com.example.e2e.utils.typeOf
-import org.junit.jupiter.api.DisplayName
 
-@DisplayName("UI: Главная страница")
 class MainPage {
 
     private val headerTitle: SelenideElement = element("h1")

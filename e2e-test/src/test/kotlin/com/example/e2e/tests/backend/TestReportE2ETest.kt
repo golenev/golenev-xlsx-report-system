@@ -27,11 +27,14 @@ class TestReportE2ETest {
     fun cleaDb() {
        val items = batchRequest.items.map { it.testId.shouldNotBeNull() }
 
-        items.forEach { item->
-            dbReportExec {
-                TestReportTable.deleteWhere { TestReportTable.testId eq item }
+        step("Удаление всех созданных тест кейсов из базы") {
+            items.forEach { item->
+                dbReportExec {
+                    TestReportTable.deleteWhere { TestReportTable.testId eq item }
+                }
             }
         }
+
     }
 
     @AllureId("169")
@@ -64,7 +67,6 @@ class TestReportE2ETest {
                 .shouldHaveSize(batchRequest.items.size)
         }
 
-        // Создаём удобную мапу по testId
         val itemsById = report.items.associateBy { it.testId }
 
         step("Проверяем все записи из batch-запроса") {
