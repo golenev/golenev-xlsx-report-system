@@ -1,6 +1,9 @@
 package com.example.e2e.tests.ui
 
+import com.codeborne.selenide.Configuration
 import com.codeborne.selenide.Selenide
+import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
+import com.codeborne.selenide.proxy.SelenideProxyServer
 import com.example.e2e.dto.*
 import com.example.e2e.http.Paths
 import com.example.e2e.ui.config.*
@@ -16,25 +19,21 @@ import org.junit.jupiter.api.*
 class CreateTestCaseUIE2eTests {
 
     private val mainPage = MainPage()
-    private var proxyThread: Thread? = null
+    private lateinit var selenideProxy: SelenideProxyServer
 
     @BeforeEach
-    fun setUpProxy(testInfo: TestInfo) {
+    fun setUpProxy() {
         DriverConfig().setup()
-
-        step("Запускаем прокси для теста ${testInfo.displayName}") {
-            proxyThread = Thread(ProxyInitializer()).also {
-                it.start()
-                it.join()
-            }
-        }
+        Configuration.proxyEnabled = true
+        mainPage.open()
+        selenideProxy = getSelenideProxy()
     }
 
     @AfterEach
     fun tearDown() {
         step("Закрываем драйвер и прокси") {
             Selenide.closeWebDriver()
-            proxyThread = null
+            Configuration.proxyEnabled = false
         }
     }
 
@@ -65,7 +64,7 @@ class CreateTestCaseUIE2eTests {
         }
 
         val requestBody = step("Сохраняем новую строку и перехватываем запрос") {
-            interceptRequestBody(Paths.REPORTS.path) {
+            interceptRequestBody(selenideProxy, Paths.REPORTS.path) {
                 step("Сохраняем новую строку") { mainPage.saveNewRow() }
             }
         }
@@ -100,7 +99,7 @@ class CreateTestCaseUIE2eTests {
         val injectedPriority = Priority.MEDIUM.value
 
         val initialResponse = step("Открываем главную страницу и перехватываем первый ответ") {
-           interceptResponseBody(Paths.REPORTS.path) {
+            interceptResponseBody(selenideProxy, Paths.REPORTS.path) {
                 step("Открываем главную страницу") { mainPage.open() }
             }
         }
@@ -126,7 +125,7 @@ class CreateTestCaseUIE2eTests {
 
         step("Проверяем, что тест-кейс отсутствует до подмены") { mainPage.shouldNotSeeTestCase(injectedTestId) }
 
-        replaceResponseBody(Paths.REPORTS.path, JsonUtils.toJson(modifiedResponse)) {
+        replaceResponseBody(selenideProxy, Paths.REPORTS.path, JsonUtils.toJson(modifiedResponse)) {
             step("Обновляем страницу после подмены ответа") { mainPage.refreshCurrentPage() }
             step("Проверяем, что тест-кейс отображается после подмены") { mainPage.shouldSeeTestCase(injectedTestId) }
         }

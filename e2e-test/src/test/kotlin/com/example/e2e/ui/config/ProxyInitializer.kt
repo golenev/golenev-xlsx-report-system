@@ -7,8 +7,6 @@ import com.codeborne.selenide.WebDriverRunner
 class ProxyInitializer() : Runnable {
     override fun run() {
         Configuration.proxyEnabled = true
-        if (!WebDriverRunner.hasWebDriverStarted()) {
-            open("/")
-        }
+
     }
 }
