@@ -20,7 +20,7 @@ class CreateTestCaseUIE2eTests {
 
     @BeforeEach
     fun setUpProxy(testInfo: TestInfo) {
-        DriverConfig.setup()
+        DriverConfig().setup()
 
         step("Запускаем прокси для теста ${testInfo.displayName}") {
             proxyThread = Thread(ProxyInitializer()).also {

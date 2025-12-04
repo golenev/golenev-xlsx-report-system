@@ -7,14 +7,14 @@ import io.qameta.allure.selenide.AllureSelenide
 import org.openqa.selenium.MutableCapabilities
 import org.openqa.selenium.chrome.ChromeOptions
 
-object DriverConfig {
+class DriverConfig {
 
     fun setup() {
         Configuration.browserSize = "1920x1080"
         Configuration.timeout = 6_000
         Configuration.fastSetValue = true
         Configuration.pageLoadStrategy = "normal"
-        Configuration.headless = false
+        Configuration.headless = true
         Configuration.screenshots = true
         Configuration.baseUrl = System.getProperty("baseUrl", "http://localhost:18080")
 

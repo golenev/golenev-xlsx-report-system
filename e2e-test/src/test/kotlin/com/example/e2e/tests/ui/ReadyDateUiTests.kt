@@ -22,7 +22,7 @@ class ReadyDateUiTests {
     @BeforeEach
     fun setUp() {
         step("Настраиваем драйвер Selenide") {
-            DriverConfig.setup()
+            DriverConfig().setup()
         }
     }
 
