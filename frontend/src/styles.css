@@ -685,12 +685,13 @@ tbody tr:nth-child(odd) .row-index-cell {
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   overflow: hidden;
-  width: 100%;
+  width: 65%;
+  min-width: 720px;
 }
 
 .snapshot-row {
   display: grid;
-  grid-template-columns: 0.35fr 1.65fr;
+  grid-template-columns: 220px 1fr;
 }
 
 .snapshot-head {
