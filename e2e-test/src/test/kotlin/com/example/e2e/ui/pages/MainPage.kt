@@ -25,8 +25,7 @@ class MainPage {
         .findBy(text("Would you run regress"))
     private val regressionReleaseInput: SelenideElement = element("input.release-input")
     private val regressionSaveButton: SelenideElement = element("div.regression-start-form button.success-btn")
-    private val regressionCancelButton: SelenideElement = regressionActions
-        .findBy(text("Отменить регресс"))
+    private val regressionCancelButton: SelenideElement = `$`(".regression-actions .secondary-btn")
 
     fun shouldDisableAddRow() {
         addRowButton
@@ -134,6 +133,20 @@ class MainPage {
     fun cancelRegression() {
         regressionCancelButton.shouldBe(visible).click()
         regressionCancelButton.should(disappear)
+    }
+
+    fun stopRegress() {
+        `$`(".regression-actions .danger-btn").shouldBe(visible).click()
+    }
+
+    fun checkPopupWarning() {
+        `$`(".popup-message").shouldHave(exactText("Перед остановкой регресса заполните результаты для всех тест-кейсов."))
+        `$`(".popup-title").shouldHave(exactText("Не все статусы заполнены"))
+    }
+
+    fun closePopupWarning() {
+        `$`(".popup-actions .primary-btn").click()
+        `$`(".popup-card").shouldBe(disappear)
     }
 
     fun updateCategory(testId: String, newValue: String) {

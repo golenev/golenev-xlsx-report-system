@@ -6,15 +6,15 @@ import com.example.e2e.db.tables.RegressionTable
 import com.example.e2e.db.tables.mapToRegression
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 
 object RegressionRepository {
 
     fun findByReleaseName(releaseName: String): RegressionRow? = dbReportExec {
         RegressionTable
-            .select { RegressionTable.releaseName eq releaseName }
-            .map(::mapToRegression)
-            .singleOrNull()
+            .selectAll().where { RegressionTable.releaseName eq releaseName }
+            .map { mapToRegression(it) }
+            .firstOrNull()
     }
 
     fun deleteByReleaseName(releaseName: String) = dbReportExec {
