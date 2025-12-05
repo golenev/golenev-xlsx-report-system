@@ -16,7 +16,7 @@ import io.qameta.allure.AllureId
 import org.junit.jupiter.api.*
 
 @DisplayName("UI: Создание записей на главной странице")
-class CreateTestCaseUIE2eTests {
+class CreateTestCaseUIE2eProxyTests {
 
     private val mainPage = MainPage()
     private lateinit var selenideProxy: SelenideProxyServer
@@ -24,7 +24,6 @@ class CreateTestCaseUIE2eTests {
     @BeforeEach
     fun setUpProxy() {
         DriverConfig().setup()
-        Configuration.proxyEnabled = true
         mainPage.open()
         selenideProxy = getSelenideProxy()
     }
@@ -33,7 +32,6 @@ class CreateTestCaseUIE2eTests {
     fun tearDown() {
         step("Закрываем драйвер и прокси") {
             Selenide.closeWebDriver()
-            Configuration.proxyEnabled = false
         }
     }
 

@@ -22,6 +22,7 @@ class TestReportE2ETest {
 
     private val reportService = ReportService()
     private lateinit var batchRequest: TestBatchRequest
+    val reportDay: LocalDate = step("Определяем дату запуска теста") { LocalDate.now().minusDays(18) }
 
     @AfterEach
     fun cleaDb() {
@@ -30,7 +31,7 @@ class TestReportE2ETest {
         step("Удаление всех созданных тест кейсов из базы") {
             items.forEach { item->
                 dbReportExec {
-                    TestReportTable.deleteWhere { TestReportTable.testId eq item }
+                    TestReportTable.deleteWhere { TestReportTable.readyDate eq reportDay }
                 }
             }
         }
@@ -41,15 +42,15 @@ class TestReportE2ETest {
     @Test
     @DisplayName("Создаем запись через batch и проверяем отображение в отчете")
     fun createAndReadReportThroughApi() {
-        val today = step("Определяем дату запуска теста") { LocalDate.now() }
+
 
         step("Удаляем отчеты за выбранную дату") {
-            DatabaseCleaner.deleteReportsByDate(today)
+            DatabaseCleaner.deleteReportsByDate(reportDay)
         }
 
         batchRequest = step("Формируем batch-запрос с десятью тестами") {
             TestBatchRequest(
-                items = generateTestCases(10),
+                items = generateTestCases(10, readyDate = reportDay),
             )
         }
 
@@ -63,7 +64,7 @@ class TestReportE2ETest {
 
         step("Проверяем количество записей за выбранную дату") {
             report.items
-                .filter { it.readyDate == today }
+                .filter { it.readyDate == reportDay }
                 .shouldHaveSize(batchRequest.items.size)
         }
 
@@ -75,7 +76,7 @@ class TestReportE2ETest {
                 val reportItem = itemsById[testId].shouldNotBeNull()
                 reportItem.category shouldBe it.category
                 reportItem.shortTitle shouldBe it.shortTitle
-                reportItem.readyDate shouldBe today
+                reportItem.readyDate shouldBe reportDay
                 reportItem.generalStatus shouldBe it.generalStatus
                 reportItem.priority shouldBe it.priority
                 reportItem.updatedAt.shouldNotBeNull()

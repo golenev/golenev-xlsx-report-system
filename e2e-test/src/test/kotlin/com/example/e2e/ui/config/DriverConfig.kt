@@ -17,6 +17,7 @@ class DriverConfig {
         Configuration.headless = true
         Configuration.screenshots = true
         Configuration.baseUrl = System.getProperty("baseUrl", "http://localhost:18080")
+        Configuration.proxyEnabled = true
 
         SelenideLogger.addListener("AllureSelenide", AllureSelenide())
 

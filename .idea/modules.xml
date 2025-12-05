@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/e2e-test.test.iml" filepath="$PROJECT_DIR$/.idea/modules/e2e-test.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/golenev-xlsx-report-system.iml" filepath="$PROJECT_DIR$/.idea/golenev-xlsx-report-system.iml" />
     </modules>
   </component>
