@@ -1,6 +1,6 @@
 package com.example.e2e.tests.ui
 
-import com.example.e2e.db.TestReportTable
+import com.example.e2e.db.tables.TestReportTable
 import com.example.e2e.db.dbReportExec
 import com.example.e2e.dto.Priority
 import com.example.e2e.ui.config.DriverConfig

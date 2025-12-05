@@ -24,6 +24,7 @@ dependencies {
     testImplementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
+    testImplementation("org.jetbrains.exposed:exposed-json:$exposedVersion")
 
     testImplementation("org.postgresql:postgresql:42.7.3")
     testImplementation("com.zaxxer:HikariCP:5.1.0")
