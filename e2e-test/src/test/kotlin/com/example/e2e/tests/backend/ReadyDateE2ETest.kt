@@ -1,8 +1,6 @@
 package com.example.e2e.tests.backend
 
-import com.example.e2e.db.DatabaseCleaner
-import com.example.e2e.db.TestReportTable
-import com.example.e2e.db.dbReportExec
+import com.example.e2e.db.repository.TestReportRepository
 import com.example.e2e.dto.GeneralTestStatus
 import com.example.e2e.dto.Priority
 import com.example.e2e.dto.TestBatchRequest
@@ -11,8 +9,6 @@ import com.example.e2e.service.ReportService
 import com.example.e2e.utils.step
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
-import org.jetbrains.exposed.sql.deleteWhere
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -25,11 +21,7 @@ class ReadyDateE2ETest {
 
     @AfterEach
     fun cleaDb() {
-        dbReportExec {
-            TestReportTable.deleteWhere {
-                (testId inList listOf("123"))
-            }
-        }
+        TestReportRepository.deleteByTestId("123")
     }
 
     @AllureId("167")
@@ -39,7 +31,7 @@ class ReadyDateE2ETest {
         val today = step("Определяем дату запуска теста") { LocalDate.now() }
 
         step("Удаляем отчеты за выбранную дату") {
-            DatabaseCleaner.deleteReportsByDate(today)
+            TestReportRepository.deleteReportsByDate(today)
         }
 
         val creationRequest = step("Формируем batch-запрос без readyDate") {

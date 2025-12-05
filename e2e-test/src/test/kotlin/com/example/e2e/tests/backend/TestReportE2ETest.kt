@@ -1,8 +1,6 @@
 package com.example.e2e.tests.backend
 
-import com.example.e2e.db.DatabaseCleaner
-import com.example.e2e.db.TestReportTable
-import com.example.e2e.db.dbReportExec
+import com.example.e2e.db.repository.TestReportRepository
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.service.ReportService
 import com.example.e2e.utils.TestDataGenerator.generateTestCases
@@ -11,8 +9,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.deleteWhere
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -26,14 +22,8 @@ class TestReportE2ETest {
 
     @AfterEach
     fun cleaDb() {
-       val items = batchRequest.items.map { it.testId.shouldNotBeNull() }
-
         step("Удаление всех созданных тест кейсов из базы") {
-            items.forEach { item->
-                dbReportExec {
-                    TestReportTable.deleteWhere { TestReportTable.readyDate eq reportDay }
-                }
-            }
+            TestReportRepository.deleteReportsByDate(reportDay)
         }
 
     }
@@ -45,7 +35,7 @@ class TestReportE2ETest {
 
 
         step("Удаляем отчеты за выбранную дату") {
-            DatabaseCleaner.deleteReportsByDate(reportDay)
+            TestReportRepository.deleteReportsByDate(reportDay)
         }
 
         batchRequest = step("Формируем batch-запрос с десятью тестами") {

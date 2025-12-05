@@ -1,4 +1,4 @@
-package com.example.e2e.db
+package com.example.e2e.db.tables
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -6,7 +6,6 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.timestampWithTimeZone
-
 
 object TestReportTable : Table("test_report") {
     val id = long("id").autoIncrement()

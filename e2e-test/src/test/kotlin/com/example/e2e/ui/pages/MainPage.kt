@@ -20,6 +20,13 @@ class MainPage {
     private val generalStatusDropdown: SelenideElement = newRow.`$$`("div.status-dropdown").first()
     private val prioritySelect: SelenideElement = newRow.find("select.cell-input")
     private val newRowSaveButton: SelenideElement = newRow.find("button.save-btn")
+    private val regressionActions = `$$`("div.regression-actions")
+    private val regressionStartButton: SelenideElement = regressionActions
+        .findBy(text("Would you run regress"))
+    private val regressionReleaseInput: SelenideElement = element("input.release-input")
+    private val regressionSaveButton: SelenideElement = element("div.regression-start-form button.success-btn")
+    private val regressionCancelButton: SelenideElement = regressionActions
+        .findBy(text("Отменить регресс"))
 
     fun shouldDisableAddRow() {
         addRowButton
@@ -102,6 +109,31 @@ class MainPage {
     fun shouldHaveReadyDate(testId: String, expectedDate: String) {
         val row = tableRowByTestId(testId).shouldBe(visible)
         row.find("input[type='date']").shouldBe(visible).shouldHave(value(expectedDate))
+    }
+
+    fun openRegressionStartForm() {
+        regressionStartButton.shouldBe(enabled).click()
+        regressionReleaseInput.shouldBe(visible)
+    }
+
+    fun fillRegressionName(releaseName: String) {
+        regressionReleaseInput.shouldBe(visible).typeOf(releaseName)
+    }
+
+    fun saveRegressionStart() {
+        regressionSaveButton.shouldBe(enabled).click()
+        regressionCancelButton.shouldBe(visible)
+    }
+
+    fun startRegression(releaseName: String) {
+        openRegressionStartForm()
+        fillRegressionName(releaseName)
+        saveRegressionStart()
+    }
+
+    fun cancelRegression() {
+        regressionCancelButton.shouldBe(visible).click()
+        regressionCancelButton.should(disappear)
     }
 
     fun updateCategory(testId: String, newValue: String) {
