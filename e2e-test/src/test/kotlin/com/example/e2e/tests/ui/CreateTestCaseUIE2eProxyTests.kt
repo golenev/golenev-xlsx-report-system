@@ -1,19 +1,24 @@
 package com.example.e2e.tests.ui
 
-import com.codeborne.selenide.Configuration
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import com.codeborne.selenide.proxy.SelenideProxyServer
 import com.example.e2e.dto.*
 import com.example.e2e.http.Paths
-import com.example.e2e.ui.config.*
+import com.example.e2e.ui.config.DriverConfig
+import com.example.e2e.ui.config.interceptRequestBody
+import com.example.e2e.ui.config.interceptResponseBody
+import com.example.e2e.ui.config.replaceResponseBody
 import com.example.e2e.ui.pages.MainPage
 import com.example.e2e.utils.JsonUtils
 import com.example.e2e.utils.step
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
 
 @DisplayName("UI: Создание записей на главной странице")
 class CreateTestCaseUIE2eProxyTests {
@@ -128,5 +133,4 @@ class CreateTestCaseUIE2eProxyTests {
             step("Проверяем, что тест-кейс отображается после подмены") { mainPage.shouldSeeTestCase(injectedTestId) }
         }
     }
-
 }
