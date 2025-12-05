@@ -129,7 +129,7 @@ class UiAndDbE2ETest {
         step("Убеждаемся в корректности полей регресса") {
             regression.status shouldBe "RUNNING"
             regression.regressionDate shouldBe regressionDate
-            regression.payload?.trim() shouldBe "{}"
+            regression.payload shouldBe emptyMap()
         }
 
         step("Отменяем регресс через UI") {

@@ -1,16 +1,19 @@
 package com.example.e2e.db.tables
 
+import com.example.e2e.utils.JsonUtils
 import java.time.LocalDate
+import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
+import org.jetbrains.exposed.sql.json.jsonb
 
 object RegressionTable : Table("regressions") {
     val id = long("id").autoIncrement()
     val status = text("status")
     val regressionDate = date("regression_date")
     val releaseName = text("release_name")
-    val payload = text("payload").nullable()
+    val payload = jsonbColumn<Map<String, Any?>>("payload").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -20,7 +23,7 @@ data class RegressionRow(
     val status: String,
     val regressionDate: LocalDate,
     val releaseName: String,
-    val payload: String?,
+    val payload: Map<String, Any?>?,
 )
 
 fun mapToRegression(row: ResultRow) = RegressionRow(
@@ -30,3 +33,6 @@ fun mapToRegression(row: ResultRow) = RegressionRow(
     releaseName = row[RegressionTable.releaseName],
     payload = row[RegressionTable.payload],
 )
+
+inline fun <reified T : Any> Table.jsonbColumn(name: String): Column<T> =
+    jsonb(name, { JsonUtils.globalMapper.writeValueAsString(it) }, { JsonUtils.globalMapper.readValue(it, T::class.java) })
