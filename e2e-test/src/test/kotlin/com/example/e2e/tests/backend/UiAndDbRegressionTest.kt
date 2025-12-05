@@ -16,7 +16,6 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import java.lang.Thread.sleep
 import java.time.LocalDate
 
 @Execution(ExecutionMode.SAME_THREAD)//в этом классе тесты последовательно, потому что мы не можем начать два регресса одновременно
@@ -64,9 +63,6 @@ class UiAndDbRegressionTest {
             mainPage.startRegression(createdReleaseName)
         }
 
-        sleep(5000)
-
-
         val regression = step("Проверяем создание записи о регрессе в базе") {
             print("createdReleaseName = ${createdReleaseName}")
             RegressionRepository.findByReleaseName(createdReleaseName)
@@ -103,8 +99,6 @@ class UiAndDbRegressionTest {
         step("Запускаем регресс через UI") {
             mainPage.startRegression(createdReleaseName)
         }
-
-        sleep(5000)
 
         val regression = step("Проверяем создание записи о регрессе в базе") {
             print("createdReleaseName = ${createdReleaseName}")
