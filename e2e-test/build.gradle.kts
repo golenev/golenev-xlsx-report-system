@@ -75,12 +75,7 @@ tasks.named<Test>("test") {
 }
 
 tasks.named("allureReport") {
-    setDependsOn(
-        dependsOn.filterNot { dependency ->
-            (dependency as? TaskProvider<*>)?.name == "runMyKotlinFunction"
-        }
-    )
-    dependsOn(tasks.named("test"))
+    setDependsOn(listOf(tasks.named("test")))
 }
 
 val allureTestCasesPath = layout.buildDirectory.dir("reports/allure-report/allureReport/data/test-cases")
@@ -91,12 +86,13 @@ tasks.register<JavaExec>("runMyKotlinFunction") {
     classpath = sourceSets["test"].runtimeClasspath
     mainClass.set("helpers.MyRunner")
     doFirst {
-        systemProperty("allure.testCasesPath", allureTestCasesPath.get().asFile.absolutePath)
+        val testCasesDir = allureTestCasesPath.get().asFile
+        if (!testCasesDir.exists()) {
+            error(
+                "Не найдена папка с test-cases: ${testCasesDir.absolutePath}. " +
+                    "Сначала запусти 'gradle -p e2e-test allureReport'."
+            )
+        }
+        systemProperty("allure.testCasesPath", testCasesDir.absolutePath)
     }
-}
-
-tasks.register("runMyKotlinFunctionWithReport") {
-    group = "custom"
-    description = "Runs tests, builds Allure report, and invokes MyRunner"
-    dependsOn(tasks.named("test"), tasks.named("allureReport"), tasks.named("runMyKotlinFunction"))
 }

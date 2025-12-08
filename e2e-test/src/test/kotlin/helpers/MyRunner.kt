@@ -3,6 +3,7 @@ package helpers
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import kotlin.system.exitProcess
+import java.io.File
 
 
 object MyRunner {
@@ -11,7 +12,7 @@ object MyRunner {
         println(">>> Start MyRunner")
         try {
             val testCasesPath = System.getProperty("allure.testCasesPath")
-                ?: error("System property 'allure.testCasesPath' is not set")
+                ?: defaultAllurePathOrError()
 
             val items = parseAllureReportsFromFolder(testCasesPath)
             println(">>> Parsed test cases: ${items.size}")
@@ -45,5 +46,16 @@ object MyRunner {
             e.printStackTrace()
             exitProcess(12074)
         }
+    }
+
+    private fun defaultAllurePathOrError(): String {
+        val defaultPath = File("build/reports/allure-report/allureReport/data/test-cases")
+        if (defaultPath.exists() && defaultPath.isDirectory) {
+            return defaultPath.absolutePath
+        }
+        error(
+            "System property 'allure.testCasesPath' is not set. " +
+                "Either run Gradle task 'runMyKotlinFunction' or provide the property manually."
+        )
     }
 }
