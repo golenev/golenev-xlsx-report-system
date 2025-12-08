@@ -72,7 +72,15 @@ tasks.register("deleteAllureReport", Delete::class) {
 tasks.named<Test>("test") {
     dependsOn(tasks.named("deleteAllureReport"))
     useJUnitPlatform()
-    finalizedBy(tasks.named("allureReport"))
+}
+
+tasks.named("allureReport") {
+    setDependsOn(
+        dependsOn.filterNot { dependency ->
+            (dependency as? TaskProvider<*>)?.name == "runMyKotlinFunction"
+        }
+    )
+    dependsOn(tasks.named("test"))
 }
 
 val allureTestCasesPath = layout.buildDirectory.dir("reports/allure-report/allureReport/data/test-cases")
@@ -82,6 +90,13 @@ tasks.register<JavaExec>("runMyKotlinFunction") {
     description = "Runs a Kotlin function from test sources"
     classpath = sourceSets["test"].runtimeClasspath
     mainClass.set("helpers.MyRunner")
-    dependsOn("allureReport")
-    systemProperty("allure.testCasesPath", allureTestCasesPath.map { it.asFile.absolutePath })
+    doFirst {
+        systemProperty("allure.testCasesPath", allureTestCasesPath.get().asFile.absolutePath)
+    }
+}
+
+tasks.register("runMyKotlinFunctionWithReport") {
+    group = "custom"
+    description = "Runs tests, builds Allure report, and invokes MyRunner"
+    dependsOn(tasks.named("test"), tasks.named("allureReport"), tasks.named("runMyKotlinFunction"))
 }
