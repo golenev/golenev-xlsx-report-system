@@ -10,7 +10,8 @@ object MyRunner {
     fun main(args: Array<String>) {
         println(">>> Start MyRunner")
         try {
-            val testCasesPath = "e2e-test/build/reports/allure-report/allureReport/data/test-cases"
+            val testCasesPath = System.getProperty("allure.testCasesPath")
+
 
             println(">>> Start MyRunner")
             val items = parseAllureReportsFromFolder(testCasesPath)

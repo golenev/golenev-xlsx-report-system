@@ -75,7 +75,7 @@ tasks.named<Test>("test") {
     finalizedBy(tasks.named("allureReport"))
 }
 
-val allureTestCasesPath = layout.buildDirectory.dir("reports/allure-report/allureReport/data/test-cases")
+val allureTestCasesPath = layout.buildDirectory.dir("e2e-test/build/reports/allure-report/allureReport/data/test-cases")
 
 tasks.register<JavaExec>("runMyKotlinFunction") {
     group = "custom"
