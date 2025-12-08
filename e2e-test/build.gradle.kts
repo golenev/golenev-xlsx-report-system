@@ -1,6 +1,3 @@
-import org.gradle.kotlin.dsl.withType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     kotlin("jvm") version "1.9.23"
     id("io.qameta.allure") version "2.12.0"
@@ -76,4 +73,15 @@ tasks.named<Test>("test") {
     dependsOn(tasks.named("deleteAllureReport"))
     useJUnitPlatform()
     finalizedBy(tasks.named("allureReport"))
+}
+
+val allureTestCasesPath = layout.buildDirectory.dir("reports/allure-report/allureReport/data/test-cases")
+
+tasks.register<JavaExec>("runMyKotlinFunction") {
+    group = "custom"
+    description = "Runs a Kotlin function from test sources"
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("helpers.MyRunner")
+    dependsOn("testClasses")
+    systemProperty("allure.testCasesPath", allureTestCasesPath.get().asFile.absolutePath)
 }
