@@ -6,6 +6,7 @@ import com.example.report.dto.TestReportResponse
 import com.example.report.dto.TestUpsertItem
 import com.example.report.entity.TestReportEntity
 import com.example.report.model.GeneralTestStatus
+import com.example.report.model.RegressionRunStatus
 import com.example.report.model.Priority
 import com.example.report.repository.TestReportRepository
 import jakarta.transaction.Transactional
@@ -38,12 +39,12 @@ class TestReportService(
     }
 
     @Transactional
-    fun upsertBatch(request: TestBatchRequest) {
+    fun upsertBatch(request: TestBatchRequest, isRegressRunning: Boolean = false) {
         request.items
             .map { item ->
                 val normalizedId = normalizeTestId(item.testId)
                 val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
-                val validated = validateAndNormalize(item, existing, normalizedId)
+                val validated = validateAndNormalize(item, existing, normalizedId, isRegressRunning)
                 validated to existing
             }
             .forEach { (validated, existing) -> upsertSingle(validated, existing) }
@@ -69,6 +70,7 @@ class TestReportService(
             entity.generalStatus = item.generalStatus
             entity.priority = item.priority
             item.notes?.let { entity.notes = it }
+            entity.runStatus = item.runStatus
             entity.updatedAt = OffsetDateTime.now()
             testReportRepository.save(entity)
             return
@@ -83,6 +85,7 @@ class TestReportService(
         item.issueLink?.let { newEntity.issueLink = it }
         newEntity.generalStatus = item.generalStatus
         item.notes?.let { newEntity.notes = it }
+        newEntity.runStatus = item.runStatus
         newEntity.updatedAt = OffsetDateTime.now()
         testReportRepository.save(newEntity)
     }
@@ -90,7 +93,8 @@ class TestReportService(
     private fun validateAndNormalize(
         item: TestUpsertItem,
         existing: TestReportEntity?,
-        normalizedId: String
+        normalizedId: String,
+        isRegressRunning: Boolean,
     ): ValidatedUpsert {
         val category = item.category
             ?.takeIf { it.isNotBlank() }
@@ -120,6 +124,12 @@ class TestReportService(
                 ?: existing?.priority?.takeIf { it.isNotBlank() }
                 ?: requiredFieldMissing("priority")
 
+        val runStatus = when {
+            isRegressRunning -> validateRunStatus(item.runStatus, true)
+            item.runStatus != null -> validateRunStatus(item.runStatus, false)
+            else -> existing?.runStatus
+        }
+
         return ValidatedUpsert(
             testId = normalizedId,
             category = category,
@@ -132,7 +142,8 @@ class TestReportService(
             readyDate = item.readyDate
                 ?.takeIf { it.isNotBlank() }
                 ?.trim()
-                ?.let { LocalDate.parse(it) }
+                ?.let { LocalDate.parse(it) },
+            runStatus = runStatus,
         )
     }
 
@@ -146,7 +157,8 @@ class TestReportService(
         priority = priority,
         scenario = scenario,
         notes = notes,
-        updatedAt = updatedAt?.toString()
+        updatedAt = updatedAt?.toString(),
+        runStatus = runStatus,
     )
 
     private fun validateGeneralStatus(generalStatus: String): String {
@@ -163,6 +175,20 @@ class TestReportService(
         } catch (ex: IllegalArgumentException) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid priority")
         }
+    }
+
+    private fun validateRunStatus(runStatus: String?, required: Boolean): String? {
+        val validated = try {
+            RegressionRunStatus.requireValid(runStatus)
+        } catch (ex: IllegalArgumentException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid run status")
+        }
+
+        if (required && validated == null) {
+            requiredFieldMissing("runStatus")
+        }
+
+        return validated
     }
 
     private fun normalizeTestId(testId: String?): String {
@@ -186,7 +212,8 @@ class TestReportService(
         val generalStatus: String,
         val priority: String,
         val notes: String?,
-        val readyDate: LocalDate?
+        val readyDate: LocalDate?,
+        val runStatus: String?,
     )
 
     private fun compareTestIds(a: String, b: String): Int {

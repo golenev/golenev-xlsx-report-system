@@ -39,8 +39,15 @@ class TestReportController(
     }
 
     @PostMapping("/tests/batch")
-    fun upsertBatch(@Valid @RequestBody request: TestBatchRequest) {
-        testReportService.upsertBatch(request)
+    fun upsertBatch(
+        @RequestParam(defaultValue = "false") isRegressRunning: Boolean,
+        @Valid @RequestBody request: TestBatchRequest,
+    ) {
+        if (isRegressRunning) {
+            regressionService.requireRunningRegression()
+        }
+
+        testReportService.upsertBatch(request, isRegressRunning)
     }
 
     @DeleteMapping("/tests/{testId}")

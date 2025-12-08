@@ -133,8 +133,19 @@ class RegressionService(
                     name = it.releaseName,
                     regressionDate = it.regressionDate.toString(),
                     status = it.status,
-                )
-            }
+            )
+    }
+
+    fun requireRunningRegression() {
+        val today = LocalDate.now()
+        val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
+        if (running == null || running.regressionDate != today) {
+            throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "регресс не запущен, сначала запустите регресс",
+            )
+        }
+    }
     }
 
     fun getRegressionSnapshot(regressionId: Long): RegressionSnapshotResponse {

@@ -43,5 +43,8 @@ data class TestReportEntity(
     var notes: String? = null,
 
     @Column(name = "updated_at")
-    var updatedAt: OffsetDateTime? = null
+    var updatedAt: OffsetDateTime? = null,
+
+    @Column(name = "run_status")
+    var runStatus: String? = null,
 )
