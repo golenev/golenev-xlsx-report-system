@@ -4,15 +4,11 @@ import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import kotlin.system.exitProcess
 
-
 object MyRunner {
     @JvmStatic
     fun main(args: Array<String>) {
-        println(">>> Start MyRunner")
         try {
             val testCasesPath = System.getProperty("allure.testCasesPath")
-
-
             println(">>> Start MyRunner")
             val items = parseAllureReportsFromFolder(testCasesPath)
             println(">>> Parsed test cases: ${items.size}")

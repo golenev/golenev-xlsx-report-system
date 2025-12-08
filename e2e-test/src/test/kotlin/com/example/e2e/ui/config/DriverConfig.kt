@@ -14,7 +14,7 @@ class DriverConfig {
         Configuration.timeout = 6_000
         Configuration.fastSetValue = true
         Configuration.pageLoadStrategy = "normal"
-        Configuration.headless = false
+        Configuration.headless = true
         Configuration.screenshots = true
         Configuration.baseUrl = System.getProperty("baseUrl", "http://localhost:18080")
         Configuration.proxyEnabled = true
