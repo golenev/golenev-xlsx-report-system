@@ -75,13 +75,13 @@ tasks.named<Test>("test") {
     finalizedBy(tasks.named("allureReport"))
 }
 
-val allureTestCasesPath = layout.buildDirectory.dir("e2e-test/build/reports/allure-report/allureReport/data/test-cases")
+val allureTestCasesPath = layout.buildDirectory.dir("reports/allure-report/allureReport/data/test-cases")
 
 tasks.register<JavaExec>("runMyKotlinFunction") {
     group = "custom"
     description = "Runs a Kotlin function from test sources"
     classpath = sourceSets["test"].runtimeClasspath
     mainClass.set("helpers.MyRunner")
-    dependsOn("testClasses")
-    systemProperty("allure.testCasesPath", allureTestCasesPath.get().asFile.absolutePath)
+    dependsOn("allureReport")
+    systemProperty("allure.testCasesPath", allureTestCasesPath.map { it.asFile.absolutePath })
 }

@@ -11,9 +11,8 @@ object MyRunner {
         println(">>> Start MyRunner")
         try {
             val testCasesPath = System.getProperty("allure.testCasesPath")
+                ?: error("System property 'allure.testCasesPath' is not set")
 
-
-            println(">>> Start MyRunner")
             val items = parseAllureReportsFromFolder(testCasesPath)
             println(">>> Parsed test cases: ${items.size}")
 
