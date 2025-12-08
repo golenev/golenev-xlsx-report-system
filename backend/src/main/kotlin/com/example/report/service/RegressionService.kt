@@ -133,7 +133,8 @@ class RegressionService(
                     name = it.releaseName,
                     regressionDate = it.regressionDate.toString(),
                     status = it.status,
-            )
+                )
+            }
     }
 
     fun requireRunningRegression() {
@@ -145,7 +146,6 @@ class RegressionService(
                 "регресс не запущен, сначала запустите регресс",
             )
         }
-    }
     }
 
     fun getRegressionSnapshot(regressionId: Long): RegressionSnapshotResponse {
