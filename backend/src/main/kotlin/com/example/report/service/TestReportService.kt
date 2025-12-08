@@ -94,7 +94,7 @@ class TestReportService(
         item: TestUpsertItem,
         existing: TestReportEntity?,
         normalizedId: String,
-        isRegressRunning: Boolean,
+        isRegressRunning: Boolean = false,
     ): ValidatedUpsert {
         val category = item.category
             ?.takeIf { it.isNotBlank() }
