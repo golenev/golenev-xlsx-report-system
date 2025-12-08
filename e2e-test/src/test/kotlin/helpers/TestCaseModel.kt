@@ -34,4 +34,7 @@ data class TestCaseItem(
 
     @JsonProperty("priority")
     val priority: String,
+
+    @JsonProperty("run_status")
+    val runStatus: String? = null,
 )

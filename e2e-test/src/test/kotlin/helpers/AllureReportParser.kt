@@ -14,7 +14,8 @@ data class AllureReport(
     val testStage: TestStage?,
     val beforeStages: List<TestStage>?,
     val afterStages: List<TestStage>?,
-    val labels: List<Label>? // здесь лежат AS_ID, suite и прочие лейблы
+    val labels: List<Label>?, // здесь лежат AS_ID, suite и прочие лейблы
+    val status: String?,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -48,7 +49,8 @@ data class TestCaseModel(
     val id: String,      // 455 или 455-1, 455-2...
     val name: String,    // название теста
     val scenario: String, // сценарий в том же виде, как раньше печатался
-    val category: String // значение @DisplayName на классе (Allure label "suite")
+    val category: String, // значение @DisplayName на классе (Allure label "suite")
+    val runStatus: String?,
 )
 
 // Внутренняя DTO: результат парсинга одного файла до окончательного назначения ID
@@ -56,7 +58,8 @@ private data class RawTestCase(
     val baseId: String?, // 455 из AS_ID, ещё без -1/-2
     val name: String,    // чистое название теста
     val scenario: String, // блок "**Сценарий**: ..." со всеми шагами
-    val category: String // suite = имя категории/класса
+    val category: String, // suite = имя категории/класса
+    val runStatus: String?,
 )
 
 // Счётчик шагов
@@ -144,11 +147,17 @@ private fun extractRawTestCase(jsonString: String, fileName: String): RawTestCas
         ?.value
         ?: "Без категории"
 
+    val normalizedStatus = report.status
+        ?.trim()
+        ?.lowercase()
+        ?.takeIf { it == "passed" || it == "failed" }
+
     return RawTestCase(
         baseId = baseId,
         name = testName,
         scenario = scenarioBlock,
-        category = category
+        category = category,
+        runStatus = normalizedStatus,
     )
 }
 
@@ -205,7 +214,8 @@ fun parseAllureReportsFromFolder(folderPath: String): List<TestCaseModel> {
                     id = baseId,
                     name = raw.name,
                     scenario = raw.scenario,
-                    category = raw.category
+                    category = raw.category,
+                    runStatus = raw.runStatus,
                 )
             )
         } else {
@@ -218,7 +228,8 @@ fun parseAllureReportsFromFolder(folderPath: String): List<TestCaseModel> {
                         id = id,
                         name = raw.name,
                         scenario = raw.scenario,
-                        category = raw.category
+                        category = raw.category,
+                        runStatus = raw.runStatus,
                     )
                 )
             }

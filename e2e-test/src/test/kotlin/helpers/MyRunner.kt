@@ -27,7 +27,8 @@ object MyRunner {
                                 generalStatus = "Готово",
                                 scenario = testCase.scenario,
                                 notes = "",
-                                priority = "Medium"
+                                priority = "Medium",
+                                runStatus = testCase.runStatus,
                             )
                         }
                     )
