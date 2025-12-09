@@ -11,6 +11,7 @@ import com.example.report.model.RegressionStatus
 import com.example.report.repository.RegressionRepository
 import com.example.report.repository.TestReportRepository
 import jakarta.transaction.Transactional
+import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -20,7 +21,7 @@ import java.time.LocalDate
 class RegressionService(
     private val regressionRepository: RegressionRepository,
     private val testReportRepository: TestReportRepository,
-    private val excelExportService: ExcelExportService,
+    @Lazy private val excelExportService: ExcelExportService,
 ) {
 
     fun getTodayState(): RegressionStateResponse {
