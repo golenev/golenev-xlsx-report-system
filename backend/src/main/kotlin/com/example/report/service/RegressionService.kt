@@ -11,6 +11,7 @@ import com.example.report.model.RegressionStatus
 import com.example.report.repository.RegressionRepository
 import com.example.report.repository.TestReportRepository
 import jakarta.transaction.Transactional
+import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -20,7 +21,7 @@ import java.time.LocalDate
 class RegressionService(
     private val regressionRepository: RegressionRepository,
     private val testReportRepository: TestReportRepository,
-    private val excelExportService: ExcelExportService,
+    @Lazy private val excelExportService: ExcelExportService,
 ) {
 
     fun getTodayState(): RegressionStateResponse {
@@ -135,6 +136,49 @@ class RegressionService(
                     status = it.status,
                 )
             }
+    }
+
+    fun requireRunningRegression() {
+        val today = LocalDate.now()
+        val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
+        if (running == null || running.regressionDate != today) {
+            throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "регресс не запущен, сначала запустите регресс",
+            )
+        }
+    }
+
+    @Transactional
+    fun syncRunningRegressionResults(results: Map<String, String>) {
+        if (results.isEmpty()) return
+
+        val today = LocalDate.now()
+        val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "регресс не запущен, сначала запустите регресс")
+
+        if (running.regressionDate != today) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "регресс не запущен, сначала запустите регресс")
+        }
+
+        val existingResults = running.extractResultsFromPayload()
+        val mergedResults = existingResults.toMutableMap()
+        mergedResults.putAll(results)
+
+        val payload = mapOf(
+            "regressionDate" to running.regressionDate.toString(),
+            "status" to running.status.name,
+            "releaseName" to running.releaseName,
+            "tests" to mergedResults.entries.map { (testId, status) ->
+                mapOf(
+                    "testId" to testId,
+                    "regressionStatus" to status,
+                )
+            },
+        )
+
+        running.payload = payload
+        regressionRepository.save(running)
     }
 
     fun getRegressionSnapshot(regressionId: Long): RegressionSnapshotResponse {

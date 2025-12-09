@@ -3,6 +3,11 @@ package com.example.e2e.tests.backend
 import com.codeborne.selenide.Selenide
 import com.example.e2e.db.repository.RegressionRepository
 import com.example.e2e.db.repository.TestReportRepository
+import com.example.e2e.dto.GeneralTestStatus
+import com.example.e2e.dto.Priority
+import com.example.e2e.dto.TestBatchRequest
+import com.example.e2e.dto.TestUpsertItem
+import com.example.e2e.service.ReportService
 import com.example.e2e.ui.config.DriverConfig
 import com.example.e2e.ui.pages.MainPage
 import com.example.e2e.utils.getRandomTestId
@@ -25,6 +30,7 @@ class UiAndDbRegressionTest {
     private val mainPage = MainPage()
     private val createdTestId: String = "UI-LOCK-${getRandomTestId()}"
     private val createdReleaseName: String = "regress-zopa-${getRandomTestId()}"
+    private val reportService = ReportService()
 
     @BeforeEach
     fun setUp() {
@@ -64,7 +70,6 @@ class UiAndDbRegressionTest {
         }
 
         val regression = step("Проверяем создание записи о регрессе в базе") {
-            print("createdReleaseName = ${createdReleaseName}")
             RegressionRepository.findByReleaseName(createdReleaseName)
                 .shouldNotBeNull()
         }
@@ -90,9 +95,27 @@ class UiAndDbRegressionTest {
     fun startAndStopRegressionViaUi() {
         val regressionDate = step("Определяем дату запуска регресса") { LocalDate.now() }
 
-        step("Удаляем из базы потенциальные конфликты по имени регресса") {
-            RegressionRepository.deleteByReleaseName(createdReleaseName)
+        val batchRequest = step("Готовим batch-запрос для создания теста") {
+            TestBatchRequest(
+                items = listOf(
+                    TestUpsertItem(
+                        testId = createdTestId,
+                        category = "API+UI",
+                        shortTitle = "Создан через API",
+                        issueLink = "https://youtrack.test/issue/$createdTestId",
+                        readyDate = regressionDate.toString(),
+                        generalStatus = GeneralTestStatus.QUEUE.value,
+                        priority = Priority.MEDIUM.value,
+                        scenario = "Создаём запись через API и удаляем через UI",
+                    ),
+                ),
+            )
         }
+
+        step("Создаём запись через API") {
+            reportService.sendBatch(batchRequest)
+        }
+
 
         step("Открываем главную страницу") { mainPage.open() }
 
@@ -101,7 +124,6 @@ class UiAndDbRegressionTest {
         }
 
         val regression = step("Проверяем создание записи о регрессе в базе") {
-            print("createdReleaseName = ${createdReleaseName}")
             RegressionRepository.findByReleaseName(createdReleaseName)
                 .shouldNotBeNull()
         }

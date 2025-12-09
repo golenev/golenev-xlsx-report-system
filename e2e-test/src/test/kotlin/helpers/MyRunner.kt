@@ -15,6 +15,7 @@ object MyRunner {
 
             RestAssured.given()
                 .contentType(ContentType.JSON)
+                .queryParam("isRegressRunning", "true")
                 .body(
                     BatchRequest(
                         items = items.map { testCase ->
@@ -27,7 +28,8 @@ object MyRunner {
                                 generalStatus = "Готово",
                                 scenario = testCase.scenario,
                                 notes = "",
-                                priority = "Medium"
+                                priority = "Medium",
+                                runStatus = testCase.runStatus,
                             )
                         }
                     )

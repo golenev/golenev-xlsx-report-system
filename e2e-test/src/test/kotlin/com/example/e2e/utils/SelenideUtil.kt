@@ -4,7 +4,7 @@ import com.codeborne.selenide.SelenideElement
 import com.codeborne.selenide.TypeOptions
 import java.time.Duration
 
-fun SelenideElement.typeOf(text: String, speed: Long = 60): SelenideElement {
+fun SelenideElement.typeOf(text: String, speed: Long = 40): SelenideElement {
     val options = TypeOptions
         .text(text)
         .withDelay(Duration.ofMillis(speed))

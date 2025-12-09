@@ -44,7 +44,6 @@ class ReadyDateE2ETest {
                         generalStatus = GeneralTestStatus.QUEUE.value,
                         priority = Priority.HIGH.value,
                         scenario = "Сценарий 1. шаг 1 шаг 2 шаг 3",
-                        runStatus = "PASSED",
                     ),
                 ),
             )

@@ -32,8 +32,6 @@ class TestReportE2ETest {
     @Test
     @DisplayName("Создаем запись через batch и проверяем отображение в отчете")
     fun createAndReadReportThroughApi() {
-
-
         step("Удаляем отчеты за выбранную дату") {
             TestReportRepository.deleteReportsByDate(reportDay)
         }
