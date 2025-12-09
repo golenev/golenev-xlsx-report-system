@@ -148,6 +148,38 @@ class RegressionService(
         }
     }
 
+    @Transactional
+    fun syncRunningRegressionResults(results: Map<String, String>) {
+        if (results.isEmpty()) return
+
+        val today = LocalDate.now()
+        val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "регресс не запущен, сначала запустите регресс")
+
+        if (running.regressionDate != today) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "регресс не запущен, сначала запустите регресс")
+        }
+
+        val existingResults = running.extractResultsFromPayload()
+        val mergedResults = existingResults.toMutableMap()
+        mergedResults.putAll(results)
+
+        val payload = mapOf(
+            "regressionDate" to running.regressionDate.toString(),
+            "status" to running.status.name,
+            "releaseName" to running.releaseName,
+            "tests" to mergedResults.entries.map { (testId, status) ->
+                mapOf(
+                    "testId" to testId,
+                    "regressionStatus" to status,
+                )
+            },
+        )
+
+        running.payload = payload
+        regressionRepository.save(running)
+    }
+
     fun getRegressionSnapshot(regressionId: Long): RegressionSnapshotResponse {
         val entity = regressionRepository.findById(regressionId)
             .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Regression $regressionId not found") }

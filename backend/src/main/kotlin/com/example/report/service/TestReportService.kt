@@ -19,7 +19,8 @@ import java.time.OffsetDateTime
 @Service
 class TestReportService(
     private val testReportRepository: TestReportRepository,
-    private val columnConfigService: ColumnConfigService
+    private val columnConfigService: ColumnConfigService,
+    private val regressionService: RegressionService,
 ) {
 
     fun getReport(): TestReportResponse {
@@ -40,14 +41,23 @@ class TestReportService(
 
     @Transactional
     fun upsertBatch(request: TestBatchRequest, isRegressRunning: Boolean = false) {
+        val regressionResults = mutableMapOf<String, String>()
+
         request.items
             .map { item ->
                 val normalizedId = normalizeTestId(item.testId)
                 val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
                 val validated = validateAndNormalize(item, existing, normalizedId, isRegressRunning)
+                if (isRegressRunning && validated.runStatus != null) {
+                    regressionResults[validated.testId] = validated.runStatus
+                }
                 validated to existing
             }
             .forEach { (validated, existing) -> upsertSingle(validated, existing) }
+
+        if (isRegressRunning && regressionResults.isNotEmpty()) {
+            regressionService.syncRunningRegressionResults(regressionResults)
+        }
     }
 
     @Transactional
