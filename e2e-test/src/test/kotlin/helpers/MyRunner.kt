@@ -15,6 +15,7 @@ object MyRunner {
 
             RestAssured.given()
                 .contentType(ContentType.JSON)
+                .queryParam("isRegressRunning", "true")
                 .body(
                     BatchRequest(
                         items = items.map { testCase ->

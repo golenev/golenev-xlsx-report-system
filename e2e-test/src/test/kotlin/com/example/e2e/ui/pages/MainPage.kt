@@ -3,6 +3,8 @@ package com.example.e2e.ui.pages
 import com.codeborne.selenide.CollectionCondition
 import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.ElementsCollection
+import com.codeborne.selenide.ScrollIntoViewOptions.Block.start
+import com.codeborne.selenide.ScrollIntoViewOptions.instant
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.Selenide.*
 import com.codeborne.selenide.SelenideElement
@@ -29,7 +31,7 @@ class MainPage {
 
     fun shouldDisableAddRow() {
         addRowButton
-            .scrollIntoView(CENTER)
+            .scrollIntoView(instant().block(start))
             .shouldBe(disabled)
     }
 
@@ -150,7 +152,7 @@ class MainPage {
     }
 
     fun updateCategory(testId: String, newValue: String) {
-        categoryInput(testId).shouldBe(enabled).typeOf(newValue)
+        categoryInput(testId).value = newValue
     }
 
     fun unFocus() {

@@ -1,16 +1,20 @@
 package com.example.e2e.tests.ui
 
-import com.example.e2e.db.tables.TestReportTable
+import com.codeborne.selenide.Selenide
 import com.example.e2e.db.dbReportExec
+import com.example.e2e.db.tables.TestReportTable
 import com.example.e2e.dto.Priority
 import com.example.e2e.ui.config.DriverConfig
 import com.example.e2e.ui.pages.MainPage
 import com.example.e2e.utils.getRandomTestId
 import com.example.e2e.utils.step
 import io.qameta.allure.AllureId
-import org.jetbrains.exposed.sql.deleteWhere
-import org.junit.jupiter.api.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
 
 @DisplayName("UI: Блокировка кнопки Add Row при редактировании")
 class AddRowLockingUiTests {
@@ -32,6 +36,7 @@ class AddRowLockingUiTests {
                 (testId eq randomTestId.toString())
             }
         }
+        Selenide.closeWebDriver()
     }
 
     @Test
@@ -62,18 +67,32 @@ class AddRowLockingUiTests {
             mainPage.fillDetailedScenario(detailedScenario)
         }
 
+
         step("Кнопка Add Row всё ещё заблокирована во время добавления новой строки") {
             mainPage.shouldDisableAddRow()
         }
 
         step("Сохраняем новую строку") { mainPage.saveNewRow() }
+
+
         step("Кнопка Add Row разблокирована после сохранения") { mainPage.shouldEnableAddRow() }
         step("Проверяем, что тест-кейс отображается в таблице") { mainPage.shouldSeeTestCase(randomTestId) }
 
         step("Начинаем редактировать поле Category в существующей строке") {
-            mainPage.focusOnCategory(randomTestId)
             mainPage.updateCategory(randomTestId, updatedCategory)
         }
+
+        step("Кнопка Add Row  заблокирована во время редактирования колонки Category") {
+            mainPage.shouldDisableAddRow()
+        }
+
+        step("Уводим фокус из редактируемой ячейки") {
+            mainPage.unFocus()
+        }
+
+        step("Кнопка Add Row разблокирована после сохранения") { mainPage.shouldEnableAddRow() }
+
+
     }
 
 }

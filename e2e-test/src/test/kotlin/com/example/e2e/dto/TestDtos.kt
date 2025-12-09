@@ -39,6 +39,7 @@ data class TestReportItemDto(
     val scenario: String?,
     val notes: String?,
     val updatedAt: String?,
+    val runStatus: String? = null
 )
 
 
