@@ -37,9 +37,27 @@ const TABLE_COLUMNS = [...FIELD_DEFINITIONS, REGRESSION_COLUMN];
 
 const ACTION_COLUMN = { key: 'actions', label: '', type: 'actions', editable: false };
 
+const DEFAULT_ISSUE_LINK = 'https://youtrackru/issue/';
+
+function todayIsoDate() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function createEmptyItem() {
   return FIELD_DEFINITIONS.reduce((acc, field) => {
-    acc[field.key] = field.key === 'priority' ? PRIORITY_OPTIONS[3] : '';
+    if (field.key === 'priority') {
+      acc[field.key] = PRIORITY_OPTIONS[3];
+    } else if (field.key === 'issueLink') {
+      acc[field.key] = DEFAULT_ISSUE_LINK;
+    } else if (field.key === 'readyDate') {
+      acc[field.key] = todayIsoDate();
+    } else {
+      acc[field.key] = '';
+    }
     return acc;
   }, {});
 }
@@ -529,7 +547,7 @@ export default function App() {
 
     const payload = { testId: trimmedId };
     FIELD_DEFINITIONS.forEach((field) => {
-      if (field.key === 'testId') {
+      if (field.key === 'testId' || field.key === 'readyDate') {
         return;
       }
       const value = draft[field.key];
@@ -787,13 +805,17 @@ export default function App() {
                   {TABLE_COLUMNS.map((column) => {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
+                    const isEditable = column.editable || column.key === 'testId';
+
                     return (
                       <td
                         key={`new-${index}-${column.key}`}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
                         className={column.type === 'regression' ? 'regression-cell locked' : undefined}
                       >
-                        {column.type === 'textarea' ? (
+                        {!isEditable ? (
+                          <span className="readonly-value">{value}</span>
+                        ) : column.type === 'textarea' ? (
                           <textarea
                             value={value}
                             onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
@@ -805,6 +827,7 @@ export default function App() {
                             value={value}
                             onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                             className="cell-input"
+                            readOnly
                           />
                         ) : column.type === 'generalStatus' ? (
                           <StatusDropdown
