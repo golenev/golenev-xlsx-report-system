@@ -1,7 +1,7 @@
 package com.example.e2e.tests.ui
 
-import com.example.e2e.db.tables.TestReportTable
 import com.example.e2e.db.dbReportExec
+import com.example.e2e.db.tables.TestReportTable
 import com.example.e2e.dto.Priority
 import com.example.e2e.ui.config.DriverConfig
 import com.example.e2e.ui.pages.MainPage
@@ -10,7 +10,10 @@ import com.example.e2e.utils.step
 import io.qameta.allure.AllureId
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
 @DisplayName("UI: Автоматическое проставление Ready Date при добавлении тест кейса")
@@ -50,6 +53,7 @@ class ReadyDateUiTests {
 
         step("Открываем главную страницу") { mainPage.open() }
         step("Начинаем создание новой строки") { mainPage.startNewRow() }
+        step("Проверяем, что Ready Date сразу автоматически заполнена сегодняшней датой") { mainPage.shouldHaveReadyDateWhenNewRow(today) }
         step("Заполняем поле Test ID значением $randomTestId") { mainPage.fillTestId(randomTestId) }
         step("Заполняем поле Category / Feature значением $category") { mainPage.fillCategory(category) }
         step("Заполняем поле Short Title значением $shortTitle") { mainPage.fillShortTitle(shortTitle) }
@@ -57,10 +61,9 @@ class ReadyDateUiTests {
         step("Выбираем значение General Test Status: $generalStatus") { mainPage.selectGeneralStatus(generalStatus) }
         step("Выбираем значение Priority: $priority") { mainPage.selectPriority(priority) }
         step("Заполняем поле Detailed Scenario значением $detailedScenario") { mainPage.fillDetailedScenario(detailedScenario) }
-
         step("Сохраняем новую строку без указания Ready Date") { mainPage.saveNewRow() }
         step("Проверяем, что тест-кейс появился в таблице") { mainPage.shouldSeeTestCase(randomTestId) }
-        step("Проверяем, что Ready Date заполнена сегодняшней датой") { mainPage.shouldHaveReadyDate(randomTestId, today) }
+        step("Проверяем, что Ready Date всё ещё заполнена сегодняшней датой") { mainPage.shouldHaveReadyDate(randomTestId, today) }
 
     }
 

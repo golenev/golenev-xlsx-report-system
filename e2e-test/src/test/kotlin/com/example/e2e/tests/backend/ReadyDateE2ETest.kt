@@ -2,12 +2,12 @@ package com.example.e2e.tests.backend
 
 import com.example.e2e.db.repository.TestReportRepository
 import com.example.e2e.dto.GeneralTestStatus
-import com.example.e2e.dto.Priority
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
 import com.example.e2e.utils.step
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.qameta.allure.AllureId
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
@@ -41,8 +41,6 @@ class ReadyDateE2ETest {
                         testId = "123",
                         category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Ready date auto set",
-                        generalStatus = GeneralTestStatus.QUEUE.value,
-                        priority = Priority.HIGH.value,
                         scenario = "Сценарий 1. шаг 1 шаг 2 шаг 3",
                     ),
                 ),
@@ -69,10 +67,7 @@ class ReadyDateE2ETest {
                         shortTitle = "Ready date auto set",
                         testId = "123",
                         readyDate = today.minusDays(5).toString(),
-                        generalStatus = GeneralTestStatus.DONE.value,
-                        priority = Priority.MEDIUM.value,
-                        notes = "Updated notes",
-                        scenario = "Сценарий 2. шаг 1 шаг 2 шаг 3",
+                        scenario = "Сценарий 782. шаг 81 шаг 2 шаг 38",
                         category = "E2E_FOR_AUTOTEST",
                     ),
                 ),
@@ -90,8 +85,8 @@ class ReadyDateE2ETest {
 
         step("Готовая дата осталась прежней, остальные поля обновлены") {
             updatedItem.readyDate shouldBe createdItem.readyDate
+            updatedItem.scenario shouldNotBe createdItem.scenario
             updatedItem.generalStatus shouldBe GeneralTestStatus.DONE.value
-            updatedItem.notes shouldBe "Updated notes"
         }
     }
 }

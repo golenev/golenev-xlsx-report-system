@@ -19,7 +19,7 @@ const FIELD_DEFINITIONS = [
   { key: 'category', label: 'Category / Feature', editable: true, type: 'text' },
   { key: 'shortTitle', label: 'Short Title', editable: true, type: 'text' },
   { key: 'issueLink', label: 'YouTrack Issue Link', editable: true, type: 'text' },
-  { key: 'readyDate', label: 'Ready Date', editable: true, type: 'date' },
+  { key: 'readyDate', label: 'Ready Date', editable: false, type: 'readonlyDate' },
   { key: 'generalStatus', label: 'General Test Status', editable: true, type: 'generalStatus' },
   { key: 'priority', label: 'Priority', editable: true, type: 'priority' },
   { key: 'scenario', label: 'Detailed Scenario', editable: true, type: 'textarea' },
@@ -37,9 +37,27 @@ const TABLE_COLUMNS = [...FIELD_DEFINITIONS, REGRESSION_COLUMN];
 
 const ACTION_COLUMN = { key: 'actions', label: '', type: 'actions', editable: false };
 
+const DEFAULT_ISSUE_LINK = 'https://youtrackru/issue/';
+
+function todayIsoDate() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function createEmptyItem() {
   return FIELD_DEFINITIONS.reduce((acc, field) => {
-    acc[field.key] = field.key === 'priority' ? PRIORITY_OPTIONS[3] : '';
+    if (field.key === 'priority') {
+      acc[field.key] = PRIORITY_OPTIONS[3];
+    } else if (field.key === 'issueLink') {
+      acc[field.key] = DEFAULT_ISSUE_LINK;
+    } else if (field.key === 'readyDate') {
+      acc[field.key] = todayIsoDate();
+    } else {
+      acc[field.key] = '';
+    }
     return acc;
   }, {});
 }
@@ -286,14 +304,20 @@ export default function App() {
     );
   };
 
-  const sendUpdate = async (testId, payload) => {
+  const sendUpdate = async (item, payload) => {
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(withBase('/api/tests'), {
+      const response = await fetch(withBase('/api/tests?forceUpdate=true'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testId, ...payload })
+        body: JSON.stringify({
+          testId: item.testId,
+          category: item.category,
+          shortTitle: item.shortTitle,
+          scenario: item.scenario,
+          ...payload
+        })
       });
       if (!response.ok) {
         throw new Error('Failed to save changes');
@@ -310,7 +334,7 @@ export default function App() {
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(withBase('/api/tests'), {
+      const response = await fetch(withBase('/api/tests?forceUpdate=true'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -340,7 +364,7 @@ export default function App() {
     const value = item[key];
     const sanitizedValue = value === '' ? null : value;
     const payload = { [key]: sanitizedValue };
-    sendUpdate(item.testId, payload);
+    sendUpdate(item, payload);
   };
 
   const handleNewFieldChange = (index, key, value) => {
@@ -523,7 +547,7 @@ export default function App() {
 
     const payload = { testId: trimmedId };
     FIELD_DEFINITIONS.forEach((field) => {
-      if (field.key === 'testId') {
+      if (field.key === 'testId' || field.key === 'readyDate') {
         return;
       }
       const value = draft[field.key];
@@ -551,12 +575,12 @@ export default function App() {
 
   const handleGeneralStatusChange = (item, value) => {
     handleFieldChange(item.testId, 'generalStatus', value);
-    sendUpdate(item.testId, { generalStatus: value === '' ? null : value });
+    sendUpdate(item, { generalStatus: value === '' ? null : value });
   };
 
   const handlePriorityChange = (item, value) => {
     handleFieldChange(item.testId, 'priority', value);
-    sendUpdate(item.testId, { priority: value });
+    sendUpdate(item, { priority: value });
   };
 
   const handleDelete = async (testId) => {
@@ -781,24 +805,38 @@ export default function App() {
                   {TABLE_COLUMNS.map((column) => {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
+                    const isEditable = column.editable || column.key === 'testId';
+                    const cellDataAttributes = {};
+
+                    if (column.key === 'testId') {
+                      cellDataAttributes['data-column'] = 'test-id';
+                      cellDataAttributes['data-row-id'] = item.testId || `new-${index + 1}`;
+                    } else if (column.key === 'readyDate') {
+                      cellDataAttributes['data-column'] = 'ready-date';
+                      cellDataAttributes['data-row-id'] = item.testId || `new-${index + 1}`;
+                    }
+
+                    const readonlySpanAttributes =
+                      column.key === 'testId'
+                        ? { 'data-test-id-value': value }
+                        : column.key === 'readyDate'
+                          ? { 'data-ready-date-value': value }
+                          : undefined;
+
                     return (
                       <td
                         key={`new-${index}-${column.key}`}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
                         className={column.type === 'regression' ? 'regression-cell locked' : undefined}
+                        {...cellDataAttributes}
                       >
-                        {column.type === 'textarea' ? (
+                        {!isEditable ? (
+                          <span className="readonly-value" {...readonlySpanAttributes}>{value}</span>
+                        ) : column.type === 'textarea' ? (
                           <textarea
                             value={value}
                             onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                             className="cell-textarea"
-                          />
-                        ) : column.type === 'date' ? (
-                          <input
-                            type="date"
-                            value={value}
-                            onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
-                            className="cell-input"
                           />
                         ) : column.type === 'generalStatus' ? (
                           <StatusDropdown
@@ -851,12 +889,29 @@ export default function App() {
                     const cellClassName = isRegressionColumn
                       ? `regression-cell ${isRegressionRunning ? '' : 'locked'}`.trim()
                       : undefined;
+                    const cellDataAttributes = {};
+
+                    if (column.key === 'testId') {
+                      cellDataAttributes['data-column'] = 'test-id';
+                      cellDataAttributes['data-row-id'] = item.testId;
+                    } else if (column.key === 'readyDate') {
+                      cellDataAttributes['data-column'] = 'ready-date';
+                      cellDataAttributes['data-row-id'] = item.testId;
+                    }
+
+                    const readonlySpanAttributes =
+                      column.key === 'testId'
+                        ? { 'data-test-id-value': value }
+                        : column.key === 'readyDate'
+                          ? { 'data-ready-date-value': value }
+                          : undefined;
 
                     return (
                       <td
                         key={column.key}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
                         className={cellClassName}
+                        {...cellDataAttributes}
                       >
                         {isRegressionColumn ? (
                           <div className="regression-cell-content">
@@ -878,15 +933,6 @@ export default function App() {
                               onBlur={() => handleBlur(item, column.key)}
                               onFocus={incrementEditingExisting}
                               className="cell-textarea"
-                            />
-                          ) : column.type === 'date' ? (
-                            <input
-                              type="date"
-                              value={value ? value : ''}
-                              onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
-                              onBlur={() => handleBlur(item, column.key)}
-                              onFocus={incrementEditingExisting}
-                              className="cell-input"
                             />
                           ) : column.type === 'generalStatus' ? (
                             <StatusDropdown
@@ -915,7 +961,7 @@ export default function App() {
                             />
                           )
                         ) : (
-                          <span className="readonly-value">{value}</span>
+                          <span className="readonly-value" {...readonlySpanAttributes}>{value}</span>
                         )}
                       </td>
                     );
