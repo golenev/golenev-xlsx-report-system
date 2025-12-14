@@ -1,5 +1,6 @@
 package com.example.report.entity
 
+import com.example.report.model.Priority
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -19,10 +20,11 @@ data class TestReportEntity(
     @Column(name = "test_id", nullable = false, unique = true)
     var testId: String,
 
-    var category: String? = null,
+    @Column(nullable = false)
+    var category: String = "",
 
-    @Column(name = "short_title")
-    var shortTitle: String? = null,
+    @Column(name = "short_title", nullable = false)
+    var shortTitle: String = "",
 
     @Column(name = "issue_link")
     var issueLink: String? = null,
@@ -34,10 +36,10 @@ data class TestReportEntity(
     var generalStatus: String? = null,
 
     @Column(name = "priority", nullable = false)
-    var priority: String,
+    var priority: String = Priority.MEDIUM.value,
 
-    @Column(name = "scenario", columnDefinition = "text")
-    var scenario: String? = null,
+    @Column(name = "scenario", columnDefinition = "text", nullable = false)
+    var scenario: String = "",
 
     @Column(name = "notes", columnDefinition = "text")
     var notes: String? = null,

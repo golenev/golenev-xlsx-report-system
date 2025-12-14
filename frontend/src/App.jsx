@@ -19,7 +19,7 @@ const FIELD_DEFINITIONS = [
   { key: 'category', label: 'Category / Feature', editable: true, type: 'text' },
   { key: 'shortTitle', label: 'Short Title', editable: true, type: 'text' },
   { key: 'issueLink', label: 'YouTrack Issue Link', editable: true, type: 'text' },
-  { key: 'readyDate', label: 'Ready Date', editable: true, type: 'date' },
+  { key: 'readyDate', label: 'Ready Date', editable: false, type: 'date' },
   { key: 'generalStatus', label: 'General Test Status', editable: true, type: 'generalStatus' },
   { key: 'priority', label: 'Priority', editable: true, type: 'priority' },
   { key: 'scenario', label: 'Detailed Scenario', editable: true, type: 'textarea' },
@@ -286,14 +286,20 @@ export default function App() {
     );
   };
 
-  const sendUpdate = async (testId, payload) => {
+  const sendUpdate = async (item, payload) => {
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(withBase('/api/tests'), {
+      const response = await fetch(withBase('/api/tests?forceUpdate=true'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testId, ...payload })
+        body: JSON.stringify({
+          testId: item.testId,
+          category: item.category,
+          shortTitle: item.shortTitle,
+          scenario: item.scenario,
+          ...payload
+        })
       });
       if (!response.ok) {
         throw new Error('Failed to save changes');
@@ -310,7 +316,7 @@ export default function App() {
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(withBase('/api/tests'), {
+      const response = await fetch(withBase('/api/tests?forceUpdate=true'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -340,7 +346,7 @@ export default function App() {
     const value = item[key];
     const sanitizedValue = value === '' ? null : value;
     const payload = { [key]: sanitizedValue };
-    sendUpdate(item.testId, payload);
+    sendUpdate(item, payload);
   };
 
   const handleNewFieldChange = (index, key, value) => {
@@ -551,12 +557,12 @@ export default function App() {
 
   const handleGeneralStatusChange = (item, value) => {
     handleFieldChange(item.testId, 'generalStatus', value);
-    sendUpdate(item.testId, { generalStatus: value === '' ? null : value });
+    sendUpdate(item, { generalStatus: value === '' ? null : value });
   };
 
   const handlePriorityChange = (item, value) => {
     handleFieldChange(item.testId, 'priority', value);
-    sendUpdate(item.testId, { priority: value });
+    sendUpdate(item, { priority: value });
   };
 
   const handleDelete = async (testId) => {

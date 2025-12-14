@@ -34,20 +34,24 @@ class TestReportController(
     fun getTests() = testReportService.getReport()
 
     @PostMapping("/tests")
-    fun upsertTest(@Valid @RequestBody request: TestUpsertItem) {
-        testReportService.upsertTest(request)
+    fun upsertTest(
+        @RequestParam(defaultValue = "false") forceUpdate: Boolean,
+        @Valid @RequestBody request: TestUpsertItem,
+    ) {
+        testReportService.upsertTest(request, forceUpdate)
     }
 
     @PostMapping("/tests/batch")
     fun upsertBatch(
         @RequestParam(defaultValue = "false") isRegressRunning: Boolean,
+        @RequestParam(defaultValue = "false") forceUpdate: Boolean,
         @Valid @RequestBody request: TestBatchRequest,
     ) {
         if (isRegressRunning) {
             regressionService.requireRunningRegression()
         }
 
-        testReportService.upsertBatch(request, isRegressRunning)
+        testReportService.upsertBatch(request, isRegressRunning, forceUpdate)
     }
 
     @DeleteMapping("/tests/{testId}")

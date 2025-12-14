@@ -1,8 +1,6 @@
 package com.example.e2e.tests.backend
 
 import com.example.e2e.dto.ErrorResponse
-import com.example.e2e.dto.GeneralTestStatus
-import com.example.e2e.dto.Priority
 import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
@@ -63,19 +61,9 @@ class RequiredFieldsE2ETest {
                 validItem().copy(shortTitle = null)
             ),
             Arguments.of(
-                "generalStatus",
-                "Required field generalStatus is missing",
-                validItem().copy(generalStatus = null)
-            ),
-            Arguments.of(
                 "scenario",
                 "Required field scenario is missing",
                 validItem().copy(scenario = null)
-            ),
-            Arguments.of(
-                "priority",
-                "Required field priority is missing",
-                validItem().copy(priority = null)
             ),
         )
 
@@ -84,8 +72,6 @@ class RequiredFieldsE2ETest {
             category = "E2E",
             shortTitle = "Проверка обязательных полей",
             scenario = "Отправляем запрос с пропущенными полями",
-            generalStatus = GeneralTestStatus.QUEUE.value,
-            priority = Priority.MEDIUM.value,
         )
     }
 }

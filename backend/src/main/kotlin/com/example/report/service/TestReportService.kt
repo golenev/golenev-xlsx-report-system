@@ -22,6 +22,13 @@ class TestReportService(
     private val columnConfigService: ColumnConfigService,
     private val regressionService: RegressionService,
 ) {
+    private companion object {
+        const val DEFAULT_GENERAL_STATUS = "Готово"
+        const val DEFAULT_ISSUE_LINK = "https://youtrackru/issue/"
+        const val DEFAULT_NOTES = ""
+    }
+
+    private val DEFAULT_PRIORITY = Priority.MEDIUM.value
 
     fun getReport(): TestReportResponse {
         val items = testReportRepository.findAll()
@@ -32,28 +39,42 @@ class TestReportService(
     }
 
     @Transactional
-    fun upsertTest(request: TestUpsertItem) {
+    fun upsertTest(request: TestUpsertItem, forceUpdate: Boolean) {
         val normalizedId = normalizeTestId(request.testId)
         val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
-        val validated = validateAndNormalize(request, existing, normalizedId)
-        upsertSingle(validated, existing)
+        val validated = validateAndNormalize(
+            item = request,
+            existing = existing,
+            normalizedId = normalizedId,
+            isRegressRunning = false,
+            forceUpdate = forceUpdate,
+            allowFallback = true,
+        )
+        upsertSingle(validated, existing, forceUpdate, false)
     }
 
     @Transactional
-    fun upsertBatch(request: TestBatchRequest, isRegressRunning: Boolean = false) {
+    fun upsertBatch(request: TestBatchRequest, isRegressRunning: Boolean = false, forceUpdate: Boolean = false) {
         val regressionResults = mutableMapOf<String, String>()
 
         request.items
             .map { item ->
                 val normalizedId = normalizeTestId(item.testId)
                 val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
-                val validated = validateAndNormalize(item, existing, normalizedId, isRegressRunning)
+                val validated = validateAndNormalize(
+                    item = item,
+                    existing = existing,
+                    normalizedId = normalizedId,
+                    isRegressRunning = isRegressRunning,
+                    forceUpdate = forceUpdate,
+                    allowFallback = false,
+                )
                 if (isRegressRunning && validated.runStatus != null) {
                     regressionResults[validated.testId] = validated.runStatus
                 }
                 validated to existing
             }
-            .forEach { (validated, existing) -> upsertSingle(validated, existing) }
+            .forEach { (validated, existing) -> upsertSingle(validated, existing, forceUpdate, isRegressRunning) }
 
         if (isRegressRunning && regressionResults.isNotEmpty()) {
             regressionService.syncRunningRegressionResults(regressionResults)
@@ -69,33 +90,61 @@ class TestReportService(
         testReportRepository.delete(entity)
     }
 
-    private fun upsertSingle(item: ValidatedUpsert, existing: TestReportEntity?) {
+    private fun upsertSingle(
+        item: ValidatedUpsert,
+        existing: TestReportEntity?,
+        forceUpdate: Boolean,
+        isRegressRunning: Boolean,
+    ) {
         if (existing != null) {
             val entity = existing
             entity.category = item.category
             entity.shortTitle = item.shortTitle
             entity.scenario = item.scenario
 
-            item.issueLink?.let { entity.issueLink = it }
-            entity.generalStatus = item.generalStatus
-            entity.priority = item.priority
-            item.notes?.let { entity.notes = it }
-            entity.runStatus = item.runStatus
+            if (forceUpdate) {
+                applyManualUpdate(item.manualFields.issueLink) { entity.issueLink = it }
+                applyManualUpdate(item.manualFields.generalStatus) { entity.generalStatus = it }
+                applyManualUpdate(item.manualFields.priority) { entity.priority = it }
+                applyManualUpdate(item.manualFields.notes) { entity.notes = it }
+            }
+            if (isRegressRunning) {
+                entity.runStatus = item.runStatus
+            }
             entity.updatedAt = OffsetDateTime.now()
             testReportRepository.save(entity)
             return
         }
 
-        val newEntity = TestReportEntity(testId = item.testId, priority = item.priority)
+        val newEntity = TestReportEntity(testId = item.testId)
         newEntity.category = item.category
         newEntity.shortTitle = item.shortTitle
         newEntity.scenario = item.scenario
-        newEntity.readyDate = item.readyDate ?: LocalDate.now()
+        newEntity.readyDate = LocalDate.now()
 
-        item.issueLink?.let { newEntity.issueLink = it }
-        newEntity.generalStatus = item.generalStatus
-        item.notes?.let { newEntity.notes = it }
-        newEntity.runStatus = item.runStatus
+        newEntity.issueLink = when {
+            forceUpdate && item.manualFields.issueLink.provided ->
+                item.manualFields.issueLink.value ?: DEFAULT_ISSUE_LINK
+            else -> DEFAULT_ISSUE_LINK
+        }
+        newEntity.generalStatus = when {
+            forceUpdate && item.manualFields.generalStatus.provided ->
+                item.manualFields.generalStatus.value ?: DEFAULT_GENERAL_STATUS
+            else -> DEFAULT_GENERAL_STATUS
+        }
+        newEntity.priority = when {
+            forceUpdate && item.manualFields.priority.provided ->
+                item.manualFields.priority.value ?: DEFAULT_PRIORITY
+            else -> DEFAULT_PRIORITY
+        }
+        newEntity.notes = when {
+            forceUpdate && item.manualFields.notes.provided ->
+                item.manualFields.notes.value ?: DEFAULT_NOTES
+            else -> DEFAULT_NOTES
+        }
+        if (isRegressRunning) {
+            newEntity.runStatus = item.runStatus
+        }
         newEntity.updatedAt = OffsetDateTime.now()
         testReportRepository.save(newEntity)
     }
@@ -105,39 +154,55 @@ class TestReportService(
         existing: TestReportEntity?,
         normalizedId: String,
         isRegressRunning: Boolean = false,
+        forceUpdate: Boolean = false,
+        allowFallback: Boolean = false,
     ): ValidatedUpsert {
-        val category = item.category
-            ?.takeIf { it.isNotBlank() }
-            ?.trim()
-            ?: existing?.category?.takeIf { it.isNotBlank() }
-            ?: requiredFieldMissing("category")
-        val shortTitle = item.shortTitle
-            ?.takeIf { it.isNotBlank() }
-            ?.trim()
-            ?: existing?.shortTitle?.takeIf { it.isNotBlank() }
-            ?: requiredFieldMissing("shortTitle")
-        val scenario = item.scenario
-            ?.takeIf { it.isNotBlank() }
-            ?.trim()
-            ?: existing?.scenario?.takeIf { it.isNotBlank() }
-            ?: requiredFieldMissing("scenario")
-        val generalStatusRaw =
-            item.generalStatus
-                ?.takeIf { it.isNotBlank() }
-                ?.trim()
-                ?: existing?.generalStatus?.takeIf { it.isNotBlank() }
-                ?: requiredFieldMissing("generalStatus")
-        val priorityRaw =
-            item.priority
-                ?.takeIf { it.isNotBlank() }
-                ?.trim()
-                ?: existing?.priority?.takeIf { it.isNotBlank() }
-                ?: requiredFieldMissing("priority")
+        val category = normalizeRequiredField(item.category, existing?.category, "category", allowFallback)
+        val shortTitle = normalizeRequiredField(item.shortTitle, existing?.shortTitle, "shortTitle", allowFallback)
+        val scenario = normalizeRequiredField(item.scenario, existing?.scenario, "scenario", allowFallback)
+
+        val manualFields = ManualFields(
+            issueLink = ManualField(
+                provided = item.issueLink != null,
+                value = if (forceUpdate) {
+                    item.issueLink?.takeIf { it.isNotBlank() }?.trim() ?: existing?.issueLink
+                } else {
+                    existing?.issueLink
+                },
+            ),
+            generalStatus = ManualField(
+                provided = item.generalStatus != null,
+                value = if (forceUpdate) {
+                    item.generalStatus
+                        ?.takeIf { it.isNotBlank() }
+                        ?.trim()
+                        ?.let { validateGeneralStatus(it) }
+                        ?: existing?.generalStatus
+                } else {
+                    existing?.generalStatus
+                },
+            ),
+            priority = ManualField(
+                provided = item.priority != null,
+                value = if (forceUpdate) {
+                    item.priority
+                        ?.takeIf { it.isNotBlank() }
+                        ?.trim()
+                        ?.let { validatePriority(it) }
+                        ?: existing?.priority
+                } else {
+                    existing?.priority
+                },
+            ),
+            notes = ManualField(
+                provided = item.notes != null,
+                value = if (forceUpdate) item.notes ?: existing?.notes else existing?.notes,
+            ),
+        )
 
         val runStatus = when {
             isRegressRunning -> validateRunStatus(item.runStatus, true)
-            item.runStatus != null -> validateRunStatus(item.runStatus, false)
-            else -> existing?.runStatus
+            else -> null
         }
 
         return ValidatedUpsert(
@@ -145,14 +210,7 @@ class TestReportService(
             category = category,
             shortTitle = shortTitle,
             scenario = scenario,
-            issueLink = item.issueLink?.takeIf { it.isNotBlank() }?.trim(),
-            generalStatus = validateGeneralStatus(generalStatusRaw),
-            priority = validatePriority(priorityRaw),
-            notes = item.notes,
-            readyDate = item.readyDate
-                ?.takeIf { it.isNotBlank() }
-                ?.trim()
-                ?.let { LocalDate.parse(it) },
+            manualFields = manualFields,
             runStatus = runStatus,
         )
     }
@@ -213,18 +271,46 @@ class TestReportService(
         throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Required field $fieldName is missing")
     }
 
+    private fun normalizeRequiredField(
+        incoming: String?,
+        existing: String?,
+        fieldName: String,
+        allowFallback: Boolean,
+    ): String {
+        val normalized = incoming?.trim()?.takeIf { it.isNotEmpty() }
+        if (normalized != null) return normalized
+        if (allowFallback) {
+            val fallback = existing?.trim()?.takeIf { it.isNotEmpty() }
+            if (fallback != null) return fallback
+        }
+        requiredFieldMissing(fieldName)
+    }
+
     private data class ValidatedUpsert(
         val testId: String,
         val category: String,
         val shortTitle: String,
         val scenario: String,
-        val issueLink: String?,
-        val generalStatus: String,
-        val priority: String,
-        val notes: String?,
-        val readyDate: LocalDate?,
+        val manualFields: ManualFields,
         val runStatus: String?,
     )
+
+    private data class ManualField<T>(
+        val provided: Boolean,
+        val value: T?,
+    )
+
+    private data class ManualFields(
+        val issueLink: ManualField<String?>,
+        val generalStatus: ManualField<String?>,
+        val priority: ManualField<String?>,
+        val notes: ManualField<String?>,
+    )
+
+    private fun <T> applyManualUpdate(field: ManualField<T>, updater: (T) -> Unit) {
+        if (!field.provided) return
+        field.value?.let { updater(it) }
+    }
 
     private fun compareTestIds(a: String, b: String): Int {
         val left = ParsedTestId.from(a)
