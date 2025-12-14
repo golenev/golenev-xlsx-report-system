@@ -10,14 +10,14 @@ data class TestBatchRequest(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class TestUpsertItem(
-    val testId: String? = null,
-    val category: String? = null,
-    val shortTitle: String? = null,
+    val testId: String?,
+    val category: String?,
+    val shortTitle: String?,
     val issueLink: String? = null,
-    val readyDate: String? = null,
-    val generalStatus: String? = null,
-    val priority: String? = null,
-    val scenario: String? = null,
+    val readyDate: String = LocalDate.now().toString(),
+    val generalStatus: String? = "Готово",
+    val priority: String? = "Medium",
+    val scenario: String?,
     val notes: String? = null,
     val runStatus: String? = null,
     val runDate: String? = null,

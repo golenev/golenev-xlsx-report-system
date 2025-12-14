@@ -38,12 +38,12 @@ class TestReportE2ETest {
 
         batchRequest = step("Формируем batch-запрос с десятью тестами") {
             TestBatchRequest(
-                items = generateTestCases(10, readyDate = reportDay),
+                items = generateTestCases(10, readyDate = reportDay.toString()),
             )
         }
 
         step("Отправляем batch на обновление тестов") {
-            reportService.sendBatch(batchRequest)
+            reportService.sendForceBatch(batchRequest)
         }
 
         val report = step("Запрашиваем отчет о тестах") {

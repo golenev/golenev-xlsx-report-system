@@ -20,6 +20,15 @@ class ReportService : RequestExecutor<Unit>(
         )
     }
 
+    @Step("Отправляем batch запрос для обновления тестов, в т.ч. неизменяемых полей")
+    fun sendForceBatch(request: TestBatchRequest, expectedStatus: Int = 200): Response {
+        return postRequest(
+            url = Paths.REPORTS_BATCH.path,
+            requestSpecification = baseRequest().queryParam("forceUpdate", true).body(request),
+            expectedStatus = expectedStatus,
+        )
+    }
+
     @Step("Читаем отчет о тестах")
     fun getReport(): TestReportResponse {
         return getRequest(

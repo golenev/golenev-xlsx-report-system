@@ -107,9 +107,13 @@ class MainPage {
         tableRowByTestId(testId).should(disappear)
     }
 
+    fun shouldHaveReadyDateWhenNewRow(expectedDate: String) {
+        `$`(".new-row [data-ready-date-value='${expectedDate}']").shouldBe(visible)
+    }
+
     fun shouldHaveReadyDate(testId: String, expectedDate: String) {
-        val row = tableRowByTestId(testId).shouldBe(visible)
-        row.find("input[type='date']").shouldBe(visible).shouldHave(value(expectedDate))
+        val row = `$`("[data-test-id='tr-data-test-id-${testId}']").shouldBe(visible)
+        row.`$`("[data-ready-date-value='${expectedDate}']").shouldBe(visible)
     }
 
     fun openRegressionStartForm() {
