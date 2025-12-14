@@ -303,7 +303,7 @@ class TestReportService(
     private data class ManualFields(
         val issueLink: ManualField<String?>,
         val generalStatus: ManualField<String?>,
-        val priority: ManualField<String?>,
+        val priority: ManualField<String>,
         val notes: ManualField<String?>,
     )
 
