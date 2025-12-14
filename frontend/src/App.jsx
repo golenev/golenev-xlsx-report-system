@@ -19,7 +19,7 @@ const FIELD_DEFINITIONS = [
   { key: 'category', label: 'Category / Feature', editable: true, type: 'text' },
   { key: 'shortTitle', label: 'Short Title', editable: true, type: 'text' },
   { key: 'issueLink', label: 'YouTrack Issue Link', editable: true, type: 'text' },
-  { key: 'readyDate', label: 'Ready Date', editable: false, type: 'date' },
+  { key: 'readyDate', label: 'Ready Date', editable: false, type: 'readonlyDate' },
   { key: 'generalStatus', label: 'General Test Status', editable: true, type: 'generalStatus' },
   { key: 'priority', label: 'Priority', editable: true, type: 'priority' },
   { key: 'scenario', label: 'Detailed Scenario', editable: true, type: 'textarea' },
@@ -821,14 +821,6 @@ export default function App() {
                             onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                             className="cell-textarea"
                           />
-                        ) : column.type === 'date' ? (
-                          <input
-                            type="date"
-                            value={value}
-                            onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
-                            className="cell-input"
-                            readOnly
-                          />
                         ) : column.type === 'generalStatus' ? (
                           <StatusDropdown
                             value={value}
@@ -907,15 +899,6 @@ export default function App() {
                               onBlur={() => handleBlur(item, column.key)}
                               onFocus={incrementEditingExisting}
                               className="cell-textarea"
-                            />
-                          ) : column.type === 'date' ? (
-                            <input
-                              type="date"
-                              value={value ? value : ''}
-                              onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
-                              onBlur={() => handleBlur(item, column.key)}
-                              onFocus={incrementEditingExisting}
-                              className="cell-input"
                             />
                           ) : column.type === 'generalStatus' ? (
                             <StatusDropdown
