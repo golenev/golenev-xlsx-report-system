@@ -806,15 +806,32 @@ export default function App() {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
                     const isEditable = column.editable || column.key === 'testId';
+                    const cellDataAttributes = {};
+
+                    if (column.key === 'testId') {
+                      cellDataAttributes['data-column'] = 'test-id';
+                      cellDataAttributes['data-row-id'] = item.testId || `new-${index + 1}`;
+                    } else if (column.key === 'readyDate') {
+                      cellDataAttributes['data-column'] = 'ready-date';
+                      cellDataAttributes['data-row-id'] = item.testId || `new-${index + 1}`;
+                    }
+
+                    const readonlySpanAttributes =
+                      column.key === 'testId'
+                        ? { 'data-test-id-value': value }
+                        : column.key === 'readyDate'
+                          ? { 'data-ready-date-value': value }
+                          : undefined;
 
                     return (
                       <td
                         key={`new-${index}-${column.key}`}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
                         className={column.type === 'regression' ? 'regression-cell locked' : undefined}
+                        {...cellDataAttributes}
                       >
                         {!isEditable ? (
-                          <span className="readonly-value">{value}</span>
+                          <span className="readonly-value" {...readonlySpanAttributes}>{value}</span>
                         ) : column.type === 'textarea' ? (
                           <textarea
                             value={value}
@@ -872,12 +889,29 @@ export default function App() {
                     const cellClassName = isRegressionColumn
                       ? `regression-cell ${isRegressionRunning ? '' : 'locked'}`.trim()
                       : undefined;
+                    const cellDataAttributes = {};
+
+                    if (column.key === 'testId') {
+                      cellDataAttributes['data-column'] = 'test-id';
+                      cellDataAttributes['data-row-id'] = item.testId;
+                    } else if (column.key === 'readyDate') {
+                      cellDataAttributes['data-column'] = 'ready-date';
+                      cellDataAttributes['data-row-id'] = item.testId;
+                    }
+
+                    const readonlySpanAttributes =
+                      column.key === 'testId'
+                        ? { 'data-test-id-value': value }
+                        : column.key === 'readyDate'
+                          ? { 'data-ready-date-value': value }
+                          : undefined;
 
                     return (
                       <td
                         key={column.key}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
                         className={cellClassName}
+                        {...cellDataAttributes}
                       >
                         {isRegressionColumn ? (
                           <div className="regression-cell-content">
@@ -927,7 +961,7 @@ export default function App() {
                             />
                           )
                         ) : (
-                          <span className="readonly-value">{value}</span>
+                          <span className="readonly-value" {...readonlySpanAttributes}>{value}</span>
                         )}
                       </td>
                     );
