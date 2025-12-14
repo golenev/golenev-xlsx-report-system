@@ -102,6 +102,10 @@ class TestReportService(
             entity.shortTitle = item.shortTitle
             entity.scenario = item.scenario
 
+            if (forceUpdate && item.readyDate != null) {
+                entity.readyDate = item.readyDate
+            }
+
             if (forceUpdate) {
                 applyManualUpdate(item.manualFields.issueLink) { entity.issueLink = it }
                 applyManualUpdate(item.manualFields.generalStatus) { entity.generalStatus = it }
@@ -120,7 +124,7 @@ class TestReportService(
         newEntity.category = item.category
         newEntity.shortTitle = item.shortTitle
         newEntity.scenario = item.scenario
-        newEntity.readyDate = LocalDate.now()
+        newEntity.readyDate = item.readyDate ?: LocalDate.now()
 
         newEntity.issueLink = when {
             forceUpdate && item.manualFields.issueLink.provided ->
@@ -160,6 +164,12 @@ class TestReportService(
         val category = normalizeRequiredField(item.category, existing?.category, "category", allowFallback)
         val shortTitle = normalizeRequiredField(item.shortTitle, existing?.shortTitle, "shortTitle", allowFallback)
         val scenario = normalizeRequiredField(item.scenario, existing?.scenario, "scenario", allowFallback)
+
+        val readyDate = when {
+            forceUpdate && item.readyDate != null -> parseReadyDate(item.readyDate)
+            existing != null -> existing.readyDate
+            else -> null
+        }
 
         val manualFields = ManualFields(
             issueLink = ManualField(
@@ -210,6 +220,7 @@ class TestReportService(
             category = category,
             shortTitle = shortTitle,
             scenario = scenario,
+            readyDate = readyDate,
             manualFields = manualFields,
             runStatus = runStatus,
         )
@@ -242,6 +253,14 @@ class TestReportService(
             Priority.requireValid(priority) ?: requiredFieldMissing("priority")
         } catch (ex: IllegalArgumentException) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Invalid priority")
+        }
+    }
+
+    private fun parseReadyDate(raw: String): LocalDate {
+        return try {
+            LocalDate.parse(raw.trim())
+        } catch (ex: Exception) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid readyDate format")
         }
     }
 
@@ -291,6 +310,7 @@ class TestReportService(
         val category: String,
         val shortTitle: String,
         val scenario: String,
+        val readyDate: LocalDate?,
         val manualFields: ManualFields,
         val runStatus: String?,
     )
