@@ -14,7 +14,8 @@ import com.example.e2e.utils.typeOf
 class MainPage {
 
     private val headerTitle: SelenideElement = element("h1")
-    private val addRowButton: SelenideElement = `$$`("button.secondary-btn").first()
+    private val headerBtnsContainers = `$$`("button.secondary-btn")
+    private val addRowButton  = headerBtnsContainers.filter(exactText("Add Row")).first()
     private val newRow: SelenideElement = element("tr.new-row")
     private val tableRowSelectorPattern = "tbody tr[data-test-id='tr-data-test-id-%s']"
     private val newRowInputs: ElementsCollection = newRow.`$$`("input.cell-input")

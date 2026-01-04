@@ -10,5 +10,9 @@ class WebConfig : WebMvcConfigurer {
         registry.addMapping("/api/**")
             .allowedOrigins("*")
             .allowedMethods("GET", "POST", "PATCH", "DELETE")
+
+        registry.addMapping("/uploadReport")
+            .allowedOrigins("*")
+            .allowedMethods("POST", "OPTIONS")
     }
 }

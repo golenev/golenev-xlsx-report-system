@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReleaseAnalyticsWidget from './ReleaseAnalyticsWidget.tsx';
 const GENERAL_STATUS_OPTIONS = [
   { value: 'Очередь', color: '#e0e8ff', textColor: '#294a9a' },
@@ -242,6 +242,10 @@ export default function App() {
   const [releaseNameDraft, setReleaseNameDraft] = useState('');
   const [showReleaseNameInput, setShowReleaseNameInput] = useState(false);
   const [editingExistingCount, setEditingExistingCount] = useState(0);
+  const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
+  const [uploadSelectionLabel, setUploadSelectionLabel] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const uploadInputRef = useRef(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -296,6 +300,75 @@ export default function App() {
 
   const decrementEditingExisting = () => {
     setEditingExistingCount((count) => Math.max(0, count - 1));
+  };
+
+  const resetUploadSelection = () => {
+    setSelectedUploadFiles([]);
+    setUploadSelectionLabel('');
+    if (uploadInputRef.current) {
+      uploadInputRef.current.value = '';
+    }
+  };
+
+  const handleUploadFilesChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    const jsonFiles = files.filter((file) => file.name.toLowerCase().endsWith('.json'));
+
+    setSelectedUploadFiles(jsonFiles);
+
+    if (jsonFiles.length === 0) {
+      setUploadSelectionLabel('');
+      return;
+    }
+
+    const firstPath = jsonFiles[0].webkitRelativePath || jsonFiles[0].name;
+    const folderName = firstPath.includes('/') ? firstPath.split('/')[0] : '';
+    const label = folderName ? `${folderName} (${jsonFiles.length} файлов)` : `${jsonFiles.length} файлов`;
+    setUploadSelectionLabel(label);
+  };
+
+  const handleUploadSubmit = async () => {
+    if (selectedUploadFiles.length === 0) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      selectedUploadFiles.forEach((file) => {
+        formData.append('files', file);
+        const relativePath = file.webkitRelativePath || file.name;
+        formData.append('paths', relativePath);
+      });
+
+      const response = await fetch(withBase('/uploadReport'), {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        let message = 'Failed to upload reports';
+        try {
+          const data = await response.json();
+          message = data.message || data.detail || message;
+        } catch (parseError) {
+          const text = await response.text();
+          message = text || message;
+        }
+        throw new Error(message);
+      }
+
+      resetUploadSelection();
+      await Promise.all([loadData(), loadRegressionState()]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openUploadPicker = () => {
+    uploadInputRef.current?.click();
   };
 
   const handleFieldChange = (testId, key, value) => {
@@ -658,6 +731,38 @@ export default function App() {
       <header className="app-header">
         <h1>Test Report</h1>
         <div className="header-actions">
+          <div className="upload-actions">
+            <input
+              ref={uploadInputRef}
+              type="file"
+              style={{ display: 'none' }}
+              onChange={handleUploadFilesChange}
+              webkitdirectory="true"
+              directory=""
+              multiple
+            />
+            <button
+              type="button"
+              onClick={openUploadPicker}
+              className="secondary-btn"
+              disabled={loading || saving || uploading}
+            >
+              Upload Test Cases
+            </button>
+            <button
+              type="button"
+              onClick={handleUploadSubmit}
+              className="primary-btn"
+              disabled={
+                uploading || selectedUploadFiles.length === 0 || loading || saving
+              }
+            >
+              {uploading ? 'Uploading…' : 'Загрузить'}
+            </button>
+            {uploadSelectionLabel && (
+              <span className="upload-hint">{uploadSelectionLabel}</span>
+            )}
+          </div>
           <button
             type="button"
             onClick={startNewRow}
