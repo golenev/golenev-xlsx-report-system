@@ -80,45 +80,105 @@ function columnLetter(index) {
   return result;
 }
 
-function renderTextWithCodeBlocks(text) {
-  if (!text) {
-    return null;
+function escapeHtml(rawText) {
+  return (rawText || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeHtmlAttribute(rawText) {
+  return escapeHtml(rawText).replace(/`/g, '&#96;');
+}
+
+function renderMarkdown(text) {
+  if (!text?.trim()) {
+    return '';
   }
 
-  const regex = /```([\s\S]*?)```/g;
-  const segments = [];
-  let lastIndex = 0;
-  let match;
+  const normalized = text.replace(/\r\n/g, '\n');
+  const lines = normalized.split('\n');
 
-  while ((match = regex.exec(text)) !== null) {
-    const preceding = text.slice(lastIndex, match.index);
-    if (preceding) {
-      segments.push(
-        <div key={`text-${lastIndex}`} className="rich-text-segment">
-          {preceding}
-        </div>
-      );
+  const blocks = [];
+  let inCodeBlock = false;
+  let codeLanguage = '';
+  let codeLines = [];
+  let paragraphLines = [];
+  let listBuffer = null;
+
+  const flushParagraph = () => {
+    if (!paragraphLines.length) return;
+    blocks.push(`<p>${escapeHtml(paragraphLines.join('\n')).replace(/\n/g, '<br>')}</p>`);
+    paragraphLines = [];
+  };
+
+  const flushList = () => {
+    if (!listBuffer) return;
+    const items = listBuffer.items
+      .map((item) => `<li>${escapeHtml(item)}</li>`) // preserve raw text inside list
+      .join('');
+    blocks.push(`<${listBuffer.type}>${items}</${listBuffer.type}>`);
+    listBuffer = null;
+  };
+
+  const flushCode = () => {
+    const escaped = escapeHtml(codeLines.join('\n'));
+    const langClass = codeLanguage ? ` class="language-${escapeHtmlAttribute(codeLanguage)}"` : '';
+    blocks.push(`<pre><code${langClass}>${escaped}</code></pre>`);
+    codeLines = [];
+    codeLanguage = '';
+  };
+
+  for (const line of lines) {
+    if (inCodeBlock) {
+      if (line.startsWith('```')) {
+        flushCode();
+        inCodeBlock = false;
+      } else {
+        codeLines.push(line);
+      }
+      continue;
     }
 
-    segments.push(
-      <pre key={`code-${match.index}`} className="rich-text-code-block">
-        <code>{match[1]}</code>
-      </pre>
-    );
+    if (line.startsWith('```')) {
+      flushParagraph();
+      flushList();
+      inCodeBlock = true;
+      codeLanguage = line.slice(3).trim();
+      continue;
+    }
 
-    lastIndex = regex.lastIndex;
+    const listMatch = /^\s*([-*+]|\d+\.)\s+(.*)/.exec(line);
+    if (listMatch) {
+      flushParagraph();
+      const listType = listMatch[1].endsWith('.') ? 'ol' : 'ul';
+      if (!listBuffer || listBuffer.type !== listType) {
+        flushList();
+        listBuffer = { type: listType, items: [] };
+      }
+      listBuffer.items.push(listMatch[2]);
+      continue;
+    }
+
+    if (!line.trim()) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    paragraphLines.push(line);
   }
 
-  const trailing = text.slice(lastIndex);
-  if (trailing) {
-    segments.push(
-      <div key={`text-${lastIndex}`} className="rich-text-segment">
-        {trailing}
-      </div>
-    );
+  if (inCodeBlock) {
+    flushCode();
   }
 
-  return segments;
+  flushParagraph();
+  flushList();
+
+  return blocks.join('\n');
 }
 
 function parseTestId(rawId) {
@@ -986,8 +1046,11 @@ export default function App() {
                               onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                               className="cell-textarea"
                             />
-                            {column.key === 'scenario' && value.includes('```') && (
-                              <div className="rich-text-preview">{renderTextWithCodeBlocks(value)}</div>
+                            {column.key === 'scenario' && value.trim() && (
+                              <div
+                                className="rich-text-preview markdown-preview"
+                                dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
+                              />
                             )}
                           </div>
                         ) : column.type === 'generalStatus' ? (
@@ -1094,8 +1157,11 @@ export default function App() {
                                 onFocus={incrementEditingExisting}
                                 className="cell-textarea"
                               />
-                              {column.key === 'scenario' && value.includes('```') && (
-                                <div className="rich-text-preview">{renderTextWithCodeBlocks(value)}</div>
+                              {column.key === 'scenario' && value.trim() && (
+                                <div
+                                  className="rich-text-preview markdown-preview"
+                                  dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
+                                />
                               )}
                             </div>
                           ) : column.type === 'generalStatus' ? (
