@@ -256,3 +256,4 @@ fun parseAllureReportsFromUploads(uploads: List<AllureUpload>): List<TestCaseMod
 
     return buildTestCaseModels(rawCases)
 }
+
