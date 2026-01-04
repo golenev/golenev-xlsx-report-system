@@ -421,6 +421,26 @@ body {
   background: transparent;
 }
 
+.markdown-preview-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inline-edit-btn {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  color: #1a73e8;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+
+.inline-edit-btn:hover {
+  text-decoration: underline;
+}
+
 .readonly-value {
   display: block;
   padding: 6px 8px;

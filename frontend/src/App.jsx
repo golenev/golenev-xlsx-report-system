@@ -344,6 +344,7 @@ export default function App() {
   const [releaseNameDraft, setReleaseNameDraft] = useState('');
   const [showReleaseNameInput, setShowReleaseNameInput] = useState(false);
   const [editingExistingCount, setEditingExistingCount] = useState(0);
+  const [editingScenarioIds, setEditingScenarioIds] = useState(new Set());
   const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
   const [uploadSelectionLabel, setUploadSelectionLabel] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -540,6 +541,13 @@ export default function App() {
     const sanitizedValue = value === '' ? null : value;
     const payload = { [key]: sanitizedValue };
     sendUpdate(item, payload);
+    if (key === 'scenario') {
+      setEditingScenarioIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.testId);
+        return next;
+      });
+    }
   };
 
   const handleNewFieldChange = (index, key, value) => {
@@ -1106,6 +1114,9 @@ export default function App() {
                   {TABLE_COLUMNS.map((column) => {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
+                    const isScenarioColumn = column.key === 'scenario';
+                    const isEditingScenario =
+                      isScenarioColumn && editingScenarioIds.has(item.testId);
                     const isRegressionColumn = column.type === 'regression';
                     const regressionValue = regressionResults[item.testId] ?? '';
                     const cellClassName = isRegressionColumn
@@ -1148,7 +1159,50 @@ export default function App() {
                             />
                           </div>
                         ) : column.editable ? (
-                          column.type === 'textarea' ? (
+                          isScenarioColumn ? (
+                            isEditingScenario ? (
+                              <div className="textarea-with-preview">
+                                <textarea
+                                  value={value}
+                                  onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
+                                  onBlur={() => handleBlur(item, column.key)}
+                                  onFocus={incrementEditingExisting}
+                                  className="cell-textarea"
+                                  autoFocus
+                                />
+                                {value.trim() && (
+                                  <div
+                                    className="rich-text-preview markdown-preview"
+                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
+                                  />
+                                )}
+                              </div>
+                            ) : (
+                              <div className="markdown-preview-wrapper">
+                                {value.trim() ? (
+                                  <div
+                                    className="rich-text-preview markdown-preview"
+                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
+                                  />
+                                ) : (
+                                  <span className="readonly-value">—</span>
+                                )}
+                                <button
+                                  type="button"
+                                  className="inline-edit-btn"
+                                  onClick={() =>
+                                    setEditingScenarioIds((prev) => {
+                                      const next = new Set(prev);
+                                      next.add(item.testId);
+                                      return next;
+                                    })
+                                  }
+                                >
+                                  Редактировать
+                                </button>
+                              </div>
+                            )
+                          ) : column.type === 'textarea' ? (
                             <div className="textarea-with-preview">
                               <textarea
                                 value={value}
