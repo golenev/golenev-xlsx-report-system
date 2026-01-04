@@ -1,16 +1,13 @@
 package com.example.e2e.ui.config
 
-import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import com.codeborne.selenide.proxy.SelenideProxyServer
-import io.qameta.allure.Step
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.junit.jupiter.api.DisplayName
 import java.util.*
 
 
-@Step("Перехватываем запрос {0} и асинхронно возвращаем из него тело")
+//Перехватываем запрос и асинхронно возвращаем из него тело
 fun interceptRequestBody(
     proxyServer: SelenideProxyServer,
     endpoint: String,
@@ -33,7 +30,7 @@ fun interceptRequestBody(
     }
 }
 
-@Step("Перехватываем ответ {0} и асинхронно возвращаем его тело")
+//Перехватываем ответ и асинхронно возвращаем его тело
 fun interceptResponseBody(
     proxyServer: SelenideProxyServer,
     endpoint: String,
@@ -54,7 +51,7 @@ fun interceptResponseBody(
     }
 }
 
-@Step("Перехватываем ответ {0} и подставляем переданное тело")
+//Перехватываем ответ  подставляем переданное тело
 fun replaceResponseBody(
     proxyServer: SelenideProxyServer,
     endpoint: String,

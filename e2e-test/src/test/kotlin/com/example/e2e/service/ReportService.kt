@@ -4,14 +4,13 @@ import com.example.e2e.dto.TestBatchRequest
 import com.example.e2e.dto.TestReportResponse
 import com.example.e2e.http.Paths
 import com.example.e2e.http.RequestExecutor
-import io.qameta.allure.Step
 import io.restassured.response.Response
 
 class ReportService : RequestExecutor<Unit>(
     path = Paths.REPORTS.path,
 ) {
 
-    @Step("Отправляем batch запрос для обновления тестов")
+    //Отправляем batch запрос для обновления тестов
     fun sendBatch(request: TestBatchRequest, expectedStatus: Int = 200): Response {
         return postRequest(
             url = Paths.REPORTS_BATCH.path,
@@ -20,7 +19,7 @@ class ReportService : RequestExecutor<Unit>(
         )
     }
 
-    @Step("Отправляем batch запрос для обновления тестов, в т.ч. неизменяемых полей")
+    //Отправляем batch запрос для обновления тестов, в т.ч. неизменяемых полей
     fun sendForceBatch(request: TestBatchRequest, expectedStatus: Int = 200): Response {
         return postRequest(
             url = Paths.REPORTS_BATCH.path,
@@ -29,7 +28,7 @@ class ReportService : RequestExecutor<Unit>(
         )
     }
 
-    @Step("Читаем отчет о тестах")
+    //Читаем отчет о тестах
     fun getReport(): TestReportResponse {
         return getRequest(
             url = path,
@@ -37,7 +36,7 @@ class ReportService : RequestExecutor<Unit>(
         ).`as`(TestReportResponse::class.java)
     }
 
-    @Step("Сбрасываем данные Run-колонок через API")
+    //Сбрасываем данные Run-колонок через API
     fun resetRuns(expectedStatus: Int = 200): Response {
         return postRequest(
             url = Paths.RUNS_RESET.path,
