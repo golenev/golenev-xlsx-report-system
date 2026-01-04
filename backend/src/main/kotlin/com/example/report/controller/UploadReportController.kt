@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
@@ -25,8 +24,8 @@ class UploadReportController(
     fun uploadReport(
         @RequestParam(defaultValue = "false") isRegressRunning: Boolean,
         @RequestParam(defaultValue = "false") forceUpdate: Boolean,
-        @RequestPart("files") files: List<MultipartFile>,
-        @RequestPart("paths", required = false) paths: List<String>?,
+        @RequestParam("files") files: List<MultipartFile>,
+        @RequestParam("paths", required = false) paths: List<String>?,
     ) {
         if (files.isEmpty()) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Не загружены файлы отчёта")
