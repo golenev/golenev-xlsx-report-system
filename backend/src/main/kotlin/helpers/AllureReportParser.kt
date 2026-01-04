@@ -165,7 +165,7 @@ private fun extractRawTestCase(jsonString: String, fileName: String): RawTestCas
     )
 }
 
-private fun buildTestCaseModels(rawCases: List<Pair<String, RawTestCase>>>): List<TestCaseModel> {
+private fun buildTestCaseModels(rawCases: List<Pair<String, RawTestCase>>): List<TestCaseModel> {
     val withoutId = rawCases.filter { it.second.baseId == null }
     if (withoutId.isNotEmpty()) {
         val fileNames = withoutId.joinToString { it.first.substringAfterLast('/') }
