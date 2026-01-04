@@ -45,6 +45,8 @@ class UploadReportController(
             parseAllureReportsFromUploads(uploads)
         } catch (ex: IllegalStateException) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Ошибка парсинга отчёта", ex)
+        } catch (ex: IllegalArgumentException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, ex.message ?: "Ошибка парсинга отчёта", ex)
         }
 
         val request = TestBatchRequest(
