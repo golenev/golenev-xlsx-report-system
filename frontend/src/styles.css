@@ -349,11 +349,13 @@ body {
 }
 
 .multiline-textarea {
-  min-height: 56px;
+  resize: none;
+  min-height: 120px;
   line-height: 1.35;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  height: 100%;
+  height: auto;
+  overflow: hidden;
 }
 
 .multiline-cell {

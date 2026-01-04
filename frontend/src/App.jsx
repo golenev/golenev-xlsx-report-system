@@ -14,6 +14,7 @@ const REGRESSION_STATUS_OPTIONS = ['PASSED', 'FAILED', 'SKIPPED'];
 const PRIORITY_OPTIONS = ['Critical', 'Blocker', 'High', 'Medium', 'Low', 'Trivial'];
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const MULTILINE_TEXT_KEYS = new Set(['category', 'shortTitle']);
+const MULTILINE_MIN_HEIGHT = 120;
 
 const FIELD_DEFINITIONS = [
   { key: 'testId', label: 'Test ID', editable: false, type: 'text' },
@@ -179,6 +180,14 @@ function renderMarkdown(text) {
   flushList();
 
   return blocks.join('\n');
+}
+
+function autoResizeTextarea(element) {
+  if (!element) return;
+  element.style.height = 'auto';
+  element.style.overflow = 'hidden';
+  const nextHeight = Math.max(element.scrollHeight, MULTILINE_MIN_HEIGHT);
+  element.style.height = `${nextHeight}px`;
 }
 
 function parseTestId(rawId) {
@@ -393,6 +402,11 @@ export default function App() {
     loadData();
     loadRegressionState();
   }, []);
+
+  useEffect(() => {
+    const textareas = document.querySelectorAll('.multiline-textarea');
+    textareas.forEach(autoResizeTextarea);
+  }, [items, newItems]);
 
   const isRegressionRunning = regressionState.status === 'RUNNING';
   const isEditingExistingRow = editingExistingCount > 0;
@@ -1084,14 +1098,17 @@ export default function App() {
                             <RegressionStatusSelect value="" onChange={() => {}} disabled />
                           </div>
                         ) : isMultilineColumn ? (
-                          <div className="multiline-textarea-wrapper">
-                            <textarea
-                              value={value}
-                              onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
-                              className="cell-textarea multiline-textarea"
-                            />
-                          </div>
-                        ) : (
+                            <div className="multiline-textarea-wrapper">
+                              <textarea
+                                value={value}
+                                onChange={(e) => {
+                                  handleNewFieldChange(index, column.key, e.target.value);
+                                  autoResizeTextarea(e.target);
+                                }}
+                                className="cell-textarea multiline-textarea"
+                              />
+                            </div>
+                          ) : (
                           <input
                             type="text"
                             value={value}
@@ -1254,7 +1271,10 @@ export default function App() {
                             <div className="multiline-textarea-wrapper">
                               <textarea
                                 value={value}
-                                onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
+                                onChange={(e) => {
+                                  handleFieldChange(item.testId, column.key, e.target.value);
+                                  autoResizeTextarea(e.target);
+                                }}
                                 onBlur={() => handleBlur(item, column.key)}
                                 onFocus={incrementEditingExisting}
                                 className="cell-textarea multiline-textarea"
