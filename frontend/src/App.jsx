@@ -17,20 +17,45 @@ const MULTILINE_TEXT_KEYS = new Set(['category', 'shortTitle']);
 const MULTILINE_MIN_HEIGHT = 120;
 
 const FIELD_DEFINITIONS = [
-  { key: 'testId', label: 'Test ID', editable: false, type: 'text' },
-  { key: 'category', label: 'Category / Feature', editable: true, type: 'text' },
-  { key: 'shortTitle', label: 'Short Title', editable: true, type: 'text' },
-  { key: 'issueLink', label: 'YouTrack Issue Link', editable: true, type: 'text' },
-  { key: 'readyDate', label: 'Ready Date', editable: false, type: 'readonlyDate' },
-  { key: 'generalStatus', label: 'General Test Status', editable: true, type: 'generalStatus' },
-  { key: 'priority', label: 'Priority', editable: true, type: 'priority' },
-  { key: 'scenario', label: 'Detailed Scenario', editable: true, type: 'textarea' },
-  { key: 'notes', label: 'Notes', editable: true, type: 'textarea' }
+  { key: 'testId', label: 'Test ID', dataTestId: 'Test ID', editable: false, type: 'text' },
+  {
+    key: 'category',
+    label: 'Category / Feature',
+    dataTestId: 'Category',
+    editable: true,
+    type: 'text'
+  },
+  { key: 'shortTitle', label: 'Short Title', dataTestId: 'Short Title', editable: true, type: 'text' },
+  {
+    key: 'issueLink',
+    label: 'YouTrack Issue Link',
+    dataTestId: 'YouTrack Issue Link',
+    editable: true,
+    type: 'text'
+  },
+  { key: 'readyDate', label: 'Ready Date', dataTestId: 'Ready Date', editable: false, type: 'readonlyDate' },
+  {
+    key: 'generalStatus',
+    label: 'General Test Status',
+    dataTestId: 'General Test Status',
+    editable: true,
+    type: 'generalStatus'
+  },
+  { key: 'priority', label: 'Priority', dataTestId: 'Priority', editable: true, type: 'priority' },
+  {
+    key: 'scenario',
+    label: 'Detailed Scenario',
+    dataTestId: 'Detailed Scenario',
+    editable: true,
+    type: 'textarea'
+  },
+  { key: 'notes', label: 'Notes', dataTestId: 'Notes', editable: true, type: 'textarea' }
 ];
 
 const REGRESSION_COLUMN = {
   key: 'regressionStatus',
   label: 'Regress Run',
+  dataTestId: 'Regress Run',
   editable: true,
   type: 'regression'
 };
@@ -79,6 +104,10 @@ function columnLetter(index) {
     n = Math.floor(n / 26) - 1;
   }
   return result;
+}
+
+function getColumnDataTestId(column) {
+  return column.dataTestId ?? column.label ?? column.key;
 }
 
 function escapeHtml(rawText) {
@@ -920,10 +949,12 @@ export default function App() {
                 {columns.map((column, idx) => {
                   const width = getColumnWidth(column);
                   const letter = columnLetter(idx);
+                  const columnDataTestId = getColumnDataTestId(column);
                   return (
                     <th
                       key={column.key}
                       style={{ width: `${width}px`, minWidth: `${width}px` }}
+                      {...(columnDataTestId ? { 'data-test-id': columnDataTestId } : undefined)}
                     >
                       <div
                         className={`header-content ${
@@ -1037,6 +1068,7 @@ export default function App() {
                     const isEditable = column.editable || column.key === 'testId';
                     const isMultilineColumn = MULTILINE_TEXT_KEYS.has(column.key);
                     const cellDataAttributes = {};
+                    const columnDataTestId = getColumnDataTestId(column);
 
                     if (column.key === 'testId') {
                       cellDataAttributes['data-column'] = 'test-id';
@@ -1044,6 +1076,10 @@ export default function App() {
                     } else if (column.key === 'readyDate') {
                       cellDataAttributes['data-column'] = 'ready-date';
                       cellDataAttributes['data-row-id'] = item.testId || `new-${index + 1}`;
+                    }
+
+                    if (columnDataTestId) {
+                      cellDataAttributes['data-test-id'] = columnDataTestId;
                     }
 
                     const readonlySpanAttributes =
@@ -1156,6 +1192,7 @@ export default function App() {
                         .filter(Boolean)
                         .join(' ') || undefined;
                     const cellDataAttributes = {};
+                    const columnDataTestId = getColumnDataTestId(column);
 
                     if (column.key === 'testId') {
                       cellDataAttributes['data-column'] = 'test-id';
@@ -1163,6 +1200,10 @@ export default function App() {
                     } else if (column.key === 'readyDate') {
                       cellDataAttributes['data-column'] = 'ready-date';
                       cellDataAttributes['data-row-id'] = item.testId;
+                    }
+
+                    if (columnDataTestId) {
+                      cellDataAttributes['data-test-id'] = columnDataTestId;
                     }
 
                     const readonlySpanAttributes =
