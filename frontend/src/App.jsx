@@ -1021,6 +1021,7 @@ export default function App() {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
                     const isEditable = column.editable || column.key === 'testId';
+                    const isMultilineColumn = MULTILINE_TEXT_KEYS.has(column.key);
                     const cellDataAttributes = {};
 
                     if (column.key === 'testId') {
@@ -1042,7 +1043,14 @@ export default function App() {
                       <td
                         key={`new-${index}-${column.key}`}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
-                        className={column.type === 'regression' ? 'regression-cell locked' : undefined}
+                        className={
+                          [
+                            column.type === 'regression' ? 'regression-cell locked' : undefined,
+                            isMultilineColumn ? 'multiline-cell' : undefined
+                          ]
+                            .filter(Boolean)
+                            .join(' ') || undefined
+                        }
                         {...cellDataAttributes}
                       >
                         {!isEditable ? (
@@ -1075,13 +1083,14 @@ export default function App() {
                           <div className="regression-cell-content">
                             <RegressionStatusSelect value="" onChange={() => {}} disabled />
                           </div>
-                        ) : MULTILINE_TEXT_KEYS.has(column.key) ? (
-                          <textarea
-                            value={value}
-                            onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
-                            className="cell-textarea multiline-textarea"
-                            rows={2}
-                          />
+                        ) : isMultilineColumn ? (
+                          <div className="multiline-textarea-wrapper">
+                            <textarea
+                              value={value}
+                              onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
+                              className="cell-textarea multiline-textarea"
+                            />
+                          </div>
                         ) : (
                           <input
                             type="text"
@@ -1119,9 +1128,16 @@ export default function App() {
                       isScenarioColumn && editingScenarioIds.has(item.testId);
                     const isRegressionColumn = column.type === 'regression';
                     const regressionValue = regressionResults[item.testId] ?? '';
-                    const cellClassName = isRegressionColumn
-                      ? `regression-cell ${isRegressionRunning ? '' : 'locked'}`.trim()
-                      : undefined;
+                    const isMultilineColumn = MULTILINE_TEXT_KEYS.has(column.key);
+                    const cellClassName =
+                      [
+                        isRegressionColumn
+                          ? `regression-cell ${isRegressionRunning ? '' : 'locked'}`.trim()
+                          : undefined,
+                        isMultilineColumn ? 'multiline-cell' : undefined
+                      ]
+                        .filter(Boolean)
+                        .join(' ') || undefined;
                     const cellDataAttributes = {};
 
                     if (column.key === 'testId') {
@@ -1234,15 +1250,16 @@ export default function App() {
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
                             />
-                          ) : MULTILINE_TEXT_KEYS.has(column.key) ? (
-                            <textarea
-                              value={value}
-                              onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
-                              onBlur={() => handleBlur(item, column.key)}
-                              onFocus={incrementEditingExisting}
-                              className="cell-textarea multiline-textarea"
-                              rows={2}
-                            />
+                          ) : isMultilineColumn ? (
+                            <div className="multiline-textarea-wrapper">
+                              <textarea
+                                value={value}
+                                onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
+                                onBlur={() => handleBlur(item, column.key)}
+                                onFocus={incrementEditingExisting}
+                                className="cell-textarea multiline-textarea"
+                              />
+                            </div>
                           ) : (
                             <input
                               type="text"

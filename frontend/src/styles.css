@@ -349,10 +349,25 @@ body {
 }
 
 .multiline-textarea {
-  min-height: 48px;
+  min-height: 56px;
   line-height: 1.35;
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  height: 100%;
+}
+
+.multiline-cell {
+  height: 100%;
+  vertical-align: top;
+}
+
+.multiline-textarea-wrapper {
+  display: flex;
+  height: 100%;
+}
+
+.multiline-textarea-wrapper .multiline-textarea {
+  flex: 1;
 }
 
 .textarea-with-preview {
