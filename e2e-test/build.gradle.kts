@@ -17,7 +17,7 @@ dependencies {
     val fakerVersion = "2.2.2"
 
     testImplementation(kotlin("stdlib"))
-    testImplementation("com.example:allure-helpers")
+    testImplementation("com.example:allure-helpers:0.0.1-SNAPSHOT")
     testImplementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
