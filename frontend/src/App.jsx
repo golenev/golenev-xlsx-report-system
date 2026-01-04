@@ -13,6 +13,7 @@ const GENERAL_STATUS_OPTIONS = [
 const REGRESSION_STATUS_OPTIONS = ['PASSED', 'FAILED', 'SKIPPED'];
 const PRIORITY_OPTIONS = ['Critical', 'Blocker', 'High', 'Medium', 'Low', 'Trivial'];
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const MULTILINE_TEXT_KEYS = new Set(['category', 'shortTitle']);
 
 const FIELD_DEFINITIONS = [
   { key: 'testId', label: 'Test ID', editable: false, type: 'text' },
@@ -77,6 +78,47 @@ function columnLetter(index) {
     n = Math.floor(n / 26) - 1;
   }
   return result;
+}
+
+function renderTextWithCodeBlocks(text) {
+  if (!text) {
+    return null;
+  }
+
+  const regex = /```([\s\S]*?)```/g;
+  const segments = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    const preceding = text.slice(lastIndex, match.index);
+    if (preceding) {
+      segments.push(
+        <div key={`text-${lastIndex}`} className="rich-text-segment">
+          {preceding}
+        </div>
+      );
+    }
+
+    segments.push(
+      <pre key={`code-${match.index}`} className="rich-text-code-block">
+        <code>{match[1]}</code>
+      </pre>
+    );
+
+    lastIndex = regex.lastIndex;
+  }
+
+  const trailing = text.slice(lastIndex);
+  if (trailing) {
+    segments.push(
+      <div key={`text-${lastIndex}`} className="rich-text-segment">
+        {trailing}
+      </div>
+    );
+  }
+
+  return segments;
 }
 
 function parseTestId(rawId) {
@@ -938,11 +980,16 @@ export default function App() {
                         {!isEditable ? (
                           <span className="readonly-value" {...readonlySpanAttributes}>{value}</span>
                         ) : column.type === 'textarea' ? (
-                          <textarea
-                            value={value}
-                            onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
-                            className="cell-textarea"
-                          />
+                          <div className="textarea-with-preview">
+                            <textarea
+                              value={value}
+                              onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
+                              className="cell-textarea"
+                            />
+                            {column.key === 'scenario' && value.includes('```') && (
+                              <div className="rich-text-preview">{renderTextWithCodeBlocks(value)}</div>
+                            )}
+                          </div>
                         ) : column.type === 'generalStatus' ? (
                           <StatusDropdown
                             value={value}
@@ -957,6 +1004,13 @@ export default function App() {
                           <div className="regression-cell-content">
                             <RegressionStatusSelect value="" onChange={() => {}} disabled />
                           </div>
+                        ) : MULTILINE_TEXT_KEYS.has(column.key) ? (
+                          <textarea
+                            value={value}
+                            onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
+                            className="cell-textarea multiline-textarea"
+                            rows={2}
+                          />
                         ) : (
                           <input
                             type="text"
@@ -1032,13 +1086,18 @@ export default function App() {
                           </div>
                         ) : column.editable ? (
                           column.type === 'textarea' ? (
-                            <textarea
-                              value={value}
-                              onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
-                              onBlur={() => handleBlur(item, column.key)}
-                              onFocus={incrementEditingExisting}
-                              className="cell-textarea"
-                            />
+                            <div className="textarea-with-preview">
+                              <textarea
+                                value={value}
+                                onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
+                                onBlur={() => handleBlur(item, column.key)}
+                                onFocus={incrementEditingExisting}
+                                className="cell-textarea"
+                              />
+                              {column.key === 'scenario' && value.includes('```') && (
+                                <div className="rich-text-preview">{renderTextWithCodeBlocks(value)}</div>
+                              )}
+                            </div>
                           ) : column.type === 'generalStatus' ? (
                             <StatusDropdown
                               value={value}
@@ -1054,6 +1113,15 @@ export default function App() {
                               disabled={saving}
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
+                            />
+                          ) : MULTILINE_TEXT_KEYS.has(column.key) ? (
+                            <textarea
+                              value={value}
+                              onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
+                              onBlur={() => handleBlur(item, column.key)}
+                              onFocus={incrementEditingExisting}
+                              className="cell-textarea multiline-textarea"
+                              rows={2}
                             />
                           ) : (
                             <input

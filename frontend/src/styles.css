@@ -348,6 +348,46 @@ body {
   min-height: 80px;
 }
 
+.multiline-textarea {
+  min-height: 48px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.textarea-with-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rich-text-preview {
+  background: #0b1021;
+  color: #e5e7eb;
+  border-radius: 8px;
+  padding: 10px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow: auto;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.rich-text-segment {
+  white-space: pre-wrap;
+  color: #e5e7eb;
+}
+
+.rich-text-code-block {
+  margin: 6px 0;
+  padding: 8px;
+  background: rgba(15, 23, 42, 0.75);
+  border-radius: 6px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .readonly-value {
   display: block;
   padding: 6px 8px;
