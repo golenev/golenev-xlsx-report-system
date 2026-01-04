@@ -14,6 +14,7 @@ RUN npm run build
 FROM gradle:8.5-jdk17 AS backend-build
 WORKDIR /workspace
 COPY backend backend
+COPY allure-helpers allure-helpers
 COPY config config
 COPY --from=frontend-build /frontend/dist ./backend/src/main/resources/static
 WORKDIR /workspace/backend
