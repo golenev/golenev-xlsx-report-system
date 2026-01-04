@@ -348,6 +348,116 @@ body {
   min-height: 80px;
 }
 
+.multiline-textarea {
+  resize: none;
+  min-height: 120px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  height: auto;
+  overflow: hidden;
+}
+
+.multiline-cell {
+  height: 100%;
+  vertical-align: top;
+}
+
+.multiline-textarea-wrapper {
+  display: flex;
+  height: 100%;
+}
+
+.multiline-textarea-wrapper .multiline-textarea {
+  flex: 1;
+}
+
+.textarea-with-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rich-text-preview {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f6f8fa;
+  border: 1px solid #e2e8f0;
+  color: #111827;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.markdown-preview p {
+  margin: 0 0 6px;
+  white-space: pre-wrap;
+}
+
+.markdown-preview p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  margin: 0 0 6px 20px;
+  padding-left: 16px;
+}
+
+.markdown-preview ul:last-child,
+.markdown-preview ol:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  background: #eef2ff;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.markdown-preview pre {
+  margin: 6px 0;
+  padding: 12px;
+  background: #0f172a;
+  color: #e5e7eb;
+  border-radius: 8px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.markdown-preview pre code {
+  display: block;
+  padding: 0;
+  background: transparent;
+}
+
+.markdown-preview-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inline-edit-btn {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  color: #1a73e8;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+
+.inline-edit-btn:hover {
+  text-decoration: underline;
+}
+
 .readonly-value {
   display: block;
   padding: 6px 8px;

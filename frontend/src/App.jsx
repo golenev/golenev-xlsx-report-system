@@ -13,6 +13,8 @@ const GENERAL_STATUS_OPTIONS = [
 const REGRESSION_STATUS_OPTIONS = ['PASSED', 'FAILED', 'SKIPPED'];
 const PRIORITY_OPTIONS = ['Critical', 'Blocker', 'High', 'Medium', 'Low', 'Trivial'];
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const MULTILINE_TEXT_KEYS = new Set(['category', 'shortTitle']);
+const MULTILINE_MIN_HEIGHT = 120;
 
 const FIELD_DEFINITIONS = [
   { key: 'testId', label: 'Test ID', editable: false, type: 'text' },
@@ -77,6 +79,115 @@ function columnLetter(index) {
     n = Math.floor(n / 26) - 1;
   }
   return result;
+}
+
+function escapeHtml(rawText) {
+  return (rawText || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeHtmlAttribute(rawText) {
+  return escapeHtml(rawText).replace(/`/g, '&#96;');
+}
+
+function renderMarkdown(text) {
+  if (!text?.trim()) {
+    return '';
+  }
+
+  const normalized = text.replace(/\r\n/g, '\n');
+  const lines = normalized.split('\n');
+
+  const blocks = [];
+  let inCodeBlock = false;
+  let codeLanguage = '';
+  let codeLines = [];
+  let paragraphLines = [];
+  let listBuffer = null;
+
+  const flushParagraph = () => {
+    if (!paragraphLines.length) return;
+    blocks.push(`<p>${escapeHtml(paragraphLines.join('\n')).replace(/\n/g, '<br>')}</p>`);
+    paragraphLines = [];
+  };
+
+  const flushList = () => {
+    if (!listBuffer) return;
+    const items = listBuffer.items
+      .map((item) => `<li>${escapeHtml(item)}</li>`) // preserve raw text inside list
+      .join('');
+    blocks.push(`<${listBuffer.type}>${items}</${listBuffer.type}>`);
+    listBuffer = null;
+  };
+
+  const flushCode = () => {
+    const escaped = escapeHtml(codeLines.join('\n'));
+    const langClass = codeLanguage ? ` class="language-${escapeHtmlAttribute(codeLanguage)}"` : '';
+    blocks.push(`<pre><code${langClass}>${escaped}</code></pre>`);
+    codeLines = [];
+    codeLanguage = '';
+  };
+
+  for (const line of lines) {
+    if (inCodeBlock) {
+      if (line.startsWith('```')) {
+        flushCode();
+        inCodeBlock = false;
+      } else {
+        codeLines.push(line);
+      }
+      continue;
+    }
+
+    if (line.startsWith('```')) {
+      flushParagraph();
+      flushList();
+      inCodeBlock = true;
+      codeLanguage = line.slice(3).trim();
+      continue;
+    }
+
+    const listMatch = /^\s*([-*+]|\d+\.)\s+(.*)/.exec(line);
+    if (listMatch) {
+      flushParagraph();
+      const listType = listMatch[1].endsWith('.') ? 'ol' : 'ul';
+      if (!listBuffer || listBuffer.type !== listType) {
+        flushList();
+        listBuffer = { type: listType, items: [] };
+      }
+      listBuffer.items.push(listMatch[2]);
+      continue;
+    }
+
+    if (!line.trim()) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    paragraphLines.push(line);
+  }
+
+  if (inCodeBlock) {
+    flushCode();
+  }
+
+  flushParagraph();
+  flushList();
+
+  return blocks.join('\n');
+}
+
+function autoResizeTextarea(element) {
+  if (!element) return;
+  element.style.height = 'auto';
+  element.style.overflow = 'hidden';
+  const nextHeight = Math.max(element.scrollHeight, MULTILINE_MIN_HEIGHT);
+  element.style.height = `${nextHeight}px`;
 }
 
 function parseTestId(rawId) {
@@ -242,6 +353,7 @@ export default function App() {
   const [releaseNameDraft, setReleaseNameDraft] = useState('');
   const [showReleaseNameInput, setShowReleaseNameInput] = useState(false);
   const [editingExistingCount, setEditingExistingCount] = useState(0);
+  const [editingScenarioIds, setEditingScenarioIds] = useState(new Set());
   const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
   const [uploadSelectionLabel, setUploadSelectionLabel] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -290,6 +402,11 @@ export default function App() {
     loadData();
     loadRegressionState();
   }, []);
+
+  useEffect(() => {
+    const textareas = document.querySelectorAll('.multiline-textarea');
+    textareas.forEach(autoResizeTextarea);
+  }, [items, newItems]);
 
   const isRegressionRunning = regressionState.status === 'RUNNING';
   const isEditingExistingRow = editingExistingCount > 0;
@@ -438,6 +555,13 @@ export default function App() {
     const sanitizedValue = value === '' ? null : value;
     const payload = { [key]: sanitizedValue };
     sendUpdate(item, payload);
+    if (key === 'scenario') {
+      setEditingScenarioIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.testId);
+        return next;
+      });
+    }
   };
 
   const handleNewFieldChange = (index, key, value) => {
@@ -911,6 +1035,7 @@ export default function App() {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
                     const isEditable = column.editable || column.key === 'testId';
+                    const isMultilineColumn = MULTILINE_TEXT_KEYS.has(column.key);
                     const cellDataAttributes = {};
 
                     if (column.key === 'testId') {
@@ -932,17 +1057,32 @@ export default function App() {
                       <td
                         key={`new-${index}-${column.key}`}
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
-                        className={column.type === 'regression' ? 'regression-cell locked' : undefined}
+                        className={
+                          [
+                            column.type === 'regression' ? 'regression-cell locked' : undefined,
+                            isMultilineColumn ? 'multiline-cell' : undefined
+                          ]
+                            .filter(Boolean)
+                            .join(' ') || undefined
+                        }
                         {...cellDataAttributes}
                       >
                         {!isEditable ? (
                           <span className="readonly-value" {...readonlySpanAttributes}>{value}</span>
                         ) : column.type === 'textarea' ? (
-                          <textarea
-                            value={value}
-                            onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
-                            className="cell-textarea"
-                          />
+                          <div className="textarea-with-preview">
+                            <textarea
+                              value={value}
+                              onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
+                              className="cell-textarea"
+                            />
+                            {column.key === 'scenario' && value.trim() && (
+                              <div
+                                className="rich-text-preview markdown-preview"
+                                dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
+                              />
+                            )}
+                          </div>
                         ) : column.type === 'generalStatus' ? (
                           <StatusDropdown
                             value={value}
@@ -957,7 +1097,18 @@ export default function App() {
                           <div className="regression-cell-content">
                             <RegressionStatusSelect value="" onChange={() => {}} disabled />
                           </div>
-                        ) : (
+                        ) : isMultilineColumn ? (
+                            <div className="multiline-textarea-wrapper">
+                              <textarea
+                                value={value}
+                                onChange={(e) => {
+                                  handleNewFieldChange(index, column.key, e.target.value);
+                                  autoResizeTextarea(e.target);
+                                }}
+                                className="cell-textarea multiline-textarea"
+                              />
+                            </div>
+                          ) : (
                           <input
                             type="text"
                             value={value}
@@ -989,11 +1140,21 @@ export default function App() {
                   {TABLE_COLUMNS.map((column) => {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
+                    const isScenarioColumn = column.key === 'scenario';
+                    const isEditingScenario =
+                      isScenarioColumn && editingScenarioIds.has(item.testId);
                     const isRegressionColumn = column.type === 'regression';
                     const regressionValue = regressionResults[item.testId] ?? '';
-                    const cellClassName = isRegressionColumn
-                      ? `regression-cell ${isRegressionRunning ? '' : 'locked'}`.trim()
-                      : undefined;
+                    const isMultilineColumn = MULTILINE_TEXT_KEYS.has(column.key);
+                    const cellClassName =
+                      [
+                        isRegressionColumn
+                          ? `regression-cell ${isRegressionRunning ? '' : 'locked'}`.trim()
+                          : undefined,
+                        isMultilineColumn ? 'multiline-cell' : undefined
+                      ]
+                        .filter(Boolean)
+                        .join(' ') || undefined;
                     const cellDataAttributes = {};
 
                     if (column.key === 'testId') {
@@ -1031,14 +1192,65 @@ export default function App() {
                             />
                           </div>
                         ) : column.editable ? (
-                          column.type === 'textarea' ? (
-                            <textarea
-                              value={value}
-                              onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
-                              onBlur={() => handleBlur(item, column.key)}
-                              onFocus={incrementEditingExisting}
-                              className="cell-textarea"
-                            />
+                          isScenarioColumn ? (
+                            isEditingScenario ? (
+                              <div className="textarea-with-preview">
+                                <textarea
+                                  value={value}
+                                  onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
+                                  onBlur={() => handleBlur(item, column.key)}
+                                  onFocus={incrementEditingExisting}
+                                  className="cell-textarea"
+                                  autoFocus
+                                />
+                                {value.trim() && (
+                                  <div
+                                    className="rich-text-preview markdown-preview"
+                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
+                                  />
+                                )}
+                              </div>
+                            ) : (
+                              <div className="markdown-preview-wrapper">
+                                {value.trim() ? (
+                                  <div
+                                    className="rich-text-preview markdown-preview"
+                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
+                                  />
+                                ) : (
+                                  <span className="readonly-value">—</span>
+                                )}
+                                <button
+                                  type="button"
+                                  className="inline-edit-btn"
+                                  onClick={() =>
+                                    setEditingScenarioIds((prev) => {
+                                      const next = new Set(prev);
+                                      next.add(item.testId);
+                                      return next;
+                                    })
+                                  }
+                                >
+                                  Редактировать
+                                </button>
+                              </div>
+                            )
+                          ) : column.type === 'textarea' ? (
+                            <div className="textarea-with-preview">
+                              <textarea
+                                value={value}
+                                onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
+                                onBlur={() => handleBlur(item, column.key)}
+                                onFocus={incrementEditingExisting}
+                                className="cell-textarea"
+                              />
+                              {column.key === 'scenario' && value.trim() && (
+                                <div
+                                  className="rich-text-preview markdown-preview"
+                                  dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
+                                />
+                              )}
+                            </div>
                           ) : column.type === 'generalStatus' ? (
                             <StatusDropdown
                               value={value}
@@ -1055,6 +1267,19 @@ export default function App() {
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
                             />
+                          ) : isMultilineColumn ? (
+                            <div className="multiline-textarea-wrapper">
+                              <textarea
+                                value={value}
+                                onChange={(e) => {
+                                  handleFieldChange(item.testId, column.key, e.target.value);
+                                  autoResizeTextarea(e.target);
+                                }}
+                                onBlur={() => handleBlur(item, column.key)}
+                                onFocus={incrementEditingExisting}
+                                className="cell-textarea multiline-textarea"
+                              />
+                            </div>
                           ) : (
                             <input
                               type="text"
