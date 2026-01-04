@@ -3,7 +3,6 @@ package helpers
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import java.io.File
 
 // ---- Модели для парсинга Allure JSON ----
 
@@ -207,35 +206,6 @@ private fun buildTestCaseModels(rawCases: List<Pair<String, RawTestCase>>): List
         }
     }
     return result
-}
-
-// ----------------- Основные функции -----------------
-
-/**
- * Парсит все JSON-файлы Allure в указанной папке и возвращает список TestCaseModel.
- *
- * @param folderPath путь к папке с Allure test-cases,
- *                   например "build/reports/allure-report/allureReport/data/test-cases"
- */
-fun parseAllureReportsFromFolder(folderPath: String): List<TestCaseModel> {
-    val folder = File(folderPath)
-    require(folder.exists() && folder.isDirectory) {
-        "Папка не найдена или не является директорией: $folderPath"
-    }
-
-    val jsonFiles = folder.listFiles { file ->
-        file.isFile && file.extension.equals("json", ignoreCase = true)
-    } ?: emptyArray()
-
-    require(jsonFiles.isNotEmpty()) {
-        "JSON-файлы не найдены в папке: $folderPath"
-    }
-
-    val uploads = jsonFiles.map { file ->
-        AllureUpload(path = file.name, content = file.readBytes())
-    }
-
-    return parseAllureReportsFromUploads(uploads)
 }
 
 /**
