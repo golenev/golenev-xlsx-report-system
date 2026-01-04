@@ -65,12 +65,6 @@ private data class RawTestCase(
     val runStatus: String?,
 )
 
-// Счётчик шагов
-private class Counter {
-    private var value = 1
-    fun next(): Int = value++
-}
-
 // ----------------- Вспомогательные функции -----------------
 
 // Парсинг одного JSON в RawTestCase
@@ -82,22 +76,23 @@ private fun extractRawTestCase(jsonString: String, fileName: String): RawTestCas
         throw IllegalStateException("Ошибка при парсинге JSON из файла $fileName: ${e.message}", e)
     }
 
-    fun processSteps(steps: List<Step>?, indent: Int = 0, stepCounter: Counter): List<String> {
+    fun processSteps(steps: List<Step>?, indent: Int = 0): List<String> {
         val seenSteps = mutableSetOf<String>()
         val lines = mutableListOf<String>()
 
-        fun traverse(steps: List<Step>?, level: Int) {
-            steps?.forEach { step ->
+        fun traverse(steps: List<Step>?, level: Int, numberingPrefix: List<Int>) {
+            steps?.forEachIndexed { index, step ->
                 val skip = listOf("beforeStages", "afterStages", "attachments").any {
                     step.name.contains(it, ignoreCase = true)
                 }
-                if (skip) return@forEach
+                if (skip) return@forEachIndexed
 
                 val key = "${step.name}:${step.parameters?.joinToString { it.value } ?: ""}"
-                if (key in seenSteps) return@forEach
+                if (key in seenSteps) return@forEachIndexed
                 seenSteps.add(key)
 
-                val prefix = " ".repeat(level * 2) + "• ${stepCounter.next()}. ${step.name}"
+                val numbering = (numberingPrefix + (index + 1)).joinToString(".")
+                val prefix = " ".repeat(level * 2) + "• $numbering. ${step.name}"
 
                 val withParams = buildString {
                     step.parameters?.takeIf { it.isNotEmpty() }?.let { params ->
@@ -111,16 +106,16 @@ private fun extractRawTestCase(jsonString: String, fileName: String): RawTestCas
                 }
 
                 lines.add(prefix + withParams)
-                traverse(step.steps, level + 1)
+                traverse(step.steps, level + 1, numberingPrefix + (index + 1))
             }
         }
 
-        traverse(steps, indent)
+        traverse(steps, indent, emptyList())
         return lines
     }
 
     fun renderBlock(title: String, steps: List<Step>?): String {
-        val lines = processSteps(steps, stepCounter = Counter())
+        val lines = processSteps(steps)
         return if (lines.isNotEmpty()) {
             buildString {
                 appendLine("$title:")
