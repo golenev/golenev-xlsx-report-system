@@ -212,18 +212,7 @@ private fun extractRawTestCase(
                 val numbering = (numberingPrefix + (index + 1)).joinToString(".")
                 val prefix = " ".repeat(level * 2) + "• $numbering. ${step.name}"
 
-                val withParams = buildString {
-                    step.parameters?.takeIf { it.isNotEmpty() }?.let { params ->
-                        appendLine()
-                        appendLine("```")
-                        params.forEach { param ->
-                            appendLine("${param.name}=${param.value}")
-                        }
-                        append("```")
-                    }
-                }
-
-                lines.add(prefix + withParams)
+                lines.add(prefix)
                 lines.addAll(processAttachments(step, level))
                 traverse(step.steps, level + 1, numberingPrefix + (index + 1))
             }
