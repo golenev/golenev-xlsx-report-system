@@ -2,7 +2,8 @@ package com.example.report.model
 
 enum class RegressionRunStatus(val value: String) {
     PASSED("passed"),
-    FAILED("failed");
+    FAILED("failed"),
+    SKIPPED("skipped");
 
     companion object {
         fun requireValid(value: String?): String? {

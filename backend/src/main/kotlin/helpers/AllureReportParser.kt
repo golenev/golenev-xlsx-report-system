@@ -288,7 +288,7 @@ private fun extractRawTestCase(
     val normalizedStatus = report.status
         ?.trim()
         ?.lowercase()
-        ?.takeIf { it == "passed" || it == "failed" } // trim -> lowercase -> фильтрируем только ожидаемые статусы
+        ?.takeIf { status -> status == "passed" || status == "failed" || status == "skipped" }
 
     return RawTestCase(
         baseId = baseId,
