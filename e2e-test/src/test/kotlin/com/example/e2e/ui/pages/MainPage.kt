@@ -1,8 +1,6 @@
 package com.example.e2e.ui.pages
 
-import com.codeborne.selenide.CollectionCondition
 import com.codeborne.selenide.Condition.*
-import com.codeborne.selenide.ElementsCollection
 import com.codeborne.selenide.ScrollIntoViewOptions.Block.start
 import com.codeborne.selenide.ScrollIntoViewOptions.instant
 import com.codeborne.selenide.Selenide
@@ -18,10 +16,22 @@ class MainPage {
     private val addRowButton  = headerBtnsContainers.filter(exactText("Add Row")).first()
     private val newRow: SelenideElement = element("tr.new-row")
     private val tableRowSelectorPattern = "tbody tr[data-test-id='tr-data-test-id-%s']"
-    private val newRowInputs: ElementsCollection = newRow.`$$`("input.cell-input")
-    private val newRowTextAreas: ElementsCollection = newRow.`$$`("textarea.cell-textarea")
-    private val generalStatusDropdown: SelenideElement = newRow.`$$`("div.status-dropdown").first()
-    private val prioritySelect: SelenideElement = newRow.find("select.cell-input")
+    private val newRowTestIdInput: SelenideElement =
+        `$`(".new-row [data-test-id='Test ID']")
+    private val newRowCategoryInput: SelenideElement =
+        `$`(".new-row [data-test-id='Category']")
+    private val newRowShortTitleInput: SelenideElement =
+        `$`(".new-row [data-test-id='Short Title']")
+    private val newRowIssueLinkInput: SelenideElement =
+        `$`(".new-row [data-test-id='YouTrack Issue Link']")
+    private val newRowScenarioTextarea: SelenideElement =
+        `$`(".new-row [data-test-id='Detailed Scenario']")
+    private val newRowNotesTextarea: SelenideElement =
+        `$`(".new-row [data-test-id='Notes']")
+    private val newRowGeneralStatusDropdown: SelenideElement =
+        `$`(".new-row [data-test-id='General Test Status']")
+    private val newRowPrioritySelect: SelenideElement =
+        `$`(".new-row [data-test-id='Priority']")
     private val newRowSaveButton: SelenideElement = newRow.find("button.save-btn")
     private val regressionActions = `$$`("div.regression-actions")
     private val regressionStartButton: SelenideElement = regressionActions
@@ -56,38 +66,37 @@ class MainPage {
     }
 
     fun fillTestId(testId: String) {
-        newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
-        newRowInputs.first().typeOf(testId)
+        newRowTestIdInput.shouldBe(visible).typeOf(testId)
     }
 
     fun fillCategory(category: String) {
-        newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(2))
-        newRowInputs[1].typeOf(category)
+        newRowCategoryInput.shouldBe(visible).typeOf(category)
     }
 
     fun fillShortTitle(shortTitle: String) {
-        newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(3))
-        newRowInputs[2].typeOf(shortTitle)
+        newRowShortTitleInput.shouldBe(visible).typeOf(shortTitle)
     }
 
     fun fillIssueLink(issueLink: String) {
-        newRowInputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(4))
-        newRowInputs[3].typeOf(issueLink)
+        newRowIssueLinkInput.shouldBe(visible).typeOf(issueLink)
     }
 
     fun selectGeneralStatus(status: String) {
-        generalStatusDropdown.shouldBe(visible)
-        generalStatusDropdown.find("summary").click()
-        generalStatusDropdown.findAll("button.status-option").findBy(text(status)).click()
+        newRowGeneralStatusDropdown.shouldBe(visible)
+        newRowGeneralStatusDropdown.find("summary").click()
+        newRowGeneralStatusDropdown.findAll("button.status-option").findBy(text(status)).click()
     }
 
     fun selectPriority(priority: String) {
-        prioritySelect.shouldBe(visible).selectOption(priority)
+        newRowPrioritySelect.shouldBe(visible).selectOption(priority)
     }
 
     fun fillDetailedScenario(scenario: String) {
-        newRowTextAreas.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
-        newRowTextAreas.first().typeOf(scenario)
+        newRowScenarioTextarea.shouldBe(visible).typeOf(scenario)
+    }
+
+    fun fillNotes(notes: String) {
+        newRowNotesTextarea.shouldBe(visible).typeOf(notes)
     }
 
     fun saveNewRow() {
@@ -172,9 +181,30 @@ class MainPage {
         element(tableRowSelectorPattern.format(testId))
 
     private fun categoryInput(testId: String): SelenideElement {
-        val row = tableRowByTestId(testId).shouldBe(visible)
-        val inputs = row.findAll("input.cell-input")
-        inputs.shouldHave(CollectionCondition.sizeGreaterThanOrEqual(1))
-        return inputs.first()
+        return existingRowField(testId, "Category")
     }
+
+    private fun existingTestIdField(testId: String): SelenideElement =
+        existingRowField(testId, "Test ID")
+
+    private fun existingShortTitleInput(testId: String): SelenideElement =
+        existingRowField(testId, "Short Title")
+
+    private fun existingIssueLinkInput(testId: String): SelenideElement =
+        existingRowField(testId, "YouTrack Issue Link")
+
+    private fun existingScenarioTextarea(testId: String): SelenideElement =
+        existingRowField(testId, "Detailed Scenario")
+
+    private fun existingNotesTextarea(testId: String): SelenideElement =
+        existingRowField(testId, "Notes")
+
+    private fun existingGeneralStatusDropdown(testId: String): SelenideElement =
+        existingRowField(testId, "General Test Status")
+
+    private fun existingPrioritySelect(testId: String): SelenideElement =
+        existingRowField(testId, "Priority")
+
+    private fun existingRowField(testId: String, columnDataTestId: String): SelenideElement =
+        `$`("[data-test-id='tr-data-test-id-${testId}'] [data-test-id='${columnDataTestId}']")
 }
