@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.web.util.HtmlUtils
 
 private const val MAX_ATTACHMENT_CHARS = 50_000
-private val logger = LoggerFactory.getLogger(AllureReportParser::class.java)
+private val logger = LoggerFactory.getLogger("AllureReportParser")
 
 // ---- Модели для парсинга Allure JSON ----
 
@@ -185,7 +185,7 @@ private fun extractRawTestCase(
         return files.flatMap { attachment ->
             val sourceName = attachment.source ?: "unknown"
             val title = attachment.name ?: "Attachment"
-            val header = "$indentPrefixAttachment: $title ($sourceName)"
+            val header = "${indentPrefix}Attachment: $title ($sourceName)"
             val upload = filesByName[baseName(sourceName)]
             val content = upload?.let { formatAttachmentContent(attachment, it) }
                 ?: "[Attachment missing] $title -> $sourceName"
