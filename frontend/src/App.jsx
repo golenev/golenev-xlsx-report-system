@@ -503,7 +503,10 @@ export default function App() {
         formData.append('paths', relativePath);
       });
 
-      const response = await fetch(withBase('/uploadReport'), {
+      const params = new URLSearchParams();
+      params.set('isRegressRunning', isRegressionRunning ? 'true' : 'false');
+
+      const response = await fetch(withBase(`/uploadReport?${params.toString()}`), {
         method: 'POST',
         body: formData
       });
