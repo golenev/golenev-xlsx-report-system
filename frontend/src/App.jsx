@@ -273,7 +273,15 @@ function StatusChip({ option }) {
   );
 }
 
-function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true, onFocus, onBlur }) {
+function StatusDropdown({
+  value,
+  onChange,
+  disabled = false,
+  allowEmpty = true,
+  onFocus,
+  onBlur,
+  dataTestId
+}) {
   const selectedOption = GENERAL_STATUS_OPTIONS.find((option) => option.value === value);
 
   const handleSelect = (optionValue, event) => {
@@ -286,7 +294,12 @@ function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true, 
   };
 
   return (
-    <div className="status-dropdown" onFocusCapture={onFocus} onBlurCapture={onBlur}>
+    <div
+      className="status-dropdown"
+      data-test-id={dataTestId}
+      onFocusCapture={onFocus}
+      onBlurCapture={onBlur}
+    >
       <details className="status-dropdown-toggle">
         <summary>
           <StatusChip option={selectedOption} />
@@ -323,7 +336,7 @@ function StatusDropdown({ value, onChange, disabled = false, allowEmpty = true, 
   );
 }
 
-function RegressionStatusSelect({ value, onChange, disabled, onFocus, onBlur }) {
+function RegressionStatusSelect({ value, onChange, disabled, onFocus, onBlur, dataTestId }) {
   return (
     <select
       className="regression-select"
@@ -332,6 +345,7 @@ function RegressionStatusSelect({ value, onChange, disabled, onFocus, onBlur }) 
       disabled={disabled}
       onFocus={onFocus}
       onBlur={onBlur}
+      data-test-id={dataTestId}
     >
       <option value="">—</option>
       {REGRESSION_STATUS_OPTIONS.map((option) => (
@@ -343,7 +357,7 @@ function RegressionStatusSelect({ value, onChange, disabled, onFocus, onBlur }) 
   );
 }
 
-function PrioritySelect({ value, onChange, disabled = false, onFocus, onBlur }) {
+function PrioritySelect({ value, onChange, disabled = false, onFocus, onBlur, dataTestId }) {
   return (
     <select
       className="cell-input"
@@ -352,6 +366,7 @@ function PrioritySelect({ value, onChange, disabled = false, onFocus, onBlur }) 
       disabled={disabled}
       onFocus={onFocus}
       onBlur={onBlur}
+      data-test-id={dataTestId}
     >
       {PRIORITY_OPTIONS.map((option) => (
         <option key={option} value={option}>
@@ -1078,10 +1093,6 @@ export default function App() {
                       cellDataAttributes['data-row-id'] = item.testId || `new-${index + 1}`;
                     }
 
-                    if (columnDataTestId) {
-                      cellDataAttributes['data-test-id'] = columnDataTestId;
-                    }
-
                     const readonlySpanAttributes =
                       column.key === 'testId'
                         ? { 'data-test-id-value': value }
@@ -1104,13 +1115,20 @@ export default function App() {
                         {...cellDataAttributes}
                       >
                         {!isEditable ? (
-                          <span className="readonly-value" {...readonlySpanAttributes}>{value}</span>
+                          <span
+                            className="readonly-value"
+                            {...readonlySpanAttributes}
+                            data-test-id={columnDataTestId}
+                          >
+                            {value}
+                          </span>
                         ) : column.type === 'textarea' ? (
                           <div className="textarea-with-preview">
                             <textarea
                               value={value}
                               onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                               className="cell-textarea"
+                              data-test-id={columnDataTestId}
                             />
                             {column.key === 'scenario' && value.trim() && (
                               <div
@@ -1123,15 +1141,22 @@ export default function App() {
                           <StatusDropdown
                             value={value}
                             onChange={(newValue) => handleNewFieldChange(index, column.key, newValue)}
+                            dataTestId={columnDataTestId}
                           />
                         ) : column.type === 'priority' ? (
                           <PrioritySelect
                             value={value || PRIORITY_OPTIONS[3]}
                             onChange={(newValue) => handleNewFieldChange(index, column.key, newValue)}
+                            dataTestId={columnDataTestId}
                           />
                         ) : column.type === 'regression' ? (
                           <div className="regression-cell-content">
-                            <RegressionStatusSelect value="" onChange={() => {}} disabled />
+                            <RegressionStatusSelect
+                              value=""
+                              onChange={() => {}}
+                              disabled
+                              dataTestId={columnDataTestId}
+                            />
                           </div>
                         ) : isMultilineColumn ? (
                             <div className="multiline-textarea-wrapper">
@@ -1142,6 +1167,7 @@ export default function App() {
                                   autoResizeTextarea(e.target);
                                 }}
                                 className="cell-textarea multiline-textarea"
+                                data-test-id={columnDataTestId}
                               />
                             </div>
                           ) : (
@@ -1150,6 +1176,7 @@ export default function App() {
                             value={value}
                             onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                             className="cell-input"
+                            data-test-id={columnDataTestId}
                           />
                         )}
                       </td>
@@ -1202,10 +1229,6 @@ export default function App() {
                       cellDataAttributes['data-row-id'] = item.testId;
                     }
 
-                    if (columnDataTestId) {
-                      cellDataAttributes['data-test-id'] = columnDataTestId;
-                    }
-
                     const readonlySpanAttributes =
                       column.key === 'testId'
                         ? { 'data-test-id-value': value }
@@ -1230,6 +1253,7 @@ export default function App() {
                               disabled={!isRegressionRunning || regressionSaving}
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
+                              dataTestId={columnDataTestId}
                             />
                           </div>
                         ) : column.editable ? (
@@ -1242,6 +1266,7 @@ export default function App() {
                                   onBlur={() => handleBlur(item, column.key)}
                                   onFocus={incrementEditingExisting}
                                   className="cell-textarea"
+                                  data-test-id={columnDataTestId}
                                   autoFocus
                                 />
                                 {value.trim() && (
@@ -1252,7 +1277,7 @@ export default function App() {
                                 )}
                               </div>
                             ) : (
-                              <div className="markdown-preview-wrapper">
+                              <div className="markdown-preview-wrapper" data-test-id={columnDataTestId}>
                                 {value.trim() ? (
                                   <div
                                     className="rich-text-preview markdown-preview"
@@ -1284,6 +1309,7 @@ export default function App() {
                                 onBlur={() => handleBlur(item, column.key)}
                                 onFocus={incrementEditingExisting}
                                 className="cell-textarea"
+                                data-test-id={columnDataTestId}
                               />
                               {column.key === 'scenario' && value.trim() && (
                                 <div
@@ -1299,6 +1325,7 @@ export default function App() {
                               disabled={saving}
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
+                              dataTestId={columnDataTestId}
                             />
                           ) : column.type === 'priority' ? (
                             <PrioritySelect
@@ -1307,6 +1334,7 @@ export default function App() {
                               disabled={saving}
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
+                              dataTestId={columnDataTestId}
                             />
                           ) : isMultilineColumn ? (
                             <div className="multiline-textarea-wrapper">
@@ -1319,6 +1347,7 @@ export default function App() {
                                 onBlur={() => handleBlur(item, column.key)}
                                 onFocus={incrementEditingExisting}
                                 className="cell-textarea multiline-textarea"
+                                data-test-id={columnDataTestId}
                               />
                             </div>
                           ) : (
@@ -1329,10 +1358,17 @@ export default function App() {
                               onBlur={() => handleBlur(item, column.key)}
                               onFocus={incrementEditingExisting}
                               className="cell-input"
+                              data-test-id={columnDataTestId}
                             />
                           )
                         ) : (
-                          <span className="readonly-value" {...readonlySpanAttributes}>{value}</span>
+                          <span
+                            className="readonly-value"
+                            {...readonlySpanAttributes}
+                            data-test-id={columnDataTestId}
+                          >
+                            {value}
+                          </span>
                         )}
                       </td>
                     );
