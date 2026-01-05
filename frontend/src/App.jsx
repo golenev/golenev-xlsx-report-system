@@ -473,18 +473,17 @@ export default function App() {
 
   const handleUploadFilesChange = (event) => {
     const files = Array.from(event.target.files || []);
-    const jsonFiles = files.filter((file) => file.name.toLowerCase().endsWith('.json'));
 
-    setSelectedUploadFiles(jsonFiles);
+    setSelectedUploadFiles(files);
 
-    if (jsonFiles.length === 0) {
+    if (files.length === 0) {
       setUploadSelectionLabel('');
       return;
     }
 
-    const firstPath = jsonFiles[0].webkitRelativePath || jsonFiles[0].name;
+    const firstPath = files[0].webkitRelativePath || files[0].name;
     const folderName = firstPath.includes('/') ? firstPath.split('/')[0] : '';
-    const label = folderName ? `${folderName} (${jsonFiles.length} файлов)` : `${jsonFiles.length} файлов`;
+    const label = folderName ? `${folderName} (${files.length} файлов)` : `${files.length} файлов`;
     setUploadSelectionLabel(label);
   };
 
