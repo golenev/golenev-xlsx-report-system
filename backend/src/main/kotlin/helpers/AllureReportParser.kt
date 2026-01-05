@@ -267,28 +267,28 @@ private fun extractRawTestCase(
     // Название теста — как раньше, только без префикса "**Название теста:**"
     val testName = report.name
         ?.replace(Regex("\\s+"), " ")
-        ?: "Без названия"
+        ?: "Без названия" // name?.replace -> дефолт, если имя пустое
 
     // Сценарий — тот самый блок "**Сценарий**", который раньше печатался
-    val scenarioSteps = report.testStage?.steps ?: report.steps
+    val scenarioSteps = report.testStage?.steps ?: report.steps // testStage?.steps -> fallback в steps
     val scenarioBlock = renderBlock("**Сценарий**", scenarioSteps)
-        .ifBlank { "Шаги не найдены" }
+        .ifBlank { "Шаги не найдены" } // renderBlock -> processSteps -> traverse -> processAttachments
 
     // ID из лейбла AS_ID
     val baseId = report.labels
         ?.firstOrNull { it.name == "AS_ID" }
-        ?.value
+        ?.value // labels?.firstOrNull -> ?.value, используется для постфиксов параметризованных тестов
 
     // Категория из лейбла suite (DisplayName над классом)
     val category = report.labels
         ?.firstOrNull { it.name == "suite" }
         ?.value
-        ?: "Без категории"
+        ?: "Без категории" // labels?.firstOrNull -> ?.value -> дефолтное значение
 
     val normalizedStatus = report.status
         ?.trim()
         ?.lowercase()
-        ?.takeIf { it == "passed" || it == "failed" }
+        ?.takeIf { it == "passed" || it == "failed" } // trim -> lowercase -> фильтрируем только ожидаемые статусы
 
     return RawTestCase(
         baseId = baseId,
