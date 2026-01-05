@@ -182,7 +182,9 @@ private fun extractRawTestCase(
         val indentPrefix = " ".repeat((level + 1) * 2)
         val contentIndent = " ".repeat((level + 2) * 2)
 
-        return files.flatMap { attachment ->
+        if (files.isEmpty()) return emptyList()
+
+        val attachmentLines = files.flatMap { attachment ->
             val sourceName = attachment.source ?: "unknown"
             val title = attachment.name ?: "Attachment"
             val header = "${indentPrefix}Attachment: $title ($sourceName)"
@@ -193,6 +195,8 @@ private fun extractRawTestCase(
             val contentLines = content.lines().map { line -> "$contentIndent$line" }
             listOf(header) + contentLines
         }
+
+        return listOf("${indentPrefix}```") + attachmentLines + listOf("${indentPrefix}```")
     }
 
     fun processSteps(steps: List<Step>?, indent: Int = 0): List<String> {
