@@ -269,7 +269,7 @@ private fun extractRawTestCase(
         ?.replace(Regex("\\s+"), " ")
         ?: "Без названия" // name?.replace -> дефолт, если имя пустое
 
-    // Сценарий — тот самый блок "**Сценарий**", который раньше печатался
+    // Сценарий
     val scenarioSteps = report.testStage?.steps ?: report.steps // testStage?.steps -> fallback в steps
     val scenarioBlock = renderBlock("**Сценарий**", scenarioSteps)
         .ifBlank { "Шаги не найдены" } // renderBlock -> processSteps -> traverse -> processAttachments
