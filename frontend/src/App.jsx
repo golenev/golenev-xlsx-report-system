@@ -162,8 +162,10 @@ function renderMarkdown(text) {
   };
 
   for (const line of lines) {
+    const trimmedLine = line.trimStart();
+
     if (inCodeBlock) {
-      if (line.startsWith('```')) {
+      if (trimmedLine.startsWith('```')) {
         flushCode();
         inCodeBlock = false;
       } else {
@@ -172,11 +174,11 @@ function renderMarkdown(text) {
       continue;
     }
 
-    if (line.startsWith('```')) {
+    if (trimmedLine.startsWith('```')) {
       flushParagraph();
       flushList();
       inCodeBlock = true;
-      codeLanguage = line.slice(3).trim();
+      codeLanguage = trimmedLine.slice(3).trim();
       continue;
     }
 
