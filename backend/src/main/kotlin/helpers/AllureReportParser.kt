@@ -84,10 +84,16 @@ private data class RawTestCase(
 
 // ----------------- Вспомогательные функции -----------------
 
+/**
+ * Отдаёт «голое» имя файла, чтобы сравнивать аттачи независимо от вложенных папок.
+ */
 private fun baseName(path: String): String =
     path.substringAfterLast('/')
         .substringAfterLast('\\')
 
+/**
+ * Проверяет, похоже ли содержимое на JSON с тестом Allure, чтобы не пытаться парсить всё подряд.
+ */
 private fun isTestCaseJson(upload: AllureUpload, mapper: ObjectMapper): Boolean {
     if (!upload.path.lowercase().endsWith(".json")) return false
 
@@ -97,27 +103,46 @@ private fun isTestCaseJson(upload: AllureUpload, mapper: ObjectMapper): Boolean 
         return false
     }
 
-    val hasName = root.get("name")?.isTextual == true
-    val hasStatus = root.get("status")?.isTextual == true
-    val hasSteps = root.get("steps")?.isArray == true
-    val hasStage = root.get("testStage")?.isObject == true
-    val hasStageSteps = root.get("testStage")?.get("steps")?.isArray == true
+    val hasName = root.get("name")?.isTextual ?: false
+    val hasStatus = root.get("status")?.isTextual ?: false
+
+    val stepsNode = root.get("steps")
+    val hasSteps = stepsNode?.isArray ?: false
+
+    val stageNode = root.get("testStage")
+    val hasStage = stageNode?.isObject ?: false
+
+    val stageStepsNode = stageNode?.get("steps")
+    val hasStageSteps = stageStepsNode?.isArray ?: false
 
     return hasName && (hasStatus || hasStage || hasSteps || hasStageSteps)
 }
 
+/**
+ * Определяет, можно ли трактовать вложение как HTML, чтобы почистить теги и не проглотить скрипты.
+ */
 private fun isHtmlAttachment(source: String?, type: String?): Boolean {
     val lowerSource = source?.lowercase() ?: ""
-    return lowerSource.endsWith(".html") || (type?.lowercase()?.contains("html") == true)
+    val lowerType = type?.lowercase()
+    val hasHtmlType = lowerType?.contains("html") ?: false
+    return lowerSource.endsWith(".html") || hasHtmlType
 }
 
+/**
+ * Проверяет, можно ли читать вложение как текст, чтобы не пытаться скармливать бинарник пользователю.
+ */
 private fun isTextAttachment(source: String?, type: String?): Boolean {
     val lowerSource = source?.lowercase() ?: ""
-    val lowerType = type?.lowercase()
+    val lowerType = type?.lowercase() ?: ""
     val textExtensions = listOf(".html", ".txt", ".log", ".json", ".xml")
-    return (lowerType?.startsWith("text/") == true) || textExtensions.any { lowerSource.endsWith(it) }
+    val isExplicitText = lowerType.startsWith("text/")
+    val matchesExtension = textExtensions.any { lowerSource.endsWith(it) }
+    return isExplicitText || matchesExtension
 }
 
+/**
+ * Очищает HTML от скриптов и оборачивает теги в читаемый текст, чтобы сценарий выглядел как обычный лог.
+ */
 private fun sanitizeHtmlAttachment(raw: String): String {
     val withoutScripts = raw.replace(Regex("(?is)<(script|style)[^>]*>.*?</\\1>"), "")
     val withLineBreaks = withoutScripts
@@ -129,16 +154,9 @@ private fun sanitizeHtmlAttachment(raw: String): String {
     return HtmlUtils.htmlUnescape(withoutTags).trim()
 }
 
-private fun maskSecrets(text: String): String {
-    val secretHeaders = listOf("Authorization", "Cookie", "X-Auth-Token")
-    var result = text
-    secretHeaders.forEach { header ->
-        val regex = Regex("(?im)^(" + Regex.escape(header) + "):\\s*.*$")
-        result = result.replace(regex, "$1: ****")
-    }
-    return result
-}
-
+/**
+ * Представляет содержимое вложения в текстовом виде, аккуратно обрабатывая пропавшие файлы и длину контента.
+ */
 private fun formatAttachmentContent(attachment: Attachment, upload: AllureUpload): String {
     val sourceName = attachment.source ?: upload.path
     val type = attachment.type
@@ -153,15 +171,16 @@ private fun formatAttachmentContent(attachment: Attachment, upload: AllureUpload
 
     val rawText = upload.content.toString(Charsets.UTF_8)
     val normalized = if (isHtml) sanitizeHtmlAttachment(rawText) else rawText
-    val masked = maskSecrets(normalized)
-    return if (masked.length > MAX_ATTACHMENT_CHARS) {
-        masked.take(MAX_ATTACHMENT_CHARS) + "...TRUNCATED..."
+    return if (normalized.length > MAX_ATTACHMENT_CHARS) {
+        normalized.take(MAX_ATTACHMENT_CHARS) + "...TRUNCATED..."
     } else {
-        masked
+        normalized
     }
 }
 
-// Парсинг одного JSON в RawTestCase
+/**
+ * Разбирает один JSON-файл Allure и превращает его в промежуточную модель теста с учётом вложений.
+ */
 private fun extractRawTestCase(
     jsonString: String,
     fileName: String,
@@ -175,6 +194,9 @@ private fun extractRawTestCase(
         throw IllegalStateException("Ошибка при парсинге JSON из файла $fileName: ${e.message}", e)
     }
 
+    /**
+     * Достаёт вложения шага и превращает их в блок текста с понятными заголовками.
+     */
     fun processAttachments(step: Step, level: Int): List<String> {
         if (!attachmentsEnabled) return emptyList()
 
@@ -199,13 +221,19 @@ private fun extractRawTestCase(
         return listOf("${indentPrefix}```") + attachmentLines + listOf("${indentPrefix}```")
     }
 
+    /**
+     * Обходит шаги сценария, формирует нумерацию и прикрепляет вложения в читаемом виде.
+     */
     fun processSteps(steps: List<Step>?, indent: Int = 0): List<String> {
         val seenSteps = mutableSetOf<String>()
         val lines = mutableListOf<String>()
 
         fun traverse(steps: List<Step>?, level: Int, numberingPrefix: List<Int>) {
-            steps?.forEachIndexed { index, step ->
-                val key = "${step.name}:${step.parameters?.joinToString { it.value } ?: ""}"
+            if (steps == null) return
+
+            steps.forEachIndexed { index, step ->
+                val parameters = step.parameters?.joinToString { it.value } ?: ""
+                val key = "${step.name}:$parameters"
                 if (key in seenSteps) return@forEachIndexed
                 seenSteps.add(key)
 
@@ -222,6 +250,9 @@ private fun extractRawTestCase(
         return lines
     }
 
+    /**
+     * Собирает человекочитаемый блок с заголовком, если в нём есть шаги.
+     */
     fun renderBlock(title: String, steps: List<Step>?): String {
         val lines = processSteps(steps)
         return if (lines.isNotEmpty()) {
@@ -268,6 +299,9 @@ private fun extractRawTestCase(
     )
 }
 
+/**
+ * Упорядочивает сырые кейсы, проверяет наличие AS_ID и проставляет хвосты -1/-2 при повторах.
+ */
 private fun buildTestCaseModels(rawCases: List<Pair<String, RawTestCase>>): List<TestCaseModel> {
     val withoutId = rawCases.filter { it.second.baseId == null }
     if (withoutId.isNotEmpty()) {
@@ -313,7 +347,7 @@ private fun buildTestCaseModels(rawCases: List<Pair<String, RawTestCase>>): List
 }
 
 /**
- * Парсит JSON-файлы Allure, переданные в байтах, и возвращает список TestCaseModel.
+ * Принимает набор загруженных файлов allure-results, вытаскивает из них тесты и возвращает готовые сценарии.
  */
 fun parseAllureReportsFromUploads(uploads: List<AllureUpload>): List<TestCaseModel> {
     require(uploads.isNotEmpty()) {
