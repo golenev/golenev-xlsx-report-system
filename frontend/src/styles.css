@@ -422,11 +422,11 @@ body {
 .markdown-preview pre {
   margin: 6px 0;
   padding: 12px;
-  background: #0f172a;
-  color: #e5e7eb;
+  background: #e5e7eb;
+  color: #111827;
   border-radius: 8px;
   overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid #d1d5db;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
   font-size: 12px;
   line-height: 1.5;
