@@ -34,7 +34,7 @@
 2. Запустите из корня проекта docker compose up -d
 3. Откройте в браузере http://localhost:18080/
 
-4. **Более подробные инструкции по локальному и контейнерному запуску вынесены в [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
-**Юз-кейсы и пользовательские сценарии собраны в [USER_SCENARIOS.md](./USER_SCENARIOS.md).
-**Логика работа парсера отчётов Allure содержится в [AllureParser.md](./AllureParser.md).
+ * Более подробные инструкции по локальному и контейнерному запуску вынесены в [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
+ * Юз-кейсы и пользовательские сценарии собраны в [USER_SCENARIOS.md](./USER_SCENARIOS.md).
+ * Логика работа парсера отчётов Allure содержится в [AllureParser.md](./AllureParser.md).
 
