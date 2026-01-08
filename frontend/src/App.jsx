@@ -895,7 +895,7 @@ export default function App() {
             </div>
             <p className="popup-message">{popup.message}</p>
             <div className="popup-actions">
-              <button type="button" className="primary-btn" onClick={closePopup}>
+              <button type="button" className="secondary-btn" onClick={closePopup}>
                 Got it
               </button>
             </div>
@@ -938,7 +938,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleUploadSubmit}
-                className="primary-btn"
+                className="secondary-btn"
                 disabled={uploading || loading || saving}
               >
                 {uploading ? 'Uploading…' : 'Confirm upload'}
@@ -962,7 +962,7 @@ export default function App() {
           >
             Add Row
           </button>
-          <button type="button" onClick={handleExport} className="primary-btn">
+          <button type="button" onClick={handleExport} className="ghost-btn">
             Export to Excel
           </button>
           {saving && <span className="status">Saving…</span>}
@@ -1348,7 +1348,7 @@ export default function App() {
                                     })
                                   }
                                 >
-                                  Edit case
+                                  ✏️
                                 </button>
                               </div>
                             )

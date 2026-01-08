@@ -224,7 +224,7 @@ export default function ReleaseAnalyticsWidget() {
       return (
         <div className="analytics-error">
           <div>Не удалось загрузить данные релиза.</div>
-          <button type="button" className="primary-btn" onClick={() => selectedReleaseId && loadSnapshot(selectedReleaseId)}>
+          <button type="button" className="secondary-btn" onClick={() => selectedReleaseId && loadSnapshot(selectedReleaseId)}>
             Повторить
           </button>
           {snapshotError && <div className="analytics-error-details">{snapshotError}</div>}
@@ -340,7 +340,7 @@ export default function ReleaseAnalyticsWidget() {
           {releasesState === 'error' && (
             <div className="analytics-error">
               <div>Не удалось загрузить список релизов.</div>
-              <button type="button" className="primary-btn" onClick={loadReleases}>
+              <button type="button" className="secondary-btn" onClick={loadReleases}>
                 Повторить
               </button>
             </div>

@@ -43,18 +43,23 @@ body {
   color: #5f6368;
 }
 
+/* Apple-like primary action */
 .primary-btn {
-  background-color: #1a73e8;
-  border: none;
+  background-color: #0a84ff;
+  border: 1px solid rgba(10, 132, 255, 0.45);
   color: #fff;
-  padding: 8px 16px;
-  border-radius: 4px;
+  padding: 10px 18px;
+  border-radius: 12px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 20px rgba(10, 132, 255, 0.25);
+  transition: background-color 180ms ease, box-shadow 180ms ease;
 }
 
-.primary-btn:hover {
-  background-color: #1666cc;
+.primary-btn:hover:not(:disabled) {
+  background-color: #007aff;
+  box-shadow: 0 10px 24px rgba(10, 132, 255, 0.28);
 }
 
 .success-btn {
@@ -85,18 +90,45 @@ body {
   background-color: #c5221f;
 }
 
+/* Secondary action */
 .secondary-btn {
-  background-color: #fff;
-  border: 1px solid #dadce0;
-  color: #1a73e8;
+  background-color: #f5f5f7;
+  border: 1px solid rgba(60, 60, 67, 0.12);
+  color: #1f2937;
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background-color: #ebebef;
+  border-color: rgba(60, 60, 67, 0.18);
+}
+
+/* Tertiary / utility action */
+.ghost-btn {
+  background: transparent;
+  border: none;
+  color: #1f2937;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.ghost-btn:hover:not(:disabled) {
+  background-color: #f5f5f7;
+  color: #111827;
 }
 
 .secondary-btn:disabled,
 .primary-btn:disabled,
+.ghost-btn:disabled,
 .save-btn:disabled,
 .success-btn:disabled,
 .danger-btn:disabled,
@@ -444,24 +476,37 @@ body {
   gap: 6px;
 }
 
+/* Inline edit button appears on row hover */
 .inline-edit-btn {
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #111827;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
   cursor: pointer;
   font-size: 12px;
-  padding: 4px 8px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  padding: 2px 6px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 160ms ease, color 160ms ease, background-color 160ms ease;
   text-transform: none;
 }
 
+.report-table tbody tr:hover .inline-edit-btn,
+.report-table tbody tr:focus-within .inline-edit-btn,
+.inline-edit-btn:focus-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
 .inline-edit-btn:hover {
-  background: #f3f4f6;
+  background: rgba(17, 24, 39, 0.06);
+  color: #374151;
 }
 
 .scenario-preview {
