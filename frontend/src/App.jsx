@@ -895,7 +895,7 @@ export default function App() {
             </div>
             <p className="popup-message">{popup.message}</p>
             <div className="popup-actions">
-              <button type="button" className="primary-btn" onClick={closePopup}>
+              <button type="button" className="secondary-btn" onClick={closePopup}>
                 Got it
               </button>
             </div>
@@ -938,7 +938,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleUploadSubmit}
-                className="primary-btn"
+                className="secondary-btn"
                 disabled={uploading || loading || saving}
               >
                 {uploading ? 'Uploading…' : 'Confirm upload'}
@@ -962,7 +962,7 @@ export default function App() {
           >
             Add Row
           </button>
-          <button type="button" onClick={handleExport} className="primary-btn">
+          <button type="button" onClick={handleExport} className="ghost-btn">
             Export to Excel
           </button>
           {saving && <span className="status">Saving…</span>}
@@ -1326,6 +1326,13 @@ export default function App() {
                               <div
                                 className="markdown-preview-wrapper scenario-preview"
                                 data-test-id={columnDataTestId}
+                                onClick={() =>
+                                  setEditingScenarioIds((prev) => {
+                                    const next = new Set(prev);
+                                    next.add(item.testId);
+                                    return next;
+                                  })
+                                }
                               >
                                 {value.trim() ? (
                                   <div
@@ -1335,21 +1342,6 @@ export default function App() {
                                 ) : (
                                   <span className="readonly-value">—</span>
                                 )}
-                                <button
-                                  type="button"
-                                  className="inline-edit-btn"
-                                  aria-label="Edit case"
-                                  title="Edit case"
-                                  onClick={() =>
-                                    setEditingScenarioIds((prev) => {
-                                      const next = new Set(prev);
-                                      next.add(item.testId);
-                                      return next;
-                                    })
-                                  }
-                                >
-                                  Edit case
-                                </button>
                               </div>
                             )
                           ) : column.type === 'textarea' ? (
