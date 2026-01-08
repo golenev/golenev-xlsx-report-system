@@ -446,16 +446,23 @@ body {
 
 .inline-edit-btn {
   align-self: flex-start;
-  border: none;
-  background: none;
-  color: #1a73e8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
+  color: #111827;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   padding: 0;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
 }
 
 .inline-edit-btn:hover {
-  text-decoration: underline;
+  background: linear-gradient(180deg, #f9fafb 0%, #e5e7eb 100%);
 }
 
 .readonly-value {
