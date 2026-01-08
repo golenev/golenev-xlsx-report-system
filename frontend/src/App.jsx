@@ -1326,6 +1326,13 @@ export default function App() {
                               <div
                                 className="markdown-preview-wrapper scenario-preview"
                                 data-test-id={columnDataTestId}
+                                onClick={() =>
+                                  setEditingScenarioIds((prev) => {
+                                    const next = new Set(prev);
+                                    next.add(item.testId);
+                                    return next;
+                                  })
+                                }
                               >
                                 {value.trim() ? (
                                   <div
@@ -1335,21 +1342,6 @@ export default function App() {
                                 ) : (
                                   <span className="readonly-value">—</span>
                                 )}
-                                <button
-                                  type="button"
-                                  className="inline-edit-btn"
-                                  aria-label="Edit case"
-                                  title="Edit case"
-                                  onClick={() =>
-                                    setEditingScenarioIds((prev) => {
-                                      const next = new Set(prev);
-                                      next.add(item.testId);
-                                      return next;
-                                    })
-                                  }
-                                >
-                                  ✏️
-                                </button>
                               </div>
                             )
                           ) : column.type === 'textarea' ? (

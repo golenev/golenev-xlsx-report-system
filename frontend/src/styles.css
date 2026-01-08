@@ -476,48 +476,10 @@ body {
   gap: 6px;
 }
 
-/* Inline edit button appears on row hover */
-.inline-edit-btn {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  cursor: pointer;
-  font-size: 12px;
-  padding: 2px 6px;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 160ms ease, color 160ms ease, background-color 160ms ease;
-  text-transform: none;
-}
-
-.report-table tbody tr:hover .inline-edit-btn,
-.report-table tbody tr:focus-within .inline-edit-btn,
-.inline-edit-btn:focus-visible {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-}
-
-.inline-edit-btn:hover {
-  background: rgba(17, 24, 39, 0.06);
-  color: #374151;
-}
-
 .scenario-preview {
   position: relative;
   padding-top: 28px;
-}
-
-.scenario-preview .inline-edit-btn {
-  position: absolute;
-  top: 4px;
-  right: 4px;
+  cursor: pointer;
 }
 
 .scenario-cell {
