@@ -446,16 +446,47 @@ body {
 
 .inline-edit-btn {
   align-self: flex-start;
-  border: none;
-  background: none;
-  color: #1a73e8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
   cursor: pointer;
   font-size: 12px;
-  padding: 0;
+  padding: 4px 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  text-transform: none;
 }
 
 .inline-edit-btn:hover {
-  text-decoration: underline;
+  background: #f3f4f6;
+}
+
+.scenario-preview {
+  position: relative;
+  padding-top: 28px;
+}
+
+.scenario-preview .inline-edit-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.scenario-cell {
+  overflow-x: auto;
+}
+
+.scenario-cell .markdown-preview,
+.scenario-cell .readonly-value {
+  white-space: pre;
+}
+
+.scenario-cell .cell-textarea {
+  white-space: pre;
+  overflow-x: auto;
 }
 
 .readonly-value {

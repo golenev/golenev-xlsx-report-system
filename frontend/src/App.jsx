@@ -15,6 +15,7 @@ const PRIORITY_OPTIONS = ['Critical', 'Blocker', 'High', 'Medium', 'Low', 'Trivi
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const MULTILINE_TEXT_KEYS = new Set(['category', 'shortTitle']);
 const MULTILINE_MIN_HEIGHT = 120;
+const SCENARIO_WIDTH_LIMIT = '90ch';
 
 const FIELD_DEFINITIONS = [
   { key: 'testId', label: 'Test ID', dataTestId: 'Test ID', editable: false, type: 'text' },
@@ -871,6 +872,7 @@ export default function App() {
   };
 
   const columns = [ACTION_COLUMN, ...TABLE_COLUMNS];
+  const hasSelectedFiles = selectedUploadFiles.length > 0;
 
   const getColumnWidth = (column) => {
     if (column.key === ACTION_COLUMN.key) {
@@ -902,7 +904,7 @@ export default function App() {
       )}
       <header className="app-header">
         <h1>Test Report</h1>
-        <div className="header-actions">
+          <div className="header-actions">
           <div className="upload-actions">
             <input
               ref={uploadInputRef}
@@ -913,24 +915,35 @@ export default function App() {
               directory=""
               multiple
             />
-            <button
-              type="button"
-              onClick={openUploadPicker}
-              className="secondary-btn"
-              disabled={loading || saving || uploading}
-            >
-              Upload Test Cases
-            </button>
-            <button
-              type="button"
-              onClick={handleUploadSubmit}
-              className="primary-btn"
-              disabled={
-                uploading || selectedUploadFiles.length === 0 || loading || saving
-              }
-            >
-              {uploading ? 'Uploading…' : 'Загрузить'}
-            </button>
+            {hasSelectedFiles ? (
+              <button
+                type="button"
+                onClick={resetUploadSelection}
+                className="secondary-btn"
+                disabled={loading || saving || uploading}
+              >
+                Отменить
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={openUploadPicker}
+                className="secondary-btn"
+                disabled={loading || saving || uploading}
+              >
+                Upload Test Cases
+              </button>
+            )}
+            {hasSelectedFiles && (
+              <button
+                type="button"
+                onClick={handleUploadSubmit}
+                className="primary-btn"
+                disabled={uploading || loading || saving}
+              >
+                {uploading ? 'Uploading…' : 'Confirm upload'}
+              </button>
+            )}
             {uploadSelectionLabel && (
               <span className="upload-hint">{uploadSelectionLabel}</span>
             )}
@@ -969,10 +982,18 @@ export default function App() {
                   const width = getColumnWidth(column);
                   const letter = columnLetter(idx);
                   const columnDataTestId = getColumnDataTestId(column);
+                  const isScenarioColumn = column.key === 'scenario';
+                  const columnSizing = isScenarioColumn
+                    ? {
+                        width: `min(${width}px, ${SCENARIO_WIDTH_LIMIT})`,
+                        minWidth: `min(${width}px, ${SCENARIO_WIDTH_LIMIT})`,
+                        maxWidth: SCENARIO_WIDTH_LIMIT
+                      }
+                    : { width: `${width}px`, minWidth: `${width}px` };
                   return (
                     <th
                       key={column.key}
-                      style={{ width: `${width}px`, minWidth: `${width}px` }}
+                      style={columnSizing}
                       {...(columnDataTestId ? { 'data-test-id': columnDataTestId } : undefined)}
                     >
                       <div
@@ -1086,6 +1107,7 @@ export default function App() {
                     const value = item[column.key] ?? '';
                     const isEditable = column.editable || column.key === 'testId';
                     const isMultilineColumn = MULTILINE_TEXT_KEYS.has(column.key);
+                    const isScenarioColumn = column.key === 'scenario';
                     const cellDataAttributes = {};
                     const columnDataTestId = getColumnDataTestId(column);
 
@@ -1107,11 +1129,20 @@ export default function App() {
                     return (
                       <td
                         key={`new-${index}-${column.key}`}
-                        style={{ width: `${width}px`, minWidth: `${width}px` }}
+                        style={
+                          isScenarioColumn
+                            ? {
+                                width: `min(${width}px, ${SCENARIO_WIDTH_LIMIT})`,
+                                minWidth: `min(${width}px, ${SCENARIO_WIDTH_LIMIT})`,
+                                maxWidth: SCENARIO_WIDTH_LIMIT
+                              }
+                            : { width: `${width}px`, minWidth: `${width}px` }
+                        }
                         className={
                           [
                             column.type === 'regression' ? 'regression-cell locked' : undefined,
-                            isMultilineColumn ? 'multiline-cell' : undefined
+                            isMultilineColumn ? 'multiline-cell' : undefined,
+                            isScenarioColumn ? 'scenario-cell' : undefined
                           ]
                             .filter(Boolean)
                             .join(' ') || undefined
@@ -1133,6 +1164,7 @@ export default function App() {
                               onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                               className="cell-textarea"
                               data-test-id={columnDataTestId}
+                              {...(isScenarioColumn ? { wrap: 'off' } : undefined)}
                             />
                             {column.key === 'scenario' && value.trim() && (
                               <div
@@ -1218,7 +1250,8 @@ export default function App() {
                         isRegressionColumn
                           ? `regression-cell ${isRegressionRunning ? '' : 'locked'}`.trim()
                           : undefined,
-                        isMultilineColumn ? 'multiline-cell' : undefined
+                        isMultilineColumn ? 'multiline-cell' : undefined,
+                        isScenarioColumn ? 'scenario-cell' : undefined
                       ]
                         .filter(Boolean)
                         .join(' ') || undefined;
@@ -1243,7 +1276,15 @@ export default function App() {
                     return (
                       <td
                         key={column.key}
-                        style={{ width: `${width}px`, minWidth: `${width}px` }}
+                        style={
+                          isScenarioColumn
+                            ? {
+                                width: `min(${width}px, ${SCENARIO_WIDTH_LIMIT})`,
+                                minWidth: `min(${width}px, ${SCENARIO_WIDTH_LIMIT})`,
+                                maxWidth: SCENARIO_WIDTH_LIMIT
+                              }
+                            : { width: `${width}px`, minWidth: `${width}px` }
+                        }
                         className={cellClassName}
                         {...cellDataAttributes}
                       >
@@ -1272,6 +1313,7 @@ export default function App() {
                                   className="cell-textarea"
                                   data-test-id={columnDataTestId}
                                   autoFocus
+                                  wrap="off"
                                 />
                                 {value.trim() && (
                                   <div
@@ -1281,7 +1323,10 @@ export default function App() {
                                 )}
                               </div>
                             ) : (
-                              <div className="markdown-preview-wrapper" data-test-id={columnDataTestId}>
+                              <div
+                                className="markdown-preview-wrapper scenario-preview"
+                                data-test-id={columnDataTestId}
+                              >
                                 {value.trim() ? (
                                   <div
                                     className="rich-text-preview markdown-preview"
@@ -1293,6 +1338,8 @@ export default function App() {
                                 <button
                                   type="button"
                                   className="inline-edit-btn"
+                                  aria-label="Edit case"
+                                  title="Edit case"
                                   onClick={() =>
                                     setEditingScenarioIds((prev) => {
                                       const next = new Set(prev);
@@ -1301,7 +1348,7 @@ export default function App() {
                                     })
                                   }
                                 >
-                                  Редактировать
+                                  Edit case
                                 </button>
                               </div>
                             )
