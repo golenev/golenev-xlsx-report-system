@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
 @DisplayName("API: Автоматическое определение и появление даты готовности для нового теста")
-class ReadyDateE2ETest {
+class ReadyDateAutoDefinitionApiTest {
 
     private val reportService = ReportService()
 

@@ -25,7 +25,7 @@ import java.time.LocalDate
 
 @Execution(ExecutionMode.SAME_THREAD)//в этом классе тесты последовательно, потому что мы не можем начать два регресса одновременно
 @DisplayName("API + UI + DB: Тесты отмены и остановки регресса")
-class UiAndDbRegressionTest {
+class UiAndDbRejectRegressionTest {
 
     private val mainPage = MainPage()
     private val createdTestId: String = "UI-LOCK-${getRandomTestId()}"

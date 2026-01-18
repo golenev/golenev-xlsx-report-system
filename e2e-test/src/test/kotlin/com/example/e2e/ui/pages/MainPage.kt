@@ -161,7 +161,7 @@ class MainPage {
     }
 
     fun closePopupWarning() {
-        `$`(".popup-actions .primary-btn").click()
+        `$`(".popup-actions .secondary-btn").click()
         `$`(".popup-card").shouldBe(disappear)
     }
 

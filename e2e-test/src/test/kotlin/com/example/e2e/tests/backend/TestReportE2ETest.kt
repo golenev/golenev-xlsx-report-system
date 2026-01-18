@@ -14,6 +14,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
+@DisplayName("Апи тест отправки батча тест кейсов через апи")
 class TestReportE2ETest {
 
     private val reportService = ReportService()
@@ -25,7 +26,6 @@ class TestReportE2ETest {
         step("Удаление всех созданных тест кейсов из базы") {
             TestReportRepository.deleteReportsByDate(reportDay)
         }
-
     }
 
     @AllureId("169")

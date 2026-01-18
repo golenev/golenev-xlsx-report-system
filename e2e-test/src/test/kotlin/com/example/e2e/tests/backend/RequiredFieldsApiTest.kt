@@ -15,8 +15,8 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
 
-@DisplayName("Проверка обязательности полей при добалвении нового тест кейса")
-class RequiredFieldsE2ETest {
+@DisplayName("Проверка обязательности полей при добавлении нового тест кейса")
+class RequiredFieldsApiTest {
 
     private val reportService = ReportService()
 

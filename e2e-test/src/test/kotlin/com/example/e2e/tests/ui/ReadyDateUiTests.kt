@@ -64,7 +64,6 @@ class ReadyDateUiTests {
         step("Сохраняем новую строку без указания Ready Date") { mainPage.saveNewRow() }
         step("Проверяем, что тест-кейс появился в таблице") { mainPage.shouldSeeTestCase(randomTestId) }
         step("Проверяем, что Ready Date всё ещё заполнена сегодняшней датой") { mainPage.shouldHaveReadyDate(randomTestId, today) }
-
     }
 
 }
