@@ -6,6 +6,7 @@ import com.codeborne.selenide.ScrollIntoViewOptions.instant
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.Selenide.*
 import com.codeborne.selenide.SelenideElement
+import com.codeborne.selenide.CollectionCondition.size
 import com.example.e2e.utils.CENTER
 import com.example.e2e.utils.typeOf
 
@@ -117,6 +118,10 @@ class MainPage {
         tableRowByTestId(testId).should(disappear)
     }
 
+    fun shouldHaveTestCasesCount(expectedCount: Int) {
+        `$$`("tbody tr[data-test-id^='tr-data-test-id-']").shouldHave(size(expectedCount))
+    }
+
     fun shouldHaveReadyDateWhenNewRow(expectedDate: String) {
         `$`(".new-row [data-ready-date-value='${expectedDate}']").shouldBe(visible)
     }
@@ -153,6 +158,11 @@ class MainPage {
 
     fun stopRegress() {
         `$`(".regression-actions .danger-btn").shouldBe(visible).click()
+    }
+
+    fun selectRegressionStatus(testId: String, status: String) {
+        val row = tableRowByTestId(testId).shouldBe(visible)
+        row.`$`("[data-test-id='Regress Run']").shouldBe(enabled).selectOption(status)
     }
 
     fun checkPopupWarning() {
