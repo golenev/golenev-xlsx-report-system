@@ -106,6 +106,7 @@ object TestDataGenerator {
                     .replace("<READY_DATE>", readyDate)
                     .replace("<READY_DATE_MINUS_1>", LocalDate.parse(readyDate).minusDays(1).toString())
                     .replace("<GENERATED>", generateTestId(index)),
+                notes = ""
             )
         }
     }
