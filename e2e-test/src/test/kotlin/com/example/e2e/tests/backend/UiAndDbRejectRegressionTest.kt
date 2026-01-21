@@ -19,11 +19,8 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.parallel.Execution
-import org.junit.jupiter.api.parallel.ExecutionMode
 import java.time.LocalDate
 
-@Execution(ExecutionMode.SAME_THREAD)//в этом классе тесты последовательно, потому что мы не можем начать два регресса одновременно
 @DisplayName("API + UI + DB: Тесты отмены и остановки регресса")
 class UiAndDbRejectRegressionTest {
 
@@ -39,9 +36,7 @@ class UiAndDbRejectRegressionTest {
 
     @AfterEach
     fun tearDown() {
-        step("Закрываем веб-драйвер") {
-            Selenide.closeWebDriver()
-        }
+        Selenide.closeWebDriver()
 
         step("Удаляем созданный тест-кейс из базы") {
             TestReportRepository.deleteByTestId(createdTestId)
