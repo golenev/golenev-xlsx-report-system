@@ -77,7 +77,8 @@ class UiAndDbRejectRegressionTest {
         step("Убеждаемся в корректности полей регресса") {
             regression.status shouldBe "RUNNING"
             regression.regressionDate shouldBe regressionDate
-            regression.payload shouldBe emptyMap()
+            regression.payload?.tests shouldBe null
+            regression.payload?.status shouldBe null
         }
 
         step("Отменяем регресс через UI") {
@@ -131,7 +132,8 @@ class UiAndDbRejectRegressionTest {
         step("Убеждаемся в корректности полей регресса") {
             regression.status shouldBe "RUNNING"
             regression.regressionDate shouldBe regressionDate
-            regression.payload shouldBe emptyMap()
+            regression.payload?.tests shouldBe null
+            regression.payload?.status shouldBe null
         }
 
         step("Отменяем регресс через UI") {

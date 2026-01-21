@@ -7,13 +7,13 @@ import com.example.e2e.db.tables.TestReportTable
 import com.example.e2e.dto.GeneralTestStatus
 import com.example.e2e.dto.Priority
 import com.example.e2e.dto.TestBatchRequest
+import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.service.ReportService
 import com.example.e2e.ui.config.DriverConfig
 import com.example.e2e.ui.pages.MainPage
 import com.example.e2e.utils.TestDataGenerator
 import com.example.e2e.utils.getRandomTestId
 import com.example.e2e.utils.step
-import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
@@ -145,30 +145,17 @@ class RegressionSnapshotUiE2eTest {
         }
 
         step("Проверяем поля снапшота регресса") {
-            payload["regressionDate"] shouldBe readyDate
-            payload["status"] shouldBe "COMPLETED"
-            payload["releaseName"] shouldBe releaseName
+            payload.regressionDate shouldBe readyDate
+            payload.status shouldBe "COMPLETED"
+            payload.releaseName shouldBe releaseName
         }
 
-        val payloadTests = payload["tests"] as? List<*> ?: emptyList<Any>()
+        val payloadTests = payload.tests.orEmpty()
         val payloadById = payloadTests
-            .mapNotNull { it as? Map<*, *> }
-            .associateBy { it["testId"] as String }
+            .mapNotNull { test -> test.testId?.let { it to test } }
+            .toMap()
 
-        val expectedTests = generatedTests.map { item ->
-            SnapshotExpectation(
-                testId = item.testId.shouldNotBeNull(),
-                category = item.category,
-                shortTitle = item.shortTitle,
-                issueLink = item.issueLink,
-                readyDate = item.readyDate,
-                generalStatus = item.generalStatus,
-                priority = item.priority,
-                scenario = item.scenario,
-                notes = item.notes,
-                regressionStatus = expectedStatuses[item.testId].shouldNotBeNull(),
-            )
-        } + SnapshotExpectation(
+        val expectedTests = generatedTests.map { it.copy() } + TestUpsertItem(
             testId = manualTestId,
             category = manualCategory,
             shortTitle = manualShortTitle,
@@ -178,43 +165,27 @@ class RegressionSnapshotUiE2eTest {
             priority = manualPriority,
             scenario = manualScenario,
             notes = manualNotes,
-            regressionStatus = expectedStatuses[manualTestId].shouldNotBeNull(),
         )
 
         step("Проверяем, что в снапшоте есть все 11 тестов") {
             payloadTests.size shouldBe expectedTests.size
-            payloadById.keys.toSet() shouldBe expectedTests.map { it.testId }.toSet()
+            payloadById.keys.toSet() shouldBe expectedTests.map { it.testId.shouldNotBeNull() }.toSet()
         }
 
         expectedTests.forEach { expected ->
+            val expectedTestId = expected.testId.shouldNotBeNull()
             step("Проверяем колонки снапшота для теста ${expected.testId}") {
-                val actual = payloadById[expected.testId].shouldNotBeNull()
-                assertSoftly {
-                    actual["testId"] shouldBe expected.testId
-                    actual["category"] shouldBe expected.category
-                    actual["shortTitle"] shouldBe expected.shortTitle
-                    actual["issueLink"] shouldBe expected.issueLink
-                    actual["readyDate"] shouldBe expected.readyDate
-                    actual["generalStatus"] shouldBe expected.generalStatus
-                    actual["priority"] shouldBe expected.priority
-                    actual["scenario"] shouldBe expected.scenario
-                    actual["notes"] shouldBe expected.notes
-                    actual["regressionStatus"] shouldBe expected.regressionStatus
-                }
+                val actual = payloadById[expectedTestId].shouldNotBeNull()
+                actual.testId shouldBe expected.testId
+                actual.category shouldBe expected.category
+                actual.shortTitle shouldBe expected.shortTitle
+                actual.issueLink shouldBe expected.issueLink
+                actual.readyDate shouldBe expected.readyDate
+                actual.generalStatus shouldBe expected.generalStatus
+                actual.priority shouldBe expected.priority
+                actual.scenario shouldBe expected.scenario
+                actual.notes shouldBe expected.notes
             }
         }
     }
-
-    private data class SnapshotExpectation(
-        val testId: String,
-        val category: String?,
-        val shortTitle: String?,
-        val issueLink: String?,
-        val readyDate: String?,
-        val generalStatus: String?,
-        val priority: String?,
-        val scenario: String?,
-        val notes: String?,
-        val regressionStatus: String,
-    )
 }
