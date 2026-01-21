@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
 @DisplayName("Апи тест отправки батча тест кейсов через апи")
-class TestReportE2ETest {
+class TestSendForceBatchApiTest {
 
     private val reportService = ReportService()
     private lateinit var batchRequest: TestBatchRequest

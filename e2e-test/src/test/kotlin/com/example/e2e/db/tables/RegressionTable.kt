@@ -1,5 +1,6 @@
 package com.example.e2e.db.tables
 
+import com.example.e2e.dto.TestUpsertItem
 import com.example.e2e.utils.JsonUtils
 import java.time.LocalDate
 import org.jetbrains.exposed.sql.Column
@@ -13,7 +14,7 @@ object RegressionTable : Table("regressions") {
     val status = text("status")
     val regressionDate = date("regression_date")
     val releaseName = text("release_name")
-    val payload = jsonbColumn<Map<String, Any?>>("payload").nullable()
+    val payload = jsonbColumn<RegressionPayload>("payload").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -23,7 +24,7 @@ data class RegressionRow(
     val status: String,
     val regressionDate: LocalDate,
     val releaseName: String,
-    val payload: Map<String, Any?>?,
+    val payload: RegressionPayload?,
 )
 
 fun mapToRegression(row: ResultRow) = RegressionRow(
@@ -32,6 +33,13 @@ fun mapToRegression(row: ResultRow) = RegressionRow(
     regressionDate = row[RegressionTable.regressionDate],
     releaseName = row[RegressionTable.releaseName],
     payload = row[RegressionTable.payload],
+)
+
+data class RegressionPayload(
+    val regressionDate: String? = null,
+    val status: String? = null,
+    val releaseName: String? = null,
+    val tests: List<TestUpsertItem>? = null,
 )
 
 inline fun <reified T : Any> Table.jsonbColumn(name: String): Column<T> =

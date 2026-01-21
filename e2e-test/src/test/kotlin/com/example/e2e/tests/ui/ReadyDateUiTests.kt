@@ -1,5 +1,6 @@
 package com.example.e2e.tests.ui
 
+import com.codeborne.selenide.Selenide
 import com.example.e2e.db.dbReportExec
 import com.example.e2e.db.tables.TestReportTable
 import com.example.e2e.dto.Priority
@@ -31,6 +32,8 @@ class ReadyDateUiTests {
 
     @AfterEach
     fun cleaDb() {
+        Selenide.closeWebDriver()
+
         dbReportExec {
             TestReportTable.deleteWhere {
                 (testId eq randomTestId.toString())
