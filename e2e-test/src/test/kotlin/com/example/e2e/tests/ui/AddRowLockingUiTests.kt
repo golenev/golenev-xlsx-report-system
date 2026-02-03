@@ -1,10 +1,13 @@
 package com.example.e2e.tests.ui
 
+import com.codeborne.selenide.Condition.disabled
+import com.codeborne.selenide.Condition.enabled
 import com.codeborne.selenide.Selenide
 import com.example.e2e.db.dbReportExec
 import com.example.e2e.db.tables.TestReportTable
 import com.example.e2e.dto.Priority
 import com.example.e2e.ui.config.DriverConfig
+import com.example.e2e.ui.core.containerShould
 import com.example.e2e.ui.pages.MainPage
 import com.example.e2e.utils.getRandomTestId
 import com.example.e2e.utils.step
@@ -54,28 +57,28 @@ class AddRowLockingUiTests {
         step("Открываем главную страницу") { mainPage.open() }
         step("Начинаем создание новой строки") { mainPage.startNewRow() }
         step("Кнопка Add Row заблокирована во время добавления новой строки") {
-            mainPage.shouldDisableAddRow()
+            mainPage.addRowButton containerShould disabled
         }
 
         step("Заполняем поля для новой строки") {
-            mainPage.fillTestId(randomTestId)
-            mainPage.fillCategory(category)
-            mainPage.fillShortTitle(shortTitle)
-            mainPage.fillIssueLink(issueLink)
+            mainPage.newRowTestId.type(randomTestId)
+            mainPage.newRowCategory.type(category)
+            mainPage.newRowShortTitle.type(shortTitle)
+            mainPage.newRowIssueLink.type(issueLink)
             mainPage.selectGeneralStatus(generalStatus)
             mainPage.selectPriority(priority)
-            mainPage.fillDetailedScenario(detailedScenario)
+            mainPage.newRowScenario.type(detailedScenario)
         }
 
 
         step("Кнопка Add Row всё ещё заблокирована во время добавления новой строки") {
-            mainPage.shouldDisableAddRow()
+            mainPage.addRowButton containerShould disabled
         }
 
         step("Сохраняем новую строку") { mainPage.saveNewRow() }
 
 
-        step("Кнопка Add Row разблокирована после сохранения") { mainPage.shouldEnableAddRow() }
+        step("Кнопка Add Row разблокирована после сохранения") { mainPage.addRowButton containerShould enabled }
         step("Проверяем, что тест-кейс отображается в таблице") { mainPage.shouldSeeTestCase(randomTestId) }
 
         step("Начинаем редактировать поле Category в существующей строке") {
@@ -83,14 +86,14 @@ class AddRowLockingUiTests {
         }
 
         step("Кнопка Add Row  заблокирована во время редактирования колонки Category") {
-            mainPage.shouldDisableAddRow()
+            mainPage.addRowButton containerShould disabled
         }
 
         step("Уводим фокус из редактируемой ячейки") {
             mainPage.unFocus()
         }
 
-        step("Кнопка Add Row разблокирована после сохранения") { mainPage.shouldEnableAddRow() }
+        step("Кнопка Add Row разблокирована после сохранения") { mainPage.addRowButton containerShould enabled }
 
 
     }
