@@ -4,7 +4,6 @@ import com.codeborne.selenide.ScrollIntoViewOptions
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.SelenideElement
 import org.openqa.selenium.By
-import org.openqa.selenium.StaleElementReferenceException
 
 /**
  * Делает XPath относительным для корректного поиска внутри контекста.
@@ -26,7 +25,7 @@ fun safeXpath(by: By): By {
 }
 
 /**
- * Базовая реализация контейнера с единым поведением клика, скролла и ввода.
+ * Базовая реализация контейнера с единым поведением поиска и автоскролла.
  *
  * Объединяет `IContainer` и делегирует интерфейс `SelenideElement`,
  * чтобы сохранять доступ к стандартным selenide-операциям при необходимости.
@@ -59,38 +58,6 @@ open class Container(override val self: SelenideElement) : IContainer, SelenideE
         }
     }
 
-    /**
-     * Кликает по элементу с автоскроллом и ретраями при stale reference.
-     */
-    fun click() {
-        scrollToIfNotVisible()
-        var lastError: StaleElementReferenceException? = null
-        repeat(3) {
-            try {
-                self.click()
-                return
-            } catch (error: StaleElementReferenceException) {
-                lastError = error
-            }
-        }
-        throw lastError ?: IllegalStateException("Failed to click container")
-    }
-
-    /**
-     * Устанавливает значение в поле с автоскроллом.
-     */
-    fun setValue(value: String) {
-        scrollToIfNotVisible()
-        self.setValue(value)
-    }
-
-    /**
-     * Отправляет нажатия клавиш с автоскроллом.
-     */
-    fun sendKeys(vararg keys: CharSequence) {
-        scrollToIfNotVisible()
-        self.sendKeys(*keys)
-    }
 }
 
 /**
