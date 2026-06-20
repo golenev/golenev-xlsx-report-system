@@ -1119,6 +1119,13 @@ tbody tr:nth-child(odd) .row-index-cell {
   color: #0f5fa8;
 }
 
+.attachment-paperclip-icon {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  color: currentColor;
+}
+
 .attachment-chip-caret {
   color: #8a8f98;
   font-size: 10px;

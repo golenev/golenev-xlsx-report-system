@@ -316,6 +316,27 @@ function serializeScenarioSteps(steps) {
     .join('\n');
 }
 
+
+function PaperclipIcon() {
+  return (
+    <svg
+      className="attachment-paperclip-icon"
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M5.2 8.4l3.9-3.9a2.1 2.1 0 0 1 3 3l-5 5a3.3 3.3 0 0 1-4.7-4.7l5.1-5.1a4.5 4.5 0 1 1 6.4 6.4l-5.1 5.1"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.35"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, autoFocus = false }) {
   const [steps, setSteps] = useState(() => parseScenarioSteps(value));
   const [openAttachmentRows, setOpenAttachmentRows] = useState(() => new Set());
@@ -447,7 +468,8 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                   onClick={() => toggleAttachmentRow(index, step.attachment)}
                   aria-expanded={isAttachmentOpen}
                 >
-                  <span>📎 Вложение</span>
+                  <PaperclipIcon />
+                  <span>Вложение</span>
                   <span className="attachment-chip-caret">{isAttachmentOpen ? '▾' : '▸'}</span>
                 </button>
               ) : (
