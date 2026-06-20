@@ -319,6 +319,7 @@ function serializeScenarioSteps(steps) {
 function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, autoFocus = false }) {
   const [steps, setSteps] = useState(() => parseScenarioSteps(value));
   const [openAttachmentRows, setOpenAttachmentRows] = useState(() => new Set());
+  const [attachmentDrafts, setAttachmentDrafts] = useState({});
   const firstInputRef = useRef(null);
   const attachmentInputRefs = useRef({});
   const latestValueRef = useRef(value);
@@ -329,6 +330,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
     latestValueRef.current = value;
     setSteps(parseScenarioSteps(value));
     setOpenAttachmentRows(new Set());
+    setAttachmentDrafts({});
   }, [value]);
 
   useEffect(() => {
@@ -347,19 +349,16 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
     });
   };
 
-  const toggleAttachmentRow = (index) => {
-    setOpenAttachmentRows((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
-      return next;
-    });
+  const toggleAttachmentRow = (index, attachmentText) => {
+    if (openAttachmentRows.has(index)) {
+      closeAttachmentRow(index);
+      return;
+    }
+    openAttachmentRow(index, attachmentText);
   };
 
-  const openAttachmentRow = (index) => {
+  const openAttachmentRow = (index, attachmentText = '') => {
+    setAttachmentDrafts((drafts) => ({ ...drafts, [index]: attachmentText }));
     setOpenAttachmentRows((prev) => {
       const next = new Set(prev);
       next.add(index);
@@ -375,6 +374,16 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
     });
   };
 
+  const saveAttachmentDraft = (index) => {
+    const draft = attachmentDrafts[index] ?? '';
+    updateSteps((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, attachment: draft, attachmentOpen: false } : item
+      )
+    );
+    closeAttachmentRow(index);
+  };
+
   const handleFocusCapture = () => {
     if (focusedInsideRef.current) return;
     focusedInsideRef.current = true;
@@ -384,7 +393,21 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
   const handleBlurCapture = (event) => {
     if (event.currentTarget.contains(event.relatedTarget)) return;
     focusedInsideRef.current = false;
-    onCommit(latestValueRef.current);
+
+    const nextSteps = ensureEditableScenarioRows(
+      steps.map((step, index) =>
+        openAttachmentRows.has(index)
+          ? { ...step, attachment: attachmentDrafts[index] ?? step.attachment, attachmentOpen: false }
+          : step
+      )
+    );
+    const serialized = serializeScenarioSteps(nextSteps);
+    latestValueRef.current = serialized;
+    setSteps(nextSteps);
+    setOpenAttachmentRows(new Set());
+    setAttachmentDrafts({});
+    onChange(serialized);
+    onCommit(serialized);
   };
 
   return (
@@ -421,7 +444,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                   type="button"
                   className={`attachment-chip ${isAttachmentOpen ? 'open' : ''}`}
                   onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => toggleAttachmentRow(index)}
+                  onClick={() => toggleAttachmentRow(index, step.attachment)}
                   aria-expanded={isAttachmentOpen}
                 >
                   <span>📎 Вложение</span>
@@ -444,6 +467,14 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                 <div className="scenario-attachment-header">
                   <span className="scenario-attachment-title">Вложение</span>
                   <div className="scenario-attachment-actions">
+                    <button
+                      type="button"
+                      className="attachment-text-action primary"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => saveAttachmentDraft(index)}
+                    >
+                      Сохранить
+                    </button>
                     {hasAttachment && (
                       <button
                         type="button"
@@ -465,6 +496,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                               itemIndex === index ? { ...item, attachment: '', attachmentOpen: false } : item
                             )
                           );
+                          setAttachmentDrafts((drafts) => ({ ...drafts, [index]: '' }));
                           closeAttachmentRow(index);
                         }}
                       >
@@ -481,15 +513,9 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                       delete attachmentInputRefs.current[index];
                     }
                   }}
-                  value={step.attachment}
+                  value={attachmentDrafts[index] ?? step.attachment}
                   onChange={(event) =>
-                    updateSteps((prev) =>
-                      prev.map((item, itemIndex) =>
-                        itemIndex === index
-                          ? { ...item, attachment: event.target.value, attachmentOpen: true }
-                          : item
-                      )
-                    )
+                    setAttachmentDrafts((drafts) => ({ ...drafts, [index]: event.target.value }))
                   }
                   className="cell-textarea scenario-attachment-input"
                   placeholder="request / response / json / curl"

@@ -1173,6 +1173,10 @@ tbody tr:nth-child(odd) .row-index-cell {
   font-weight: 500;
 }
 
+.attachment-text-action.primary {
+  color: #0a66c2;
+}
+
 .attachment-text-action:hover:not(:disabled) {
   color: #0a66c2;
   text-decoration: underline;
