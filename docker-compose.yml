@@ -19,8 +19,10 @@ services:
       DB_URL: jdbc:postgresql://db:5432/test_report
       DB_USERNAME: report
       DB_PASSWORD: report
-      COLUMN_CONFIG_PATH: classpath:config/column-config.json
+      COLUMN_CONFIG_PATH: /app/config/column-config.json
       PORT: 18080
+    volumes:
+      - ./config:/app/config:ro
     depends_on:
       - db
     ports:

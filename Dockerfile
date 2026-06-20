@@ -25,8 +25,9 @@ WORKDIR /app
 ENV DB_URL=jdbc:postgresql://db:5432/test_report \
     DB_USERNAME=report \
     DB_PASSWORD=report \
-    COLUMN_CONFIG_PATH=classpath:config/column-config.json \
+    COLUMN_CONFIG_PATH=/app/config/column-config.json \
     PORT=18080
 COPY --from=backend-build /workspace/backend/build/libs/*.jar app.jar
+COPY --from=backend-build /workspace/config ./config
 EXPOSE 18080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
