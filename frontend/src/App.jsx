@@ -337,25 +337,63 @@ function PaperclipIcon() {
   );
 }
 
-function ScenarioPreview({ value }) {
-  const [openAttachmentIndex, setOpenAttachmentIndex] = useState(null);
+function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview }) {
+  const [openAttachmentIndexes, setOpenAttachmentIndexes] = useState(() => new Set());
   const previewRef = useRef(null);
   const steps = useMemo(
     () => parseScenarioSteps(value).filter((step) => step.text.trim() || step.attachment.trim()),
     [value]
   );
+  const attachmentIndexes = useMemo(
+    () =>
+      steps
+        .map((step, index) => (step.attachment.trim() ? index : null))
+        .filter((index) => index !== null),
+    [steps]
+  );
+  const hasAttachments = attachmentIndexes.length > 0;
+  const allAttachmentsOpen =
+    hasAttachments && attachmentIndexes.every((index) => openAttachmentIndexes.has(index));
 
   useEffect(() => {
-    if (openAttachmentIndex === null) return undefined;
+    if (activePreviewId === previewId) return;
+    setOpenAttachmentIndexes(new Set());
+  }, [activePreviewId, previewId]);
+
+  useEffect(() => {
+    if (!openAttachmentIndexes.size) return undefined;
 
     const handlePointerDown = (event) => {
       if (previewRef.current?.contains(event.target)) return;
-      setOpenAttachmentIndex(null);
+      setOpenAttachmentIndexes(new Set());
     };
 
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [openAttachmentIndex]);
+  }, [openAttachmentIndexes]);
+
+  const toggleAttachment = (index) => {
+    onActivatePreview?.(previewId);
+    setOpenAttachmentIndexes((currentIndexes) => {
+      const nextIndexes = new Set(activePreviewId === previewId ? currentIndexes : []);
+      if (nextIndexes.has(index)) {
+        nextIndexes.delete(index);
+      } else {
+        nextIndexes.add(index);
+      }
+      return nextIndexes;
+    });
+  };
+
+  const toggleAllAttachments = () => {
+    onActivatePreview?.(previewId);
+    setOpenAttachmentIndexes((currentIndexes) => {
+      const nextShouldOpenAll =
+        activePreviewId !== previewId || attachmentIndexes.some((index) => !currentIndexes.has(index));
+
+      return nextShouldOpenAll ? new Set(attachmentIndexes) : new Set();
+    });
+  };
 
   if (!steps.length) {
     return <span className="readonly-value">—</span>;
@@ -363,41 +401,57 @@ function ScenarioPreview({ value }) {
 
   return (
     <div className="scenario-preview-list" ref={previewRef}>
+      {hasAttachments && (
+        <div className="scenario-preview-toolbar">
+          <button
+            type="button"
+            className="scenario-preview-toggle-all"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleAllAttachments();
+            }}
+          >
+            {allAttachmentsOpen ? 'Свернуть все вложения' : 'Развернуть все вложения'}
+          </button>
+        </div>
+      )}
       {steps.map((step, index) => {
         const hasAttachment = step.attachment.trim().length > 0;
-        const isAttachmentOpen = openAttachmentIndex === index;
+        const isAttachmentOpen = openAttachmentIndexes.has(index);
 
         return (
           <div className="scenario-preview-step" key={`${index}-${step.text}`}>
-            <span className="scenario-preview-number">{index + 1}.</span>
-            <span className="scenario-preview-text">{step.text.trim()}</span>
-            {hasAttachment && (
-              <span className="scenario-preview-attachment">
-                <button
-                  type="button"
-                  className={`scenario-preview-attachment-button ${isAttachmentOpen ? 'open' : ''}`}
-                  title="Показать вложение"
-                  aria-label={`Показать вложение шага ${index + 1}`}
-                  aria-expanded={isAttachmentOpen}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setOpenAttachmentIndex((currentIndex) => (currentIndex === index ? null : index));
-                  }}
-                >
-                  <PaperclipIcon />
-                </button>
-                {isAttachmentOpen && (
-                  <div
-                    className="scenario-preview-attachment-popover"
-                    role="dialog"
-                    aria-label={`Вложение шага ${index + 1}`}
-                    onClick={(event) => event.stopPropagation()}
+            <div className="scenario-preview-step-header">
+              <span className="scenario-preview-number">{index + 1}.</span>
+              <span className="scenario-preview-text">{step.text.trim()}</span>
+              {hasAttachment && (
+                <span className="scenario-preview-attachment">
+                  <button
+                    type="button"
+                    className={`scenario-preview-attachment-button ${isAttachmentOpen ? 'open' : ''}`}
+                    title="Показать вложение"
+                    aria-label={`Показать вложение шага ${index + 1}`}
+                    aria-expanded={isAttachmentOpen}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleAttachment(index);
+                    }}
                   >
-                    <div className="scenario-preview-attachment-title">Вложение шага {index + 1}</div>
-                    <pre className="scenario-preview-attachment-content">{step.attachment.trim()}</pre>
-                  </div>
-                )}
-              </span>
+                    <PaperclipIcon />
+                  </button>
+                </span>
+              )}
+            </div>
+            {hasAttachment && isAttachmentOpen && (
+              <div
+                className="scenario-preview-attachment-panel"
+                role="region"
+                aria-label={`Вложение шага ${index + 1}`}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="scenario-preview-attachment-title">Вложение шага {index + 1}</div>
+                <pre className="scenario-preview-attachment-content">{step.attachment.trim()}</pre>
+              </div>
             )}
           </div>
         );
@@ -811,6 +865,7 @@ export default function App() {
   const [showReleaseNameInput, setShowReleaseNameInput] = useState(false);
   const [editingExistingCount, setEditingExistingCount] = useState(0);
   const [editingScenarioIds, setEditingScenarioIds] = useState(new Set());
+  const [activeScenarioPreviewId, setActiveScenarioPreviewId] = useState(null);
   const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
   const [uploadSelectionLabel, setUploadSelectionLabel] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -1733,7 +1788,12 @@ export default function App() {
                                   })
                                 }
                               >
-                                <ScenarioPreview value={value} />
+                                <ScenarioPreview
+                                  value={value}
+                                  previewId={item.testId}
+                                  activePreviewId={activeScenarioPreviewId}
+                                  onActivatePreview={setActiveScenarioPreviewId}
+                                />
                               </div>
                             )
                           ) : column.type === 'textarea' ? (
