@@ -1012,3 +1012,106 @@ tbody tr:nth-child(odd) .row-index-cell {
     background-position: 120px 0;
   }
 }
+
+.scenario-step-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
+  background: linear-gradient(180deg, rgba(250, 251, 255, 0.96), rgba(244, 247, 251, 0.96));
+  border-radius: 14px;
+}
+
+.scenario-step-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(60, 60, 67, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  transition: min-height 260ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease, transform 220ms ease;
+}
+
+.scenario-step-row.attachment-open {
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+.scenario-step-number {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #0a84ff;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(10, 132, 255, 0.28);
+}
+
+.scenario-step-body {
+  min-width: 0;
+}
+
+.scenario-step-input,
+.scenario-attachment-input {
+  border: 1px solid rgba(60, 60, 67, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.scenario-step-input:focus,
+.scenario-attachment-input:focus {
+  background: #fff;
+  border-color: rgba(10, 132, 255, 0.58);
+  box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.12);
+}
+
+.scenario-step-actions {
+  display: flex;
+  justify-content: flex-start;
+  padding-top: 6px;
+}
+
+.attachment-toggle-btn {
+  border: 1px solid rgba(10, 132, 255, 0.22);
+  background: rgba(10, 132, 255, 0.08);
+  color: #075bb5;
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.attachment-toggle-btn:hover:not(:disabled) {
+  background: rgba(10, 132, 255, 0.14);
+  box-shadow: 0 6px 16px rgba(10, 132, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.scenario-attachment-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin-top: 0;
+  overflow: hidden;
+  transition: grid-template-rows 300ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease, margin-top 220ms ease;
+}
+
+.scenario-step-row.attachment-open .scenario-attachment-panel {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 8px;
+}
+
+.scenario-attachment-panel > textarea {
+  min-height: 0;
+}
