@@ -344,16 +344,6 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
     () => parseScenarioSteps(value).filter((step) => step.text.trim() || step.attachment.trim()),
     [value]
   );
-  const attachmentIndexes = useMemo(
-    () =>
-      steps
-        .map((step, index) => (step.attachment.trim() ? index : null))
-        .filter((index) => index !== null),
-    [steps]
-  );
-  const hasAttachments = attachmentIndexes.length > 0;
-  const allAttachmentsOpen =
-    hasAttachments && attachmentIndexes.every((index) => openAttachmentIndexes.has(index));
 
   useEffect(() => {
     if (activePreviewId === previewId) return;
@@ -385,36 +375,12 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
     });
   };
 
-  const toggleAllAttachments = () => {
-    onActivatePreview?.(previewId);
-    setOpenAttachmentIndexes((currentIndexes) => {
-      const nextShouldOpenAll =
-        activePreviewId !== previewId || attachmentIndexes.some((index) => !currentIndexes.has(index));
-
-      return nextShouldOpenAll ? new Set(attachmentIndexes) : new Set();
-    });
-  };
-
   if (!steps.length) {
     return <span className="readonly-value">—</span>;
   }
 
   return (
     <div className="scenario-preview-list" ref={previewRef}>
-      {hasAttachments && (
-        <div className="scenario-preview-toolbar">
-          <button
-            type="button"
-            className="scenario-preview-toggle-all"
-            onClick={(event) => {
-              event.stopPropagation();
-              toggleAllAttachments();
-            }}
-          >
-            {allAttachmentsOpen ? 'Свернуть все вложения' : 'Развернуть все вложения'}
-          </button>
-        </div>
-      )}
       {steps.map((step, index) => {
         const hasAttachment = step.attachment.trim().length > 0;
         const isAttachmentOpen = openAttachmentIndexes.has(index);
