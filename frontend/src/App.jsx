@@ -971,24 +971,18 @@ export default function App() {
     setNewItems((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const isDraftEmpty = (draft) => {
-    if (!draft) {
-      return true;
-    }
-    return !FIELD_DEFINITIONS.some((field) => {
-      const value = draft[field.key];
-      if (field.type === 'date') {
-        return !!value;
-      }
-      if (typeof value === 'string') {
-        return value.trim() !== '';
-      }
-      return value != null && value !== '';
-    });
+  const isRequiredDraftFieldFilled = (draft, key) => {
+    const value = draft?.[key];
+    return typeof value === 'string' ? value.trim() !== '' : value != null && value !== '';
   };
 
-  const hasPristineNewRow = useMemo(
-    () => newItems.some((item) => isDraftEmpty(item)),
+  const isDraftReadyToSave = (draft) =>
+    ['testId', 'category', 'shortTitle', 'scenario'].every((key) =>
+      isRequiredDraftFieldFilled(draft, key)
+    );
+
+  const hasIncompleteNewRow = useMemo(
+    () => newItems.some((item) => !isDraftReadyToSave(item)),
     [newItems]
   );
 
@@ -1300,8 +1294,7 @@ export default function App() {
             disabled={
               loading ||
                 saving ||
-                hasPristineNewRow ||
-                newItems.length > 0 ||
+                hasIncompleteNewRow ||
                 isEditingExistingRow
             }
           >
@@ -1426,9 +1419,7 @@ export default function App() {
                       type="button"
                       className="save-btn"
                       onClick={() => handleCreate(index)}
-                      disabled={
-                        saving || !(item.testId ? item.testId.trim() : '').length
-                      }
+                      disabled={saving || !isDraftReadyToSave(item)}
                     >
                       Save
                     </button>

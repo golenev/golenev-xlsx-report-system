@@ -68,8 +68,8 @@ class AddRowLockingUiTests {
         }
 
 
-        step("Кнопка Add Row всё ещё заблокирована во время добавления новой строки") {
-            mainPage.shouldDisableAddRow()
+        step("Кнопка Add Row разблокирована после заполнения обязательных полей") {
+            mainPage.shouldEnableAddRow()
         }
 
         step("Сохраняем новую строку") { mainPage.saveNewRow() }
