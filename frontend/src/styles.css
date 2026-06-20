@@ -1016,8 +1016,8 @@ tbody tr:nth-child(odd) .row-index-cell {
 .scenario-step-editor {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 6px;
+  gap: 1px;
+  padding: 4px;
   background: #f6f7f9;
   border: 1px solid rgba(60, 60, 67, 0.12);
   border-radius: 10px;
@@ -1025,7 +1025,7 @@ tbody tr:nth-child(odd) .row-index-cell {
 }
 
 .scenario-step-row {
-  border-radius: 8px;
+  border-radius: 6px;
   transition: background-color 160ms ease;
 }
 
@@ -1036,29 +1036,29 @@ tbody tr:nth-child(odd) .row-index-cell {
 .scenario-step-line {
   display: grid;
   grid-template-columns: 22px minmax(180px, 1fr) max-content;
-  align-items: start;
-  gap: 6px;
-  min-height: 34px;
-  padding: 3px 4px;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 1px 3px;
 }
 
 .scenario-step-number {
   color: #6b7280;
   font-size: 12px;
   font-weight: 600;
-  line-height: 28px;
+  line-height: 22px;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
 .scenario-step-input {
-  min-height: 28px;
-  max-height: 76px;
-  padding: 5px 7px;
+  min-height: 22px;
+  max-height: 58px;
+  padding: 2px 6px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 6px;
   background: transparent;
-  line-height: 1.35;
+  line-height: 1.25;
   resize: vertical;
   overflow: auto;
 }
@@ -1086,8 +1086,8 @@ tbody tr:nth-child(odd) .row-index-cell {
 
 .attachment-inline-action {
   align-self: center;
-  padding: 5px 6px;
-  border-radius: 7px;
+  padding: 2px 5px;
+  border-radius: 6px;
   color: #6b7280;
   font-size: 12px;
   font-weight: 500;
@@ -1103,7 +1103,7 @@ tbody tr:nth-child(odd) .row-index-cell {
   align-items: center;
   gap: 4px;
   align-self: center;
-  padding: 4px 7px;
+  padding: 2px 6px;
   border: 1px solid rgba(60, 60, 67, 0.11);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.74);
@@ -1137,8 +1137,8 @@ tbody tr:nth-child(odd) .row-index-cell {
   grid-template-rows: 0fr;
   opacity: 0;
   overflow: hidden;
-  padding-left: 32px;
-  padding-right: 4px;
+  padding-left: 29px;
+  padding-right: 3px;
   transition: grid-template-rows 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease;
 }
 
@@ -1149,7 +1149,7 @@ tbody tr:nth-child(odd) .row-index-cell {
 
 .scenario-attachment-content {
   min-height: 0;
-  padding: 5px 0 7px;
+  padding: 3px 0 5px;
 }
 
 .scenario-attachment-header {
@@ -1157,7 +1157,7 @@ tbody tr:nth-child(odd) .row-index-cell {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .scenario-attachment-title {
