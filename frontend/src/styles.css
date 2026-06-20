@@ -1012,3 +1012,198 @@ tbody tr:nth-child(odd) .row-index-cell {
     background-position: 120px 0;
   }
 }
+
+.scenario-step-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+  background: #f6f7f9;
+  border: 1px solid rgba(60, 60, 67, 0.12);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.scenario-step-row {
+  border-radius: 6px;
+  transition: background-color 160ms ease;
+}
+
+.scenario-step-row:focus-within {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.scenario-step-line {
+  display: grid;
+  grid-template-columns: 22px minmax(180px, 1fr) max-content;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 1px 3px;
+}
+
+.scenario-step-number {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 22px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.scenario-step-input {
+  min-height: 22px;
+  max-height: 58px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  line-height: 1.25;
+  resize: vertical;
+  overflow: auto;
+}
+
+.scenario-step-input:hover {
+  background: rgba(255, 255, 255, 0.64);
+  border-color: rgba(60, 60, 67, 0.08);
+}
+
+.scenario-step-input:focus {
+  background: #fff;
+  border-color: rgba(10, 132, 255, 0.42);
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.11);
+}
+
+.attachment-inline-action,
+.attachment-chip,
+.attachment-text-action {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.attachment-inline-action {
+  align-self: center;
+  padding: 2px 5px;
+  border-radius: 6px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.attachment-inline-action:hover:not(:disabled) {
+  background: rgba(10, 132, 255, 0.08);
+  color: #0a66c2;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: center;
+  padding: 2px 6px;
+  border: 1px solid rgba(60, 60, 67, 0.11);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.74);
+  color: #374151;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.attachment-chip:hover:not(:disabled),
+.attachment-chip.open {
+  background: #fff;
+  border-color: rgba(10, 132, 255, 0.24);
+  color: #0f5fa8;
+}
+
+.attachment-paperclip-icon {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  color: currentColor;
+}
+
+.attachment-chip-caret {
+  color: #8a8f98;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.scenario-attachment-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  overflow: hidden;
+  padding-left: 29px;
+  padding-right: 3px;
+  transition: grid-template-rows 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease;
+}
+
+.scenario-attachment-panel.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.scenario-attachment-content {
+  min-height: 0;
+  padding: 3px 0 5px;
+}
+
+.scenario-attachment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.scenario-attachment-title {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.scenario-attachment-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attachment-text-action {
+  padding: 0;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.attachment-text-action.primary {
+  color: #0a66c2;
+}
+
+.attachment-text-action:hover:not(:disabled) {
+  color: #0a66c2;
+  text-decoration: underline;
+}
+
+.attachment-text-action.danger:hover:not(:disabled) {
+  color: #c5221f;
+}
+
+.scenario-attachment-input {
+  min-height: 72px;
+  padding: 7px 8px;
+  border: 1px solid rgba(60, 60, 67, 0.13);
+  border-radius: 8px;
+  background: #fff;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.scenario-attachment-input:focus {
+  border-color: rgba(10, 132, 255, 0.42);
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.11);
+}
