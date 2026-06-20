@@ -318,7 +318,9 @@ function serializeScenarioSteps(steps) {
 
 function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, autoFocus = false }) {
   const [steps, setSteps] = useState(() => parseScenarioSteps(value));
+  const [openAttachmentRows, setOpenAttachmentRows] = useState(() => new Set());
   const firstInputRef = useRef(null);
+  const attachmentInputRefs = useRef({});
   const latestValueRef = useRef(value);
   const focusedInsideRef = useRef(false);
 
@@ -326,6 +328,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
     if (value === latestValueRef.current) return;
     latestValueRef.current = value;
     setSteps(parseScenarioSteps(value));
+    setOpenAttachmentRows(new Set());
   }, [value]);
 
   useEffect(() => {
@@ -340,6 +343,34 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
       const serialized = serializeScenarioSteps(next);
       latestValueRef.current = serialized;
       onChange(serialized);
+      return next;
+    });
+  };
+
+  const toggleAttachmentRow = (index) => {
+    setOpenAttachmentRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const openAttachmentRow = (index) => {
+    setOpenAttachmentRows((prev) => {
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
+  };
+
+  const closeAttachmentRow = (index) => {
+    setOpenAttachmentRows((prev) => {
+      const next = new Set(prev);
+      next.delete(index);
       return next;
     });
   };
@@ -363,60 +394,112 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
       onFocusCapture={handleFocusCapture}
       onBlurCapture={handleBlurCapture}
     >
-      {steps.map((step, index) => (
-        <div className={`scenario-step-row ${step.attachmentOpen ? 'attachment-open' : ''}`} key={index}>
-          <div className="scenario-step-number">{index + 1}</div>
-          <div className="scenario-step-body">
-            <textarea
-              ref={index === 0 ? firstInputRef : undefined}
-              value={step.text}
-              onChange={(event) =>
-                updateSteps((prev) =>
-                  prev.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, text: event.target.value } : item
-                  )
-                )
-              }
-              className="cell-textarea scenario-step-input"
-              placeholder={`Шаг ${index + 1}`}
-              rows={2}
-            />
-            <div className="scenario-step-actions">
-              <button
-                type="button"
-                className="attachment-toggle-btn"
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() =>
-                  updateSteps((prev) =>
-                    prev.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, attachmentOpen: true } : item
-                    )
-                  )
-                }
-              >
-                Добавить вложение
-              </button>
-            </div>
-            <div className="scenario-attachment-panel">
+      {steps.map((step, index) => {
+        const hasAttachment = step.attachment.trim().length > 0;
+        const isAttachmentOpen = openAttachmentRows.has(index);
+
+        return (
+          <div className="scenario-step-row" key={index}>
+            <div className="scenario-step-line">
+              <div className="scenario-step-number">{index + 1}</div>
               <textarea
-                value={step.attachment}
+                ref={index === 0 ? firstInputRef : undefined}
+                value={step.text}
                 onChange={(event) =>
                   updateSteps((prev) =>
                     prev.map((item, itemIndex) =>
-                      itemIndex === index
-                        ? { ...item, attachment: event.target.value, attachmentOpen: true }
-                        : item
+                      itemIndex === index ? { ...item, text: event.target.value } : item
                     )
                   )
                 }
-                className="cell-textarea scenario-attachment-input"
-                placeholder="Вложение шага: request, response или текст из Allure"
-                rows={3}
+                className="cell-textarea scenario-step-input"
+                placeholder={index === steps.length - 1 ? 'Добавьте следующий шаг…' : `Шаг ${index + 1}`}
+                rows={1}
               />
+              {hasAttachment ? (
+                <button
+                  type="button"
+                  className={`attachment-chip ${isAttachmentOpen ? 'open' : ''}`}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => toggleAttachmentRow(index)}
+                  aria-expanded={isAttachmentOpen}
+                >
+                  <span>📎 Вложение</span>
+                  <span className="attachment-chip-caret">{isAttachmentOpen ? '▾' : '▸'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="attachment-inline-action"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => openAttachmentRow(index)}
+                >
+                  + Вложение
+                </button>
+              )}
+            </div>
+
+            <div className={`scenario-attachment-panel ${isAttachmentOpen ? 'open' : ''}`}>
+              <div className="scenario-attachment-content">
+                <div className="scenario-attachment-header">
+                  <span className="scenario-attachment-title">Вложение</span>
+                  <div className="scenario-attachment-actions">
+                    {hasAttachment && (
+                      <button
+                        type="button"
+                        className="attachment-text-action"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => attachmentInputRefs.current[index]?.focus()}
+                      >
+                        Изменить
+                      </button>
+                    )}
+                    {hasAttachment && (
+                      <button
+                        type="button"
+                        className="attachment-text-action danger"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          updateSteps((prev) =>
+                            prev.map((item, itemIndex) =>
+                              itemIndex === index ? { ...item, attachment: '', attachmentOpen: false } : item
+                            )
+                          );
+                          closeAttachmentRow(index);
+                        }}
+                      >
+                        Удалить
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <textarea
+                  ref={(element) => {
+                    if (element) {
+                      attachmentInputRefs.current[index] = element;
+                    } else {
+                      delete attachmentInputRefs.current[index];
+                    }
+                  }}
+                  value={step.attachment}
+                  onChange={(event) =>
+                    updateSteps((prev) =>
+                      prev.map((item, itemIndex) =>
+                        itemIndex === index
+                          ? { ...item, attachment: event.target.value, attachmentOpen: true }
+                          : item
+                      )
+                    )
+                  }
+                  className="cell-textarea scenario-attachment-input"
+                  placeholder="request / response / json / curl"
+                  rows={3}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
