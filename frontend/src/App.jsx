@@ -337,6 +337,95 @@ function PaperclipIcon() {
   );
 }
 
+function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview }) {
+  const [openAttachmentIndexes, setOpenAttachmentIndexes] = useState(() => new Set());
+  const previewRef = useRef(null);
+  const steps = useMemo(
+    () => parseScenarioSteps(value).filter((step) => step.text.trim() || step.attachment.trim()),
+    [value]
+  );
+
+  useEffect(() => {
+    if (activePreviewId === previewId) return;
+    setOpenAttachmentIndexes(new Set());
+  }, [activePreviewId, previewId]);
+
+  useEffect(() => {
+    if (!openAttachmentIndexes.size) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (previewRef.current?.contains(event.target)) return;
+      setOpenAttachmentIndexes(new Set());
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [openAttachmentIndexes]);
+
+  const toggleAttachment = (index) => {
+    onActivatePreview?.(previewId);
+    setOpenAttachmentIndexes((currentIndexes) => {
+      const nextIndexes = new Set(activePreviewId === previewId ? currentIndexes : []);
+      if (nextIndexes.has(index)) {
+        nextIndexes.delete(index);
+      } else {
+        nextIndexes.add(index);
+      }
+      return nextIndexes;
+    });
+  };
+
+  if (!steps.length) {
+    return <span className="readonly-value">—</span>;
+  }
+
+  return (
+    <div className="scenario-preview-list" ref={previewRef}>
+      {steps.map((step, index) => {
+        const hasAttachment = step.attachment.trim().length > 0;
+        const isAttachmentOpen = openAttachmentIndexes.has(index);
+
+        return (
+          <div className="scenario-preview-step" key={`${index}-${step.text}`}>
+            <div className="scenario-preview-step-header">
+              <span className="scenario-preview-number">{index + 1}.</span>
+              <span className="scenario-preview-text">{step.text.trim()}</span>
+              {hasAttachment && (
+                <span className="scenario-preview-attachment">
+                  <button
+                    type="button"
+                    className={`scenario-preview-attachment-button ${isAttachmentOpen ? 'open' : ''}`}
+                    title="Показать вложение"
+                    aria-label={`Показать вложение шага ${index + 1}`}
+                    aria-expanded={isAttachmentOpen}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleAttachment(index);
+                    }}
+                  >
+                    <PaperclipIcon />
+                  </button>
+                </span>
+              )}
+            </div>
+            {hasAttachment && isAttachmentOpen && (
+              <div
+                className="scenario-preview-attachment-panel"
+                role="region"
+                aria-label={`Вложение шага ${index + 1}`}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="scenario-preview-attachment-title">Вложение шага {index + 1}</div>
+                <pre className="scenario-preview-attachment-content">{step.attachment.trim()}</pre>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, autoFocus = false }) {
   const [steps, setSteps] = useState(() => parseScenarioSteps(value));
   const [openAttachmentRows, setOpenAttachmentRows] = useState(() => new Set());
@@ -459,6 +548,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                 className="cell-textarea scenario-step-input"
                 placeholder={index === steps.length - 1 ? 'Добавьте следующий шаг…' : `Шаг ${index + 1}`}
                 rows={1}
+                wrap="soft"
               />
               {hasAttachment ? (
                 <button
@@ -542,6 +632,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                   className="cell-textarea scenario-attachment-input"
                   placeholder="request / response / json / curl"
                   rows={3}
+                  wrap="soft"
                 />
               </div>
             </div>
@@ -740,6 +831,7 @@ export default function App() {
   const [showReleaseNameInput, setShowReleaseNameInput] = useState(false);
   const [editingExistingCount, setEditingExistingCount] = useState(0);
   const [editingScenarioIds, setEditingScenarioIds] = useState(new Set());
+  const [activeScenarioPreviewId, setActiveScenarioPreviewId] = useState(null);
   const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
   const [uploadSelectionLabel, setUploadSelectionLabel] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -1662,14 +1754,12 @@ export default function App() {
                                   })
                                 }
                               >
-                                {value.trim() ? (
-                                  <div
-                                    className="rich-text-preview markdown-preview"
-                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
-                                  />
-                                ) : (
-                                  <span className="readonly-value">—</span>
-                                )}
+                                <ScenarioPreview
+                                  value={value}
+                                  previewId={item.testId}
+                                  activePreviewId={activeScenarioPreviewId}
+                                  onActivatePreview={setActiveScenarioPreviewId}
+                                />
                               </div>
                             )
                           ) : column.type === 'textarea' ? (
