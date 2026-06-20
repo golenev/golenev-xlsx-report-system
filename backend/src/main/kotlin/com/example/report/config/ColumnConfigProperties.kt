@@ -1,5 +1,6 @@
 package com.example.report.config
 
 data class ColumnConfigProperties(
-    val columns: Map<String, Int>
+    val columns: Map<String, Int>,
+    val translations: Map<String, String> = emptyMap()
 )

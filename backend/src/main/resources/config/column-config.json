@@ -1,5 +1,6 @@
 {
   "columns": {
+    "actions": 72,
     "testId": 180,
     "category": 200,
     "shortTitle": 220,
@@ -10,5 +11,34 @@
     "scenario": 300,
     "notes": 220,
     "regressionStatus": 180
+  },
+  "translations": {
+    "Test Report": "Test Report",
+    "Upload Test Cases": "Upload Test Cases",
+    "Add Row": "Add Row",
+    "Export to Excel": "Export to Excel",
+    "Cancel": "Cancel",
+    "Confirm upload": "Confirm upload",
+    "Uploading…": "Uploading…",
+    "Saving…": "Saving…",
+    "Loading…": "Loading…",
+    "Resolve the issue to continue": "Resolve the issue to continue",
+    "Got it": "Got it",
+    "Test ID": "Test ID",
+    "Category / Feature": "Category / Feature",
+    "Short Title": "Short Title",
+    "YouTrack Issue Link": "YouTrack Issue Link",
+    "Ready Date": "Ready Date",
+    "General Test Status": "General Test Status",
+    "Priority": "Priority",
+    "Detailed Scenario": "Detailed Scenario",
+    "Notes": "Notes",
+    "Regress Run": "Regress Run",
+    "Cancel Regression": "Cancel Regression",
+    "Regression on release-version": "Regression on release-version",
+    "is in progress. Stop it ?": "is in progress. Stop it ?",
+    "Release name": "Release name",
+    "Save": "Save",
+    "Would you run regress": "Would you run regress"
   }
 }

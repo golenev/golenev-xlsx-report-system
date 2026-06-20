@@ -34,8 +34,12 @@ class TestReportService(
         val items = testReportRepository.findAll()
             .sortedWith { a, b -> compareTestIds(a.testId, b.testId) }
             .map { it.toDto() }
-        val columns = columnConfigService.getConfig().columns
-        return TestReportResponse(items = items, columnConfig = columns)
+        val config = columnConfigService.getConfig()
+        return TestReportResponse(
+            items = items,
+            columnConfig = config.columns,
+            translations = config.translations
+        )
     }
 
     @Transactional

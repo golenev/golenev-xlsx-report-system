@@ -26,6 +26,7 @@ data class TestUpsertItem(
 data class TestReportResponse(
     val items: List<TestReportItemDto>,
     val columnConfig: Map<String, Int>,
+    val translations: Map<String, String> = emptyMap(),
 )
 
 data class TestReportItemDto(

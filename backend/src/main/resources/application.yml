@@ -21,4 +21,4 @@ server:
   port: ${PORT:18080}
 
 column-config:
-  path: ${COLUMN_CONFIG_PATH:classpath:config/column-config.json}
+  path: ${COLUMN_CONFIG_PATH:/app/config/column-config.json}

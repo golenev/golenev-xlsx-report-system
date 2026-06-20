@@ -80,7 +80,7 @@ docker compose up -d --build
 | `DB_URL` | JDBC-строка подключения к PostgreSQL | `jdbc:postgresql://localhost:55432/test_report` |
 | `DB_USERNAME` | Пользователь PostgreSQL | `report` |
 | `DB_PASSWORD` | Пароль PostgreSQL | `report` |
-| `COLUMN_CONFIG_PATH` | Путь к JSON с ширинами колонок | `classpath:config/column-config.json` |
+| `COLUMN_CONFIG_PATH` | Путь к JSON с ширинами колонок и переводами | `/app/config/column-config.json` |
 | `PORT` | Порт HTTP-сервера Spring Boot | `18080` |
 
 ## Переменные окружения фронтенда
