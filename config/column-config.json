@@ -1,15 +1,15 @@
 {
   "columns": {
     "actions": 72,
-    "testId": 180,
-    "category": 200,
+    "testId": 100,
+    "category": 150,
     "shortTitle": 220,
     "issueLink": 180,
     "readyDate": 140,
-    "generalStatus": 140,
-    "priority": 140,
-    "scenario": 300,
-    "notes": 220,
+    "generalStatus": 120,
+    "priority": 100,
+    "scenario": 500,
+    "notes": 150,
     "regressionStatus": 180
   },
   "translations": {
@@ -31,7 +31,7 @@
     "Ready Date": "Ready Date",
     "General Test Status": "General Test Status",
     "Priority": "Priority",
-    "Detailed Scenario": "Detailed Scenario",
+    "Detailed Scenario": "Детальный сценарий",
     "Notes": "Notes",
     "Regress Run": "Regress Run",
     "Cancel Regression": "Cancel Regression",
