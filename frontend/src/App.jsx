@@ -721,6 +721,7 @@ function PrioritySelect({ value, onChange, disabled = false, onFocus, onBlur, da
 export default function App() {
   const [items, setItems] = useState([]);
   const [columnConfig, setColumnConfig] = useState({});
+  const [translations, setTranslations] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -755,6 +756,7 @@ export default function App() {
       const data = await response.json();
       setItems(data.items ?? []);
       setColumnConfig(data.columnConfig ?? {});
+      setTranslations(data.translations ?? {});
     } catch (err) {
       setError(err.message);
     } finally {
@@ -1214,6 +1216,7 @@ export default function App() {
   };
 
   const columns = [ACTION_COLUMN, ...TABLE_COLUMNS];
+  const translate = (text) => translations[text] ?? text;
   const hasSelectedFiles = selectedUploadFiles.length > 0;
 
   const getColumnWidth = (column) => {
@@ -1232,20 +1235,20 @@ export default function App() {
               <div className="popup-icon" aria-hidden="true">⚠️</div>
               <div>
                 <div className="popup-title">{popup.title}</div>
-                <div className="popup-subtitle">Resolve the issue to continue</div>
+                <div className="popup-subtitle">{translate('Resolve the issue to continue')}</div>
               </div>
             </div>
             <p className="popup-message">{popup.message}</p>
             <div className="popup-actions">
               <button type="button" className="secondary-btn" onClick={closePopup}>
-                Got it
+                {translate('Got it')}
               </button>
             </div>
           </div>
         </div>
       )}
       <header className="app-header">
-        <h1>Test Report</h1>
+        <h1>{translate('Test Report')}</h1>
           <div className="header-actions">
           <div className="upload-actions">
             <input
@@ -1264,7 +1267,7 @@ export default function App() {
                 className="secondary-btn"
                 disabled={loading || saving || uploading}
               >
-                Отменить
+                {translate('Cancel')}
               </button>
             ) : (
               <button
@@ -1273,7 +1276,7 @@ export default function App() {
                 className="secondary-btn"
                 disabled={loading || saving || uploading}
               >
-                Upload Test Cases
+                {translate('Upload Test Cases')}
               </button>
             )}
             {hasSelectedFiles && (
@@ -1283,7 +1286,7 @@ export default function App() {
                 className="secondary-btn"
                 disabled={uploading || loading || saving}
               >
-                {uploading ? 'Uploading…' : 'Confirm upload'}
+                {uploading ? translate('Uploading…') : translate('Confirm upload')}
               </button>
             )}
             {uploadSelectionLabel && (
@@ -1302,18 +1305,18 @@ export default function App() {
                 isEditingExistingRow
             }
           >
-            Add Row
+            {translate('Add Row')}
           </button>
           <button type="button" onClick={handleExport} className="ghost-btn">
-            Export to Excel
+            {translate('Export to Excel')}
           </button>
-          {saving && <span className="status">Saving…</span>}
+          {saving && <span className="status">{translate('Saving…')}</span>}
         </div>
       </header>
       <ReleaseAnalyticsWidget />
       {error && <div className="error-banner">{error}</div>}
       {loading ? (
-        <div className="loader">Loading…</div>
+        <div className="loader">{translate('Loading…')}</div>
       ) : (
         <div className="table-wrapper">
           <table className="report-table">
@@ -1345,7 +1348,7 @@ export default function App() {
                       >
                         <div className="header-title">
                           <span className="column-letter">{letter}</span>
-                          <span>{column.label}</span>
+                          <span>{translate(column.label)}</span>
                         </div>
                         {column.key === 'regressionStatus' && (
                           <div className="regression-actions">
@@ -1357,9 +1360,9 @@ export default function App() {
                                   onClick={handleStopRegression}
                                   disabled={regressionSaving}
                                 >
-                                  {`Regression on release-version ${
+                                  {`${translate('Regression on release-version')} ${
                                     regressionState.releaseName || '—'
-                                  } is in progress. Stop it ?`}
+                                  } ${translate('is in progress. Stop it ?')}`}
                                 </button>
                                 <button
                                   type="button"
@@ -1367,7 +1370,7 @@ export default function App() {
                                   onClick={handleCancelRegression}
                                   disabled={regressionSaving}
                                 >
-                                  Отменить регресс
+                                  {translate('Cancel Regression')}
                                 </button>
                               </>
                             ) : showReleaseNameInput ? (
@@ -1376,7 +1379,7 @@ export default function App() {
                                   type="text"
                                   value={releaseNameDraft}
                                   onChange={(e) => setReleaseNameDraft(e.target.value)}
-                                  placeholder="Release name"
+                                  placeholder={translate('Release name')}
                                   className="cell-input release-input"
                                   disabled={regressionSaving}
                                 />
@@ -1386,7 +1389,7 @@ export default function App() {
                                   onClick={handleStartRegression}
                                   disabled={regressionSaving || !releaseNameDraft.trim()}
                                 >
-                                  Save
+                                  {translate('Save')}
                                 </button>
                                 <button
                                   type="button"
@@ -1394,7 +1397,7 @@ export default function App() {
                                   onClick={() => setShowReleaseNameInput(false)}
                                   disabled={regressionSaving}
                                 >
-                                  Cancel
+                                  {translate('Cancel')}
                                 </button>
                               </div>
                             ) : (
@@ -1404,7 +1407,7 @@ export default function App() {
                                 onClick={() => setShowReleaseNameInput(true)}
                                 disabled={loading || saving || regressionSaving || regressionLoading}
                               >
-                                Would you run regress
+                                {translate('Would you run regress')}
                               </button>
                             )}
                           </div>
