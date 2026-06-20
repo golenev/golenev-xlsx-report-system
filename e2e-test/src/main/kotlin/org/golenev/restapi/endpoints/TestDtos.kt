@@ -1,11 +1,11 @@
-package org.golenev.dto
+package org.golenev.restapi.endpoints
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class TestBatchRequest(
-    val items: List<org.golenev.dto.TestUpsertItem>,
+    val items: List<TestUpsertItem>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -24,7 +24,7 @@ data class TestUpsertItem(
 )
 
 data class TestReportResponse(
-    val items: List<org.golenev.dto.TestReportItemDto>,
+    val items: List<TestReportItemDto>,
     val columnConfig: Map<String, Int>,
 )
 
@@ -42,7 +42,6 @@ data class TestReportItemDto(
     val runStatus: String? = null
 )
 
-
 data class ErrorResponse(
     val timestamp: String? = null,
     val status: Int? = null,
@@ -50,7 +49,7 @@ data class ErrorResponse(
     val message: String? = null,
     val path: String? = null,
     val missingField: String? = null,
-    val items: List<org.golenev.dto.TestUpsertItem>? = null,
+    val items: List<TestUpsertItem>? = null,
 )
 
 enum class GeneralTestStatus(val value: String) {

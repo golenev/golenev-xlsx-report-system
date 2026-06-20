@@ -4,10 +4,10 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.qameta.allure.AllureId
-import org.golenev.dto.ErrorResponse
-import org.golenev.dto.TestBatchRequest
-import org.golenev.dto.TestUpsertItem
-import org.golenev.service.ReportService
+import org.golenev.restapi.endpoints.ErrorResponse
+import org.golenev.restapi.endpoints.ReportServiceDao
+import org.golenev.restapi.endpoints.TestBatchRequest
+import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.utils.step
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
@@ -18,7 +18,7 @@ import java.util.stream.Stream
 @DisplayName("Проверка обязательности полей при добавлении нового тест кейса")
 class RequiredFieldsApiTest {
 
-    private val reportService = ReportService()
+    private val reportService = ReportServiceDao()
 
     @AllureId("168")
     @ParameterizedTest

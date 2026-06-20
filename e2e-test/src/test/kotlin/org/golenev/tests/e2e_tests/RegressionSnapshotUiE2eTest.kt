@@ -4,13 +4,14 @@ import com.codeborne.selenide.Selenide
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
+import org.golenev.commondto.Priority.HIGH
 import org.golenev.db.dbReportExec
-import org.golenev.db.tables.TestReportTable
-import org.golenev.dto.GeneralTestStatus
-import org.golenev.dto.Priority.HIGH
-import org.golenev.dto.TestBatchRequest
-import org.golenev.dto.TestUpsertItem
-import org.golenev.service.ReportService
+import org.golenev.db.tables.regression.RegressionDao
+import org.golenev.db.tables.testReportTable.TestReportTable
+import org.golenev.restapi.endpoints.GeneralTestStatus
+import org.golenev.restapi.endpoints.ReportServiceDao
+import org.golenev.restapi.endpoints.TestBatchRequest
+import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.MainPage
 import org.golenev.utils.TestDataGenerator
@@ -27,7 +28,7 @@ import java.time.LocalDate
 class RegressionSnapshotUiE2eTest {
 
     private val mainPage = MainPage()
-    private val reportService = ReportService()
+    private val reportService = ReportServiceDao()
     private lateinit var releaseName: String
 
     @BeforeEach
@@ -45,7 +46,7 @@ class RegressionSnapshotUiE2eTest {
 
         step("Удаляем созданный регресс из базы") {
             if (::releaseName.isInitialized) {
-                org.golenev.db.repository.RegressionRepository.deleteByReleaseName(releaseName)
+                RegressionDao.deleteByReleaseName(releaseName)
             }
         }
 
@@ -130,7 +131,7 @@ class RegressionSnapshotUiE2eTest {
         }
 
         val regression = step("Проверяем появление записи в таблице regressions") {
-            org.golenev.db.repository.RegressionRepository.findByReleaseName(releaseName)
+            RegressionDao.findByReleaseName(releaseName)
                 .shouldNotBeNull()
         }
 

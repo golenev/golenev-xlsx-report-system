@@ -1,17 +1,14 @@
-package org.golenev.db.repository
+package org.golenev.db.tables.regression
 
 import org.golenev.db.dbReportExec
-import org.golenev.db.tables.RegressionRow
-import org.golenev.db.tables.RegressionTable
-import org.golenev.db.tables.mapToRegression
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.selectAll
 
-object RegressionRepository {
+object RegressionDao {
 
     fun findByReleaseName(releaseName: String): RegressionRow? =
-       dbReportExec {
+        dbReportExec {
             RegressionTable
                 .selectAll()
                 .where { RegressionTable.releaseName eq releaseName }

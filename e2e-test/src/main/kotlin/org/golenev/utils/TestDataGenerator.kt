@@ -1,6 +1,6 @@
 package org.golenev.utils
 
-import org.golenev.dto.TestUpsertItem
+import org.golenev.restapi.endpoints.TestUpsertItem
 import java.time.LocalDate
 
 

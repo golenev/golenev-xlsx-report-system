@@ -1,6 +1,6 @@
-package org.golenev.db.tables
+package org.golenev.db.tables.regression
 
-import org.golenev.dto.TestUpsertItem
+import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.utils.JsonUtils
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ResultRow
@@ -14,7 +14,7 @@ object RegressionTable : Table("regressions") {
     val status = text("status")
     val regressionDate = date("regression_date")
     val releaseName = text("release_name")
-    val payload = jsonbColumn<RegressionPayload>("payload").nullable()
+    val payload = jsonbColumn<RegressionPayloadDto>("payload").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -24,7 +24,7 @@ data class RegressionRow(
     val status: String,
     val regressionDate: LocalDate,
     val releaseName: String,
-    val payload: RegressionPayload?,
+    val payload: RegressionPayloadDto?,
 )
 
 fun mapToRegression(row: ResultRow) = RegressionRow(
@@ -35,7 +35,7 @@ fun mapToRegression(row: ResultRow) = RegressionRow(
     payload = row[RegressionTable.payload],
 )
 
-data class RegressionPayload(
+data class RegressionPayloadDto(
     val regressionDate: String? = null,
     val status: String? = null,
     val releaseName: String? = null,

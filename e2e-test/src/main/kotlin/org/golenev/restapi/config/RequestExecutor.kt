@@ -1,4 +1,4 @@
-package org.golenev.http
+package org.golenev.restapi.config
 
 import io.qameta.allure.Step
 import io.restassured.RestAssured

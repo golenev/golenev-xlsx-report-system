@@ -1,13 +1,12 @@
-package org.golenev.db.repository
+package org.golenev.db.tables.testReportTable
 
 import org.golenev.db.dbReportExec
-import org.golenev.db.tables.TestReportTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.select
 import java.time.LocalDate
 
-object TestReportRepository {
+object TestReportDao {
 
     fun deleteReportsByDate(date: LocalDate = LocalDate.now()) = dbReportExec {
         TestReportTable.deleteWhere { TestReportTable.readyDate eq date }

@@ -6,8 +6,12 @@ import com.codeborne.selenide.proxy.SelenideProxyServer
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
-import org.golenev.dto.*
-import org.golenev.http.Paths
+import org.golenev.commondto.Priority
+import org.golenev.restapi.config.Paths
+import org.golenev.restapi.endpoints.GeneralTestStatus
+import org.golenev.restapi.endpoints.TestReportItemDto
+import org.golenev.restapi.endpoints.TestReportResponse
+import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.config.interceptRequestBody
 import org.golenev.ui.config.interceptResponseBody

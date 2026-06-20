@@ -1,12 +1,10 @@
-package org.golenev.service
+package org.golenev.restapi.endpoints
 
 import io.restassured.response.Response
-import org.golenev.dto.TestBatchRequest
-import org.golenev.dto.TestReportResponse
-import org.golenev.http.Paths
-import org.golenev.http.RequestExecutor
+import org.golenev.restapi.config.Paths
+import org.golenev.restapi.config.RequestExecutor
 
-class ReportService : RequestExecutor<Unit>(
+class ReportServiceDao : RequestExecutor<Unit>(
     path = Paths.REPORTS.path,
 ) {
 

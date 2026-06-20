@@ -1,4 +1,4 @@
-package org.golenev.http
+package org.golenev.restapi.config
 
 enum class Paths(val path: String) {
     REPORTS("/api/tests"),

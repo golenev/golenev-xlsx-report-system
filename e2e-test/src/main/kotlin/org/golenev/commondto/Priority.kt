@@ -1,4 +1,4 @@
-package org.golenev.dto
+package org.golenev.commondto
 
 enum class Priority(val value: String) {
     CRITICAL("Critical"),

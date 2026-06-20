@@ -2,9 +2,9 @@ package org.golenev.tests.ui
 
 import com.codeborne.selenide.Selenide
 import io.qameta.allure.AllureId
+import org.golenev.commondto.Priority
 import org.golenev.db.dbReportExec
-import org.golenev.db.tables.TestReportTable
-import org.golenev.dto.Priority
+import org.golenev.db.tables.testReportTable.TestReportTable
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.MainPage
 import org.golenev.utils.getRandomTestId

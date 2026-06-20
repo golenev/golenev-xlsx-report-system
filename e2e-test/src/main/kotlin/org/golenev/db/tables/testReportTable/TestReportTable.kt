@@ -1,4 +1,4 @@
-package org.golenev.db.tables
+package org.golenev.db.tables.testReportTable
 
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table

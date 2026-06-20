@@ -4,9 +4,9 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
-import org.golenev.db.repository.TestReportRepository
-import org.golenev.dto.TestBatchRequest
-import org.golenev.service.ReportService
+import org.golenev.db.tables.testReportTable.TestReportDao
+import org.golenev.restapi.endpoints.ReportServiceDao
+import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.utils.TestDataGenerator.generateTestCases
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
@@ -17,7 +17,7 @@ import java.time.LocalDate
 @DisplayName("Апи тест отправки батча тест кейсов через апи")
 class TestSendForceBatchApiTest {
 
-    private val reportService = ReportService()
+    private val reportService = ReportServiceDao()
     private lateinit var batchRequest: TestBatchRequest
     val reportDay: LocalDate =
         step("Определяем дату запуска теста") { LocalDate.now().minusDays(18) }
@@ -25,7 +25,7 @@ class TestSendForceBatchApiTest {
     @AfterEach
     fun cleaDb() {
         step("Удаление всех созданных тест кейсов из базы") {
-            TestReportRepository.deleteReportsByDate(reportDay)
+            TestReportDao.deleteReportsByDate(reportDay)
         }
     }
 
@@ -34,7 +34,7 @@ class TestSendForceBatchApiTest {
     @DisplayName("Создаем запись через batch и проверяем отображение в отчете")
     fun createAndReadReportThroughApi() {
         step("Удаляем отчеты за выбранную дату") {
-            TestReportRepository.deleteReportsByDate(reportDay)
+            TestReportDao.deleteReportsByDate(reportDay)
         }
 
         batchRequest = step("Формируем batch-запрос с десятью тестами") {

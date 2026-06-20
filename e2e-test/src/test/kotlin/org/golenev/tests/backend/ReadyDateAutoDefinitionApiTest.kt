@@ -3,11 +3,11 @@ package org.golenev.tests.backend
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.qameta.allure.AllureId
-import org.golenev.db.repository.TestReportRepository
-import org.golenev.dto.GeneralTestStatus
-import org.golenev.dto.TestBatchRequest
-import org.golenev.dto.TestUpsertItem
-import org.golenev.service.ReportService
+import org.golenev.db.tables.testReportTable.TestReportDao
+import org.golenev.restapi.endpoints.GeneralTestStatus
+import org.golenev.restapi.endpoints.ReportServiceDao
+import org.golenev.restapi.endpoints.TestBatchRequest
+import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
@@ -17,11 +17,11 @@ import java.time.LocalDate
 @DisplayName("API: Автоматическое определение и появление даты готовности для нового теста")
 class ReadyDateAutoDefinitionApiTest {
 
-    private val reportService = ReportService()
+    private val reportService = ReportServiceDao()
 
     @AfterEach
     fun cleaDb() {
-        TestReportRepository.deleteByTestId("123")
+        TestReportDao.deleteByTestId("123")
     }
 
     @AllureId("167")
@@ -31,7 +31,7 @@ class ReadyDateAutoDefinitionApiTest {
         val today = step("Определяем дату запуска теста") { LocalDate.now() }
 
         step("Удаляем отчеты за выбранную дату") {
-            TestReportRepository.deleteReportsByDate(today)
+            TestReportDao.deleteReportsByDate(today)
         }
 
         val creationRequest = step("Формируем batch-запрос без readyDate") {

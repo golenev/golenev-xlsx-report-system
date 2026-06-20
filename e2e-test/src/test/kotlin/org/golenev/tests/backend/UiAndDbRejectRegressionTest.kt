@@ -4,13 +4,13 @@ import com.codeborne.selenide.Selenide
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
-import org.golenev.db.repository.RegressionRepository
-import org.golenev.db.repository.TestReportRepository
-import org.golenev.dto.GeneralTestStatus
-import org.golenev.dto.Priority
-import org.golenev.dto.TestBatchRequest
-import org.golenev.dto.TestUpsertItem
-import org.golenev.service.ReportService
+import org.golenev.commondto.Priority
+import org.golenev.db.tables.regression.RegressionDao
+import org.golenev.db.tables.testReportTable.TestReportDao
+import org.golenev.restapi.endpoints.GeneralTestStatus
+import org.golenev.restapi.endpoints.ReportServiceDao
+import org.golenev.restapi.endpoints.TestBatchRequest
+import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.MainPage
 import org.golenev.utils.getRandomTestId
@@ -27,7 +27,7 @@ class UiAndDbRejectRegressionTest {
     private val mainPage = MainPage()
     private val createdTestId: String = "UI-LOCK-${getRandomTestId()}"
     private val createdReleaseName: String = "regress-zopa-${getRandomTestId()}"
-    private val reportService = ReportService()
+    private val reportService = ReportServiceDao()
 
     @BeforeEach
     fun setUp() {
@@ -39,11 +39,11 @@ class UiAndDbRejectRegressionTest {
         Selenide.closeWebDriver()
 
         step("Удаляем созданный тест-кейс из базы") {
-            TestReportRepository.deleteByTestId(createdTestId)
+            TestReportDao.deleteByTestId(createdTestId)
         }
 
         step("Удаляем созданный регресс из базы") {
-            RegressionRepository.deleteByReleaseName(createdReleaseName)
+            RegressionDao.deleteByReleaseName(createdReleaseName)
         }
 
     }
@@ -56,7 +56,7 @@ class UiAndDbRejectRegressionTest {
             step("Определяем дату запуска регресса") { LocalDate.now() }
 
         step("Удаляем из базы потенциальные конфликты по имени регресса") {
-            RegressionRepository.deleteByReleaseName(createdReleaseName)
+            RegressionDao.deleteByReleaseName(createdReleaseName)
         }
 
         step("Открываем главную страницу") { mainPage.open() }
@@ -66,7 +66,7 @@ class UiAndDbRejectRegressionTest {
         }
 
         val regression = step("Проверяем создание записи о регрессе в базе") {
-            RegressionRepository.findByReleaseName(createdReleaseName)
+            RegressionDao.findByReleaseName(createdReleaseName)
                 .shouldNotBeNull()
         }
 
@@ -82,7 +82,7 @@ class UiAndDbRejectRegressionTest {
         }
 
         step("Проверяем, что запись о регрессе удалена из БД") {
-            RegressionRepository.findByReleaseName(createdReleaseName) shouldBe null
+            RegressionDao.findByReleaseName(createdReleaseName) shouldBe null
         }
     }
 
@@ -122,7 +122,7 @@ class UiAndDbRejectRegressionTest {
         }
 
         val regression = step("Проверяем создание записи о регрессе в базе") {
-            RegressionRepository.findByReleaseName(createdReleaseName)
+            RegressionDao.findByReleaseName(createdReleaseName)
                 .shouldNotBeNull()
         }
 
@@ -150,7 +150,7 @@ class UiAndDbRejectRegressionTest {
         }
 
         step("Проверяем, что запись о регрессе удалена из БД") {
-            RegressionRepository.findByReleaseName(createdReleaseName) shouldBe null
+            RegressionDao.findByReleaseName(createdReleaseName) shouldBe null
         }
     }
 }

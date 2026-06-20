@@ -3,12 +3,12 @@ package org.golenev.tests.ui
 import com.codeborne.selenide.Selenide
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
-import org.golenev.db.repository.TestReportRepository
-import org.golenev.dto.GeneralTestStatus
-import org.golenev.dto.Priority
-import org.golenev.dto.TestBatchRequest
-import org.golenev.dto.TestUpsertItem
-import org.golenev.service.ReportService
+import org.golenev.commondto.Priority
+import org.golenev.db.tables.testReportTable.TestReportDao
+import org.golenev.restapi.endpoints.GeneralTestStatus
+import org.golenev.restapi.endpoints.ReportServiceDao
+import org.golenev.restapi.endpoints.TestBatchRequest
+import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.MainPage
 import org.golenev.utils.getRandomTestId
@@ -25,7 +25,7 @@ class DeleteTestCaseByUI {
 
     private val mainPage = MainPage()
     private val createdTestId: String = "UI-LOCK-${getRandomTestId()}"
-    private val reportService = ReportService()
+    private val reportService = ReportServiceDao()
 
     @BeforeEach
     fun setUp() {
@@ -39,7 +39,7 @@ class DeleteTestCaseByUI {
         }
 
         step("Удаляем созданный тест-кейс из базы") {
-            TestReportRepository.deleteByTestId(createdTestId)
+            TestReportDao.deleteByTestId(createdTestId)
         }
 
     }
@@ -85,7 +85,7 @@ class DeleteTestCaseByUI {
         }
 
         val remainingItems = step("Проверяем отсутствие записи в базе данных") {
-            TestReportRepository.countByTestId(createdTestId)
+            TestReportDao.countByTestId(createdTestId)
         }
 
         step("Подтверждаем, что записи нет") {
