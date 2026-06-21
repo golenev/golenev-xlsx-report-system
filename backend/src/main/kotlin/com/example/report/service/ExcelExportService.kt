@@ -1,5 +1,8 @@
 package com.example.report.service
 
+import com.example.report.dto.ScenarioAttachmentRequest
+import com.example.report.dto.ScenarioRequest
+import com.example.report.dto.ScenarioStepRequest
 import org.apache.poi.ss.usermodel.BorderStyle
 import org.apache.poi.ss.usermodel.FillPatternType
 import org.apache.poi.ss.usermodel.HorizontalAlignment
@@ -36,7 +39,7 @@ class ExcelExportService(
                 "readyDate" to it.readyDate?.toString(),
                 "generalStatus" to it.generalStatus,
                 "priority" to it.priority,
-                "scenario" to it.scenario,
+                "scenario" to formatScenario(it.scenario),
                 "notes" to it.notes,
             )
         }
@@ -126,6 +129,56 @@ class ExcelExportService(
         }
     }
 
+    private fun formatScenario(scenario: ScenarioRequest?): String? {
+        if (scenario == null) return null
+        return scenario.steps
+            .filter { step -> !step.text.isNullOrBlank() || !step.attachments.isNullOrEmpty() }
+            .joinToString("\n") { step ->
+                val number = step.number ?: 0
+                val text = step.text.orEmpty().trim()
+                val attachments = step.attachments.orEmpty()
+                    .filter { attachment -> !attachment.content.isNullOrBlank() }
+                    .joinToString("\n") { attachment ->
+                        "   [${attachment.type.orEmpty().ifBlank { "attachment" }}] ${attachment.content.orEmpty()}"
+                    }
+                if (attachments.isBlank()) {
+                    "$number. $text"
+                } else {
+                    "$number. $text\n$attachments"
+                }
+            }
+    }
+
+    private fun formatSnapshotScenario(rawScenario: Any?): String? {
+        return when (rawScenario) {
+            null -> null
+            is String -> rawScenario
+            is ScenarioRequest -> formatScenario(rawScenario)
+            is Map<*, *> -> {
+                val steps = (rawScenario["steps"] as? List<*>)
+                    ?.mapNotNull { rawStep ->
+                        val step = rawStep as? Map<*, *> ?: return@mapNotNull null
+                        ScenarioStepRequest(
+                            number = (step["number"] as? Number)?.toInt(),
+                            text = step["text"] as? String,
+                            attachments = (step["attachments"] as? List<*>)
+                                ?.mapNotNull { rawAttachment ->
+                                    val attachment = rawAttachment as? Map<*, *> ?: return@mapNotNull null
+                                    ScenarioAttachmentRequest(
+                                        type = attachment["type"] as? String,
+                                        content = attachment["content"] as? String,
+                                    )
+                                }
+                                ?: emptyList(),
+                        )
+                    }
+                    ?: return rawScenario.toString()
+                formatScenario(ScenarioRequest(steps = steps))
+            }
+            else -> rawScenario.toString()
+        }
+    }
+
     private fun extractTestsFromSnapshot(snapshot: Map<String, Any?>): List<SnapshotTest> {
         val tests = snapshot["tests"] as? List<*> ?: return emptyList()
         return tests.mapNotNull { entry ->
@@ -139,7 +192,7 @@ class ExcelExportService(
                 readyDate = map["readyDate"]?.toString(),
                 generalStatus = map["generalStatus"] as? String,
                 priority = map["priority"]?.toString(),
-                scenario = map["scenario"] as? String,
+                scenario = formatSnapshotScenario(map["scenario"]),
                 notes = map["notes"] as? String,
             )
         }
