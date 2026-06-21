@@ -1,5 +1,6 @@
 package com.example.report.dto
 
+import com.fasterxml.jackson.databind.JsonNode
 import java.time.LocalDate
 
 data class TestReportResponse(
@@ -16,7 +17,7 @@ data class TestReportItemDto(
     val readyDate: LocalDate?,
     val generalStatus: String?,
     val priority: String?,
-    val scenario: String?,
+    val scenario: JsonNode?,
     val notes: String?,
     val updatedAt: String?,
     val runStatus: String?,

@@ -1,6 +1,7 @@
 package org.golenev.utils
 
 import org.golenev.restapi.endpoints.TestUpsertItem
+import org.golenev.restapi.endpoints.scenarioFromText
 import java.time.LocalDate
 
 
@@ -102,10 +103,12 @@ object TestDataGenerator {
                 readyDate = readyDate,
                 generalStatus = template.generalStatus,
                 priority = template.priority,
-                scenario = template.scenario
-                    .replace("<READY_DATE>", readyDate)
-                    .replace("<READY_DATE_MINUS_1>", LocalDate.parse(readyDate).minusDays(1).toString())
-                    .replace("<GENERATED>", generateTestId(index)),
+                scenario = scenarioFromText(
+                    template.scenario
+                        .replace("<READY_DATE>", readyDate)
+                        .replace("<READY_DATE_MINUS_1>", LocalDate.parse(readyDate).minusDays(1).toString())
+                        .replace("<GENERATED>", generateTestId(index)),
+                ),
                 notes = ""
             )
         }

@@ -53,7 +53,7 @@ class UploadReportController(
                     testId = testCase.id,
                     category = testCase.category,
                     shortTitle = testCase.name,
-                    scenario = testCase.scenario,
+                    scenario = testReportService.structuredScenarioFromText(testCase.scenario),
                     runStatus = testCase.runStatus,
                 )
             },

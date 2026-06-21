@@ -8,6 +8,18 @@ class ReportServiceDao : RequestExecutor<Unit>(
     path = Paths.REPORTS.path,
 ) {
 
+    //Отправляем одиночный запрос для обновления теста
+    fun sendTest(request: TestUpsertItem, expectedStatus: Int = 200): Response = sendTestBody(request, expectedStatus)
+
+    //Отправляем одиночный запрос с произвольным телом
+    fun sendTestBody(request: Any, expectedStatus: Int = 200): Response {
+        return postRequest(
+            url = Paths.REPORTS.path,
+            requestSpecification = baseRequest().queryParam("forceUpdate", true).body(request),
+            expectedStatus = expectedStatus,
+        )
+    }
+
     //Отправляем batch запрос для обновления тестов
     fun sendBatch(request: TestBatchRequest, expectedStatus: Int = 200): Response {
         return postRequest(

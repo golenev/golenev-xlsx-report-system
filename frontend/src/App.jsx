@@ -241,6 +241,18 @@ function ensureEditableScenarioRows(steps) {
 }
 
 function parseScenarioSteps(rawText) {
+  if (rawText && typeof rawText === 'object' && Array.isArray(rawText.steps)) {
+    return ensureEditableScenarioRows(
+      rawText.steps.map((step) => ({
+        text: step.text ?? '',
+        attachment: Array.isArray(step.attachments)
+          ? step.attachments.map((attachment) => attachment.content ?? '').filter(Boolean).join('\n')
+          : '',
+        attachmentOpen: Array.isArray(step.attachments) && step.attachments.length > 0
+      }))
+    );
+  }
+
   const normalized = (rawText || '').replace(/\r\n/g, '\n');
   if (!normalized.trim()) {
     return ensureEditableScenarioRows([]);
@@ -297,6 +309,20 @@ function parseScenarioSteps(rawText) {
 
   pushCurrent();
   return ensureEditableScenarioRows(steps);
+}
+
+function buildStructuredScenario(steps) {
+  const scenarioSteps = parseScenarioSteps(steps)
+    .filter((step) => step.text.trim() || step.attachment.trim())
+    .map((step, index) => ({
+      number: index + 1,
+      text: step.text.trim(),
+      attachments: step.attachment.trim()
+        ? [{ type: 'text', content: step.attachment.trim() }]
+        : []
+    }));
+
+  return scenarioSteps.length ? { steps: scenarioSteps } : null;
 }
 
 function serializeScenarioSteps(steps) {
@@ -1094,7 +1120,7 @@ export default function App() {
           testId: item.testId,
           category: item.category,
           shortTitle: item.shortTitle,
-          scenario: item.scenario,
+          scenario: buildStructuredScenario(item.scenario) ?? item.scenario,
           ...payload
         })
       });
@@ -1148,7 +1174,7 @@ export default function App() {
 
   const handleScenarioCommit = (item, value) => {
     decrementEditingExisting();
-    const sanitizedValue = value === '' ? null : value;
+    const sanitizedValue = value === '' ? null : buildStructuredScenario(value);
     sendUpdate({ ...item, scenario: value }, { scenario: sanitizedValue });
     setEditingScenarioIds((prev) => {
       const next = new Set(prev);
@@ -1342,7 +1368,7 @@ export default function App() {
       } else if (typeof value === 'string') {
         const trimmed = value.trim();
         if (trimmed) {
-          payload[field.key] = trimmed;
+          payload[field.key] = field.key === 'scenario' ? buildStructuredScenario(trimmed) : trimmed;
         }
       } else if (value != null) {
         payload[field.key] = value;
