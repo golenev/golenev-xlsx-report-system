@@ -8,6 +8,7 @@ import org.golenev.restapi.endpoints.GeneralTestStatus
 import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.restapi.endpoints.TestUpsertItem
+import org.golenev.restapi.endpoints.ScenarioAttachmentRequest
 import org.golenev.restapi.endpoints.ScenarioRequest
 import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.utils.step
@@ -43,7 +44,30 @@ class ReadyDateAutoDefinitionApiTest {
                         testId = "123",
                         category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Ready date auto set",
-                        scenario = ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = "Сценарий 1. шаг 1 шаг 2 шаг 3", attachments = emptyList()))),
+                        scenario = ScenarioRequest(
+                            steps = listOf(
+                                ScenarioStepRequest(
+                                    number = 1,
+                                    text = "Подготовить batch-запрос для создания нового тест-кейса без readyDate",
+                                    attachments = listOf(
+                                        ScenarioAttachmentRequest(
+                                            type = "text",
+                                            content = "POST /api/tests/batch; readyDate intentionally omitted",
+                                        ),
+                                    ),
+                                ),
+                                ScenarioStepRequest(
+                                    number = 2,
+                                    text = "Отправить batch-запрос на создание тест-кейса",
+                                    attachments = emptyList(),
+                                ),
+                                ScenarioStepRequest(
+                                    number = 3,
+                                    text = "Проверить, что readyDate автоматически выставлен текущей датой",
+                                    attachments = emptyList(),
+                                ),
+                            ),
+                        ),
                     ),
                 ),
             )
