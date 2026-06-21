@@ -11,6 +11,8 @@ import org.golenev.restapi.endpoints.GeneralTestStatus
 import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.restapi.endpoints.TestUpsertItem
+import org.golenev.restapi.endpoints.ScenarioRequest
+import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.MainPage
 import org.golenev.utils.getRandomTestId
@@ -104,7 +106,7 @@ class UiAndDbRejectRegressionTest {
                         readyDate = regressionDate.toString(),
                         generalStatus = GeneralTestStatus.QUEUE.value,
                         priority = Priority.MEDIUM.value,
-                        scenario = "Создаём запись через API и удаляем через UI",
+                        scenario = ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = "Создаём запись через API и удаляем через UI", attachments = emptyList()))),
                     ),
                 ),
             )

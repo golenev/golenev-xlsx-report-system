@@ -16,8 +16,23 @@ data class TestUpsertItem(
     val readyDate: String? = null,
     val generalStatus: String? = null,
     val priority: String? = null,
-    val scenario: String? = null,
+    val scenario: ScenarioRequest? = null,
     val notes: String? = null,
     @JsonAlias("run_status")
     val runStatus: String? = null,
+)
+
+data class ScenarioRequest(
+    val steps: List<ScenarioStepRequest> = emptyList(),
+)
+
+data class ScenarioStepRequest(
+    val number: Int? = null,
+    val text: String? = null,
+    val attachments: List<ScenarioAttachmentRequest>? = null,
+)
+
+data class ScenarioAttachmentRequest(
+    val type: String? = null,
+    val content: String? = null,
 )

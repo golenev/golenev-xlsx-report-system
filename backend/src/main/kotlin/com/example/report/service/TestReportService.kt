@@ -2,6 +2,9 @@ package com.example.report.service
 
 import com.example.report.dto.TestBatchRequest
 import com.example.report.dto.TestReportItemDto
+import com.example.report.dto.ScenarioAttachmentRequest
+import com.example.report.dto.ScenarioRequest
+import com.example.report.dto.ScenarioStepRequest
 import com.example.report.dto.TestReportResponse
 import com.example.report.dto.TestUpsertItem
 import com.example.report.entity.TestReportEntity
@@ -9,6 +12,7 @@ import com.example.report.model.GeneralTestStatus
 import com.example.report.model.RegressionRunStatus
 import com.example.report.model.Priority
 import com.example.report.repository.TestReportRepository
+import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -21,6 +25,7 @@ class TestReportService(
     private val testReportRepository: TestReportRepository,
     private val columnConfigService: ColumnConfigService,
     private val regressionService: RegressionService,
+    private val objectMapper: ObjectMapper,
 ) {
     private companion object {
         const val DEFAULT_GENERAL_STATUS = "Готово"
@@ -167,7 +172,7 @@ class TestReportService(
     ): ValidatedUpsert {
         val category = normalizeRequiredField(item.category, existing?.category, "category", allowFallback)
         val shortTitle = normalizeRequiredField(item.shortTitle, existing?.shortTitle, "shortTitle", allowFallback)
-        val scenario = normalizeRequiredField(item.scenario, existing?.scenario, "scenario", allowFallback)
+        val scenario = normalizeScenarioField(item.scenario, existing?.scenario, allowFallback)
 
         val readyDate = when {
             forceUpdate && item.readyDate != null -> parseReadyDate(item.readyDate)
@@ -238,7 +243,7 @@ class TestReportService(
         readyDate = readyDate,
         generalStatus = generalStatus,
         priority = priority,
-        scenario = scenario,
+        scenario = deserializeScenario(scenario),
         notes = notes,
         updatedAt = updatedAt?.toString(),
         runStatus = runStatus,
@@ -292,6 +297,75 @@ class TestReportService(
 
     private fun requiredFieldMissing(fieldName: String): Nothing {
         throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Required field $fieldName is missing")
+    }
+
+
+    private fun normalizeScenarioField(
+        incoming: ScenarioRequest?,
+        existing: String?,
+        allowFallback: Boolean,
+    ): String {
+        if (incoming != null) return normalizeStructuredScenario(incoming)
+
+        if (allowFallback) {
+            val fallback = existing?.trim()?.takeIf { it.isNotEmpty() }
+            if (fallback != null) return fallback
+        }
+        requiredFieldMissing("scenario")
+    }
+
+    private fun normalizeStructuredScenario(scenario: ScenarioRequest): String {
+        val normalizedSteps = scenario.steps.mapNotNull { step ->
+            val number = step.number
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps.number is required")
+            val text = step.text?.trim()
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps.text is required")
+            val attachments = step.attachments
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps.attachments must be an array")
+
+            if (text.isEmpty() && attachments.isEmpty()) return@mapNotNull null
+
+            ScenarioStepRequest(
+                number = number,
+                text = text,
+                attachments = attachments,
+            )
+        }
+
+        if (normalizedSteps.isEmpty()) {
+            requiredFieldMissing("scenario")
+        }
+
+        return objectMapper.writeValueAsString(ScenarioRequest(steps = normalizedSteps))
+    }
+
+    private fun deserializeScenario(stored: String): ScenarioRequest {
+        val trimmed = stored.trim()
+        if (trimmed.startsWith("{")) {
+            try {
+                return objectMapper.readValue(trimmed, ScenarioRequest::class.java)
+            } catch (ex: Exception) {
+                // Existing text storage can contain non-JSON scenarios. Fall through and expose them as structured steps.
+            }
+        }
+        return buildScenarioFromText(stored)
+    }
+
+    fun buildScenarioFromText(rawScenario: String): ScenarioRequest {
+        val steps = rawScenario
+            .lineSequence()
+            .map { line -> line.trim() }
+            .filter { line -> line.isNotEmpty() && !line.matches(Regex("""^\*\*[^*]+\*\*:\s*$""")) }
+            .mapIndexed { index, line ->
+                ScenarioStepRequest(
+                    number = index + 1,
+                    text = line.replace(Regex("""^(?:[-*+]|•)?\s*\d+(?:\.\d+)*\.?\s+"""), ""),
+                    attachments = emptyList(),
+                )
+            }
+            .toList()
+
+        return ScenarioRequest(steps = steps)
     }
 
     private fun normalizeRequiredField(

@@ -16,7 +16,7 @@ data class TestReportItemDto(
     val readyDate: LocalDate?,
     val generalStatus: String?,
     val priority: String?,
-    val scenario: String?,
+    val scenario: ScenarioRequest?,
     val notes: String?,
     val updatedAt: String?,
     val runStatus: String?,

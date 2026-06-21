@@ -17,7 +17,7 @@ data class TestUpsertItem(
     val readyDate: String = LocalDate.now().toString(),
     val generalStatus: String? = "Готово",
     val priority: String? = "Medium",
-    val scenario: String?,
+    val scenario: ScenarioRequest?,
     val notes: String? = null,
     val runStatus: String? = null,
     val runDate: String? = null,
@@ -37,10 +37,25 @@ data class TestReportItemDto(
     val readyDate: LocalDate?,
     val generalStatus: String?,
     val priority: String?,
-    val scenario: String?,
+    val scenario: ScenarioRequest?,
     val notes: String?,
     val updatedAt: String?,
     val runStatus: String? = null
+)
+
+data class ScenarioRequest(
+    val steps: List<ScenarioStepRequest>,
+)
+
+data class ScenarioStepRequest(
+    val number: Int,
+    val text: String,
+    val attachments: List<ScenarioAttachmentRequest>,
+)
+
+data class ScenarioAttachmentRequest(
+    val type: String,
+    val content: String,
 )
 
 data class ErrorResponse(
