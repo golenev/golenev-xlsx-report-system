@@ -2,6 +2,9 @@ package com.example.report.service
 
 import com.example.report.dto.TestBatchRequest
 import com.example.report.dto.TestReportItemDto
+import com.example.report.dto.ScenarioAttachmentRequest
+import com.example.report.dto.ScenarioRequest
+import com.example.report.dto.ScenarioStepRequest
 import com.example.report.dto.TestReportResponse
 import com.example.report.dto.TestUpsertItem
 import com.example.report.entity.TestReportEntity
@@ -9,7 +12,6 @@ import com.example.report.model.GeneralTestStatus
 import com.example.report.model.RegressionRunStatus
 import com.example.report.model.Priority
 import com.example.report.repository.TestReportRepository
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
@@ -299,16 +301,11 @@ class TestReportService(
 
 
     private fun normalizeScenarioField(
-        incoming: JsonNode?,
+        incoming: ScenarioRequest?,
         existing: String?,
         allowFallback: Boolean,
     ): String {
-        if (incoming != null && !incoming.isNull) {
-            return when {
-                incoming.isObject -> normalizeStructuredScenario(incoming)
-                else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario must be an object")
-            }
-        }
+        if (incoming != null) return normalizeStructuredScenario(incoming)
 
         if (allowFallback) {
             val fallback = existing?.trim()?.takeIf { it.isNotEmpty() }
@@ -317,78 +314,58 @@ class TestReportService(
         requiredFieldMissing("scenario")
     }
 
-    private fun normalizeStructuredScenario(scenario: JsonNode): String {
-        val stepsNode = scenario.get("steps")
-        if (stepsNode == null || !stepsNode.isArray) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps must be an array")
-        }
-
-        val normalizedSteps = objectMapper.createArrayNode()
-        stepsNode.forEach { step ->
-            if (!step.isObject) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Each scenario step must be an object")
-            }
-            val number = step.get("number")
-                ?.takeIf { it.isNumber }
-                ?.asInt()
+    private fun normalizeStructuredScenario(scenario: ScenarioRequest): String {
+        val normalizedSteps = scenario.steps.mapNotNull { step ->
+            val number = step.number
                 ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps.number is required")
-            val text = step.get("text")
-                ?.takeIf { it.isTextual }
-                ?.asText()
-                ?.trim()
+            val text = step.text?.trim()
                 ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps.text is required")
-            val attachments = step.get("attachments")
-            if (attachments == null || !attachments.isArray) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps.attachments must be an array")
-            }
-            if (text.isEmpty() && attachments.size() == 0) return@forEach
+            val attachments = step.attachments
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps.attachments must be an array")
 
-            val normalizedStep = objectMapper.createObjectNode()
-            normalizedStep.put("number", number)
-            normalizedStep.put("text", text)
-            normalizedStep.set<JsonNode>("attachments", attachments.deepCopy<JsonNode>())
-            normalizedSteps.add(normalizedStep)
+            if (text.isEmpty() && attachments.isEmpty()) return@mapNotNull null
+
+            ScenarioStepRequest(
+                number = number,
+                text = text,
+                attachments = attachments,
+            )
         }
 
-        if (normalizedSteps.size() == 0) {
+        if (normalizedSteps.isEmpty()) {
             requiredFieldMissing("scenario")
         }
 
-        val normalizedScenario = objectMapper.createObjectNode()
-        normalizedScenario.set<JsonNode>("steps", normalizedSteps)
-        return objectMapper.writeValueAsString(normalizedScenario)
+        return objectMapper.writeValueAsString(ScenarioRequest(steps = normalizedSteps))
     }
 
-    private fun deserializeScenario(stored: String): JsonNode {
+    private fun deserializeScenario(stored: String): ScenarioRequest {
         val trimmed = stored.trim()
         if (trimmed.startsWith("{")) {
             try {
-                val parsed = objectMapper.readTree(trimmed)
-                if (parsed.isObject && parsed.get("steps")?.isArray == true) return parsed
+                return objectMapper.readValue(trimmed, ScenarioRequest::class.java)
             } catch (ex: Exception) {
                 // Existing text storage can contain non-JSON scenarios. Fall through and expose them as structured steps.
             }
         }
-        return structuredScenarioFromText(stored)
+        return buildScenarioFromText(stored)
     }
 
-    fun structuredScenarioFromText(rawScenario: String): JsonNode {
-        val steps = objectMapper.createArrayNode()
-        rawScenario
+    fun buildScenarioFromText(rawScenario: String): ScenarioRequest {
+        val steps = rawScenario
             .lineSequence()
             .map { line -> line.trim() }
             .filter { line -> line.isNotEmpty() && !line.matches(Regex("""^\*\*[^*]+\*\*:\s*$""")) }
-            .forEach { line ->
-                val step = objectMapper.createObjectNode()
-                step.put("number", steps.size() + 1)
-                step.put("text", line.replace(Regex("""^(?:[-*+]|•)?\s*\d+(?:\.\d+)*\.?\s+"""), ""))
-                step.set<JsonNode>("attachments", objectMapper.createArrayNode())
-                steps.add(step)
+            .mapIndexed { index, line ->
+                ScenarioStepRequest(
+                    number = index + 1,
+                    text = line.replace(Regex("""^(?:[-*+]|•)?\s*\d+(?:\.\d+)*\.?\s+"""), ""),
+                    attachments = emptyList(),
+                )
             }
+            .toList()
 
-        val scenario = objectMapper.createObjectNode()
-        scenario.set<JsonNode>("steps", steps)
-        return scenario
+        return ScenarioRequest(steps = steps)
     }
 
     private fun normalizeRequiredField(

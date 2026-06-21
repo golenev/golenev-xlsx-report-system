@@ -1,7 +1,6 @@
 package org.golenev.restapi.endpoints
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.JsonNode
 import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -38,7 +37,7 @@ data class TestReportItemDto(
     val readyDate: LocalDate?,
     val generalStatus: String?,
     val priority: String?,
-    val scenario: JsonNode?,
+    val scenario: ScenarioRequest?,
     val notes: String?,
     val updatedAt: String?,
     val runStatus: String? = null
@@ -57,28 +56,6 @@ data class ScenarioStepRequest(
 data class ScenarioAttachmentRequest(
     val type: String,
     val content: String,
-)
-
-fun scenarioOf(vararg texts: String): ScenarioRequest = ScenarioRequest(
-    steps = texts
-        .mapIndexed { index, text ->
-            ScenarioStepRequest(number = index + 1, text = text, attachments = emptyList())
-        },
-)
-
-fun scenarioFromText(rawScenario: String): ScenarioRequest = ScenarioRequest(
-    steps = rawScenario
-        .lineSequence()
-        .map { it.trim() }
-        .filter { it.isNotEmpty() && !Regex("""^\*\*[^*]+\*\*:\s*$""").matches(it) }
-        .mapIndexed { index, text ->
-            ScenarioStepRequest(
-                number = index + 1,
-                text = text.replace(Regex("""^(?:[-*+]|•)?\s*\d+(?:\.\d+)*\.?\s+"""), ""),
-                attachments = emptyList(),
-            )
-        }
-        .toList(),
 )
 
 data class ErrorResponse(

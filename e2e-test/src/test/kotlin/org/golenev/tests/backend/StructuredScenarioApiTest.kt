@@ -48,15 +48,13 @@ class StructuredScenarioApiTest {
         }
 
         step("Проверяем, что шаги вернулись объектами без format") {
-            actualScenario?.has("format") shouldBe false
-            val steps = actualScenario?.get("steps")
-            steps?.isArray shouldBe true
-            steps?.size() shouldBe 2
-            steps?.get(0)?.get("number")?.asInt() shouldBe 1
-            steps?.get(0)?.get("text")?.asText() shouldBe "Первый шаг"
-            steps?.get(0)?.get("attachments")?.isArray shouldBe true
-            steps?.get(1)?.get("number")?.asInt() shouldBe 2
-            steps?.get(1)?.get("text")?.asText() shouldBe "Второй шаг"
+            val steps = actualScenario?.steps
+            steps?.size shouldBe 2
+            steps?.get(0)?.number shouldBe 1
+            steps?.get(0)?.text shouldBe "Первый шаг"
+            steps?.get(0)?.attachments shouldBe emptyList()
+            steps?.get(1)?.number shouldBe 2
+            steps?.get(1)?.text shouldBe "Второй шаг"
         }
     }
 
@@ -103,14 +101,13 @@ class StructuredScenarioApiTest {
         }
 
         step("Проверяем, что вложение осталось у первого шага") {
-            actualScenario?.has("format") shouldBe false
-            val steps = actualScenario?.get("steps")
-            steps?.size() shouldBe 2
-            val firstAttachments = steps?.get(0)?.get("attachments")
-            firstAttachments?.size() shouldBe 1
-            firstAttachments?.get(0)?.get("type")?.asText() shouldBe "text"
-            firstAttachments?.get(0)?.get("content")?.asText() shouldBe "request / response / json / curl"
-            steps?.get(1)?.get("attachments")?.size() shouldBe 0
+            val steps = actualScenario?.steps
+            steps?.size shouldBe 2
+            val firstAttachments = steps?.get(0)?.attachments
+            firstAttachments?.size shouldBe 1
+            firstAttachments?.get(0)?.type shouldBe "text"
+            firstAttachments?.get(0)?.content shouldBe "request / response / json / curl"
+            steps?.get(1)?.attachments shouldBe emptyList()
         }
     }
 
@@ -132,10 +129,10 @@ class StructuredScenarioApiTest {
         }
 
         step("Проверяем, что пустой шаг не вернулся как полноценный шаг") {
-            val steps = reportService.getReport().items.first { it.testId == testId }.scenario?.get("steps")
-            steps?.size() shouldBe 2
-            steps?.get(0)?.get("number")?.asInt() shouldBe 1
-            steps?.get(1)?.get("number")?.asInt() shouldBe 3
+            val steps = reportService.getReport().items.first { it.testId == testId }.scenario?.steps
+            steps?.size shouldBe 2
+            steps?.get(0)?.number shouldBe 1
+            steps?.get(1)?.number shouldBe 3
         }
     }
 

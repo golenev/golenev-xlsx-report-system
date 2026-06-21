@@ -12,7 +12,8 @@ import org.golenev.restapi.endpoints.GeneralTestStatus
 import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.restapi.endpoints.TestUpsertItem
-import org.golenev.restapi.endpoints.scenarioOf
+import org.golenev.restapi.endpoints.ScenarioRequest
+import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.MainPage
 import org.golenev.utils.TestDataGenerator
@@ -165,7 +166,7 @@ class RegressionSnapshotUiE2eTest {
             readyDate = readyDate,
             generalStatus = manualGeneralStatus,
             priority = manualPriority,
-            scenario = scenarioOf(manualScenario),
+            scenario = ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = manualScenario, attachments = emptyList()))),
             notes = manualNotes,
         )
 

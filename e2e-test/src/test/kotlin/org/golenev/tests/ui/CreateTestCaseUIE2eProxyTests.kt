@@ -1,6 +1,5 @@
 package org.golenev.tests.ui
 
-import com.fasterxml.jackson.databind.node.TextNode
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import com.codeborne.selenide.proxy.SelenideProxyServer
@@ -13,7 +12,8 @@ import org.golenev.restapi.endpoints.GeneralTestStatus
 import org.golenev.restapi.endpoints.TestReportItemDto
 import org.golenev.restapi.endpoints.TestReportResponse
 import org.golenev.restapi.endpoints.TestUpsertItem
-import org.golenev.restapi.endpoints.scenarioOf
+import org.golenev.restapi.endpoints.ScenarioRequest
+import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.config.interceptRequestBody
 import org.golenev.ui.config.interceptResponseBody
@@ -88,7 +88,7 @@ class CreateTestCaseUIE2eProxyTests {
                 createdTest.issueLink shouldBe issueLink
                 createdTest.generalStatus shouldBe generalStatus
                 createdTest.priority shouldBe priority
-                createdTest.scenario shouldBe scenarioOf(detailedScenario)
+                createdTest.scenario shouldBe ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = detailedScenario, attachments = emptyList())))
             }
         }
 
@@ -123,7 +123,7 @@ class CreateTestCaseUIE2eProxyTests {
                 readyDate = null,
                 generalStatus = GeneralTestStatus.DONE.value,
                 priority = injectedPriority,
-                scenario = TextNode.valueOf(injectedScenario),
+                scenario = ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = injectedScenario, attachments = emptyList()))),
                 notes = "Добавлено через прокси",
                 updatedAt = null,
             )

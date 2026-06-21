@@ -1,7 +1,6 @@
 package com.example.report.dto
 
 import com.fasterxml.jackson.annotation.JsonAlias
-import com.fasterxml.jackson.databind.JsonNode
 import jakarta.validation.constraints.NotEmpty
 
 data class TestBatchRequest(
@@ -17,8 +16,23 @@ data class TestUpsertItem(
     val readyDate: String? = null,
     val generalStatus: String? = null,
     val priority: String? = null,
-    val scenario: JsonNode? = null,
+    val scenario: ScenarioRequest? = null,
     val notes: String? = null,
     @JsonAlias("run_status")
     val runStatus: String? = null,
+)
+
+data class ScenarioRequest(
+    val steps: List<ScenarioStepRequest> = emptyList(),
+)
+
+data class ScenarioStepRequest(
+    val number: Int? = null,
+    val text: String? = null,
+    val attachments: List<ScenarioAttachmentRequest>? = null,
+)
+
+data class ScenarioAttachmentRequest(
+    val type: String? = null,
+    val content: String? = null,
 )

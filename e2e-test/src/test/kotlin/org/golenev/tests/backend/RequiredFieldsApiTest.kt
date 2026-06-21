@@ -8,7 +8,8 @@ import org.golenev.restapi.endpoints.ErrorResponse
 import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.restapi.endpoints.TestUpsertItem
-import org.golenev.restapi.endpoints.scenarioOf
+import org.golenev.restapi.endpoints.ScenarioRequest
+import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.utils.step
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
@@ -72,7 +73,7 @@ class RequiredFieldsApiTest {
             testId = "REQ-1",
             category = "E2E",
             shortTitle = "Проверка обязательных полей",
-            scenario = scenarioOf("Отправляем запрос с пропущенными полями"),
+            scenario = ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = "Отправляем запрос с пропущенными полями", attachments = emptyList()))),
         )
     }
 }

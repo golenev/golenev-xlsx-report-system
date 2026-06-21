@@ -8,7 +8,8 @@ import org.golenev.restapi.endpoints.GeneralTestStatus
 import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.restapi.endpoints.TestUpsertItem
-import org.golenev.restapi.endpoints.scenarioOf
+import org.golenev.restapi.endpoints.ScenarioRequest
+import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
@@ -42,7 +43,7 @@ class ReadyDateAutoDefinitionApiTest {
                         testId = "123",
                         category = "E2E_FOR_AUTOTEST",
                         shortTitle = "Ready date auto set",
-                        scenario = scenarioOf("Сценарий 1. шаг 1 шаг 2 шаг 3"),
+                        scenario = ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = "Сценарий 1. шаг 1 шаг 2 шаг 3", attachments = emptyList()))),
                     ),
                 ),
             )
@@ -69,7 +70,7 @@ class ReadyDateAutoDefinitionApiTest {
                             shortTitle = "Ready date auto set",
                             testId = "123",
                             readyDate = today.minusDays(5).toString(),
-                            scenario = scenarioOf("Сценарий 782. шаг 81 шаг 2 шаг 38"),
+                            scenario = ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = "Сценарий 782. шаг 81 шаг 2 шаг 38", attachments = emptyList()))),
                             category = "E2E_FOR_AUTOTEST",
                         ),
                     ),
