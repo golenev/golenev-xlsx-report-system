@@ -1369,3 +1369,54 @@ tbody tr:nth-child(odd) .row-index-cell {
   border-color: rgba(10, 132, 255, 0.42);
   box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.11);
 }
+
+.scenario-export-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(60, 60, 67, 0.12);
+  border-radius: 999px;
+  color: #1d1d1f;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.10);
+  backdrop-filter: saturate(180%) blur(14px);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-2px) scale(0.96);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.scenario-preview:hover .scenario-export-button,
+.scenario-preview:focus-within .scenario-export-button {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.scenario-export-button:hover {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+
+.scenario-export-button:active {
+  transform: translateY(0) scale(0.94);
+}
+
+.scenario-export-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.scenario-preview .scenario-preview-list {
+  padding-right: 34px;
+}

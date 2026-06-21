@@ -317,6 +317,114 @@ function serializeScenarioSteps(steps) {
 }
 
 
+function formatScenarioExportValue(value) {
+  const text = value == null ? '' : String(value).trim();
+  return text || '—';
+}
+
+function appendExportField(lines, label, value, { optional = false } = {}) {
+  const text = value == null ? '' : String(value).trim();
+  if (optional && !text) return;
+  lines.push(`${label}: ${text || '—'}`);
+}
+
+function buildScenarioExportText(item) {
+  const meaningfulSteps = parseScenarioSteps(item.scenario)
+    .filter((step) => step.text.trim() || step.attachment.trim());
+  const lines = ['TEST CASE', ''];
+
+  appendExportField(lines, 'ID', item.testId);
+  appendExportField(lines, 'Category / Feature', item.category);
+  appendExportField(lines, 'Short Title', item.shortTitle);
+  appendExportField(lines, 'Priority', item.priority, { optional: true });
+  appendExportField(lines, 'Ready Date', item.readyDate, { optional: true });
+  appendExportField(lines, 'YouTrack Link', item.issueLink, { optional: true });
+  appendExportField(lines, 'General Test Status', item.generalStatus, { optional: true });
+  appendExportField(lines, 'Notes', item.notes, { optional: true });
+
+  lines.push('', 'DETAILED SCENARIO', '');
+
+  const attachments = [];
+
+  meaningfulSteps.forEach((step, index) => {
+    const stepNumber = index + 1;
+    const stepTextLines = formatScenarioExportValue(step.text).split('\n');
+    lines.push(`${stepNumber}. ${stepTextLines[0]}`);
+    stepTextLines.slice(1).forEach((line) => lines.push(`   ${line}`));
+
+    if (step.attachment.trim()) {
+      const attachmentId = `A${attachments.length + 1}`;
+      attachments.push({
+        id: attachmentId,
+        stepNumber,
+        type: 'text',
+        content: step.attachment.trim()
+      });
+      lines.push(`   [Вложение: ${attachmentId}]`);
+    }
+
+    lines.push('');
+  });
+
+  if (!meaningfulSteps.length) {
+    lines.push('—', '');
+  }
+
+  if (attachments.length) {
+    lines.push('ATTACHMENTS', '');
+    attachments.forEach((attachment) => {
+      lines.push(`[${attachment.id}]`);
+      lines.push(`Step: ${attachment.stepNumber}`);
+      lines.push(`Type: ${attachment.type}`);
+      lines.push('');
+      lines.push(attachment.content);
+      lines.push('');
+    });
+  }
+
+  return lines.join('\n').replace(/\n+$/u, '\n');
+}
+
+function makeSafeFileName(value) {
+  return String(value || 'test-case')
+    .trim()
+    .replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'test-case';
+}
+
+function downloadTextFile(fileName, content) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+function ExportIcon() {
+  return (
+    <svg
+      className="scenario-export-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M12 3v11m0 0 4-4m-4 4-4-4M5 15v3.2A2.8 2.8 0 0 0 7.8 21h8.4a2.8 2.8 0 0 0 2.8-2.8V15"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+
 function PaperclipIcon() {
   return (
     <svg
@@ -1301,6 +1409,12 @@ export default function App() {
     }
   };
 
+  const handleScenarioExport = (item) => {
+    const content = buildScenarioExportText(item);
+    const fileName = `${makeSafeFileName(item.testId)}-scenario.txt`;
+    downloadTextFile(fileName, content);
+  };
+
   const columns = [ACTION_COLUMN, ...TABLE_COLUMNS];
   const translate = (text) => translations[text] ?? text;
   const hasSelectedFiles = selectedUploadFiles.length > 0;
@@ -1754,6 +1868,18 @@ export default function App() {
                                   })
                                 }
                               >
+                                <button
+                                  type="button"
+                                  className="scenario-export-button"
+                                  title="Экспортировать сценарий"
+                                  aria-label={`Экспортировать сценарий тест-кейса ${item.testId}`}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleScenarioExport(item);
+                                  }}
+                                >
+                                  <ExportIcon />
+                                </button>
                                 <ScenarioPreview
                                   value={value}
                                   previewId={item.testId}
