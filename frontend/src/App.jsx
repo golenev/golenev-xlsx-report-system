@@ -317,31 +317,72 @@ function serializeScenarioSteps(steps) {
 }
 
 
-function buildScenarioExportPayload(item) {
-  const steps = parseScenarioSteps(item.scenario)
-    .filter((step) => step.text.trim() || step.attachment.trim())
-    .map((step, index) => ({
-      number: index + 1,
-      text: step.text.trim(),
-      attachments: step.attachment.trim()
-        ? [
-            {
-              type: 'text',
-              content: step.attachment.trim()
-            }
-          ]
-        : []
-    }));
+function formatScenarioExportValue(value) {
+  const text = value == null ? '' : String(value).trim();
+  return text || '—';
+}
 
-  return {
-    testId: item.testId ?? '',
-    category: item.category ?? '',
-    shortTitle: item.shortTitle ?? '',
-    scenario: {
-      format: 'json',
-      steps
+function appendExportField(lines, label, value, { optional = false } = {}) {
+  const text = value == null ? '' : String(value).trim();
+  if (optional && !text) return;
+  lines.push(`${label}: ${text || '—'}`);
+}
+
+function buildScenarioExportText(item) {
+  const meaningfulSteps = parseScenarioSteps(item.scenario)
+    .filter((step) => step.text.trim() || step.attachment.trim());
+  const lines = ['TEST CASE', ''];
+
+  appendExportField(lines, 'ID', item.testId);
+  appendExportField(lines, 'Category / Feature', item.category);
+  appendExportField(lines, 'Short Title', item.shortTitle);
+  appendExportField(lines, 'Priority', item.priority, { optional: true });
+  appendExportField(lines, 'Ready Date', item.readyDate, { optional: true });
+  appendExportField(lines, 'YouTrack Link', item.issueLink, { optional: true });
+  appendExportField(lines, 'General Test Status', item.generalStatus, { optional: true });
+  appendExportField(lines, 'Notes', item.notes, { optional: true });
+
+  lines.push('', 'DETAILED SCENARIO', '');
+
+  const attachments = [];
+
+  meaningfulSteps.forEach((step, index) => {
+    const stepNumber = index + 1;
+    const stepTextLines = formatScenarioExportValue(step.text).split('\n');
+    lines.push(`${stepNumber}. ${stepTextLines[0]}`);
+    stepTextLines.slice(1).forEach((line) => lines.push(`   ${line}`));
+
+    if (step.attachment.trim()) {
+      const attachmentId = `A${attachments.length + 1}`;
+      attachments.push({
+        id: attachmentId,
+        stepNumber,
+        type: 'text',
+        content: step.attachment.trim()
+      });
+      lines.push(`   [Вложение: ${attachmentId}]`);
     }
-  };
+
+    lines.push('');
+  });
+
+  if (!meaningfulSteps.length) {
+    lines.push('—', '');
+  }
+
+  if (attachments.length) {
+    lines.push('ATTACHMENTS', '');
+    attachments.forEach((attachment) => {
+      lines.push(`[${attachment.id}]`);
+      lines.push(`Step: ${attachment.stepNumber}`);
+      lines.push(`Type: ${attachment.type}`);
+      lines.push('');
+      lines.push(attachment.content);
+      lines.push('');
+    });
+  }
+
+  return lines.join('\n').replace(/\n+$/u, '\n');
 }
 
 function makeSafeFileName(value) {
@@ -1369,8 +1410,7 @@ export default function App() {
   };
 
   const handleScenarioExport = (item) => {
-    const payload = buildScenarioExportPayload(item);
-    const content = JSON.stringify(payload, null, 2);
+    const content = buildScenarioExportText(item);
     const fileName = `${makeSafeFileName(item.testId)}-scenario.txt`;
     downloadTextFile(fileName, content);
   };
