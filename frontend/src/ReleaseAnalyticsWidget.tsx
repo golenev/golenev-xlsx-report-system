@@ -65,6 +65,10 @@ type LoadingState = 'idle' | 'loading' | 'error' | 'success';
 const iconChevronDown = '▼';
 const iconChevronRight = '▶';
 
+function booleanDataAttribute(value: unknown) {
+  return String(Boolean(value));
+}
+
 function formatDate(date?: string) {
   if (!date) return '—';
   const parsed = new Date(date);
@@ -224,7 +228,7 @@ export default function ReleaseAnalyticsWidget() {
       return (
         <div className="analytics-error">
           <div>Не удалось загрузить данные релиза.</div>
-          <button type="button" className="secondary-btn" onClick={() => selectedReleaseId && loadSnapshot(selectedReleaseId)}>
+          <button type="button" className="secondary-btn" data-role="button" data-action="reload-snapshot" onClick={() => selectedReleaseId && loadSnapshot(selectedReleaseId)}>
             Повторить
           </button>
           {snapshotError && <div className="analytics-error-details">{snapshotError}</div>}
@@ -233,7 +237,7 @@ export default function ReleaseAnalyticsWidget() {
     }
 
     return (
-      <div className="analytics-grid-with-table">
+      <div className="analytics-grid-with-table" data-role="widget" data-testid="release-analytics-content" data-name="release-analytics">
         <div className="analytics-grid">
           <div className="analytics-card">
             <div className="donut-wrapper">
@@ -277,14 +281,14 @@ export default function ReleaseAnalyticsWidget() {
 
         <div className="snapshot-card">
           <div className="snapshot-header">Снапшот релиза</div>
-          <div className="snapshot-table">
-            <div className="snapshot-row snapshot-head">
-              <div className="snapshot-cell date-col">regression_date</div>
-              <div className="snapshot-cell payload-col">payload</div>
+          <div className="snapshot-table" data-role="table" data-testid="table" data-name="release-snapshot">
+            <div className="snapshot-row snapshot-head" data-role="header" data-testid="head-row">
+              <div className="snapshot-cell date-col" data-role="headercell" data-testid="head-cell" data-name="regressionDate">regression_date</div>
+              <div className="snapshot-cell payload-col" data-role="headercell" data-testid="head-cell" data-name="payload">payload</div>
             </div>
-            <div className="snapshot-row">
-              <div className="snapshot-cell date-col single-line">{regression?.regressionDate || '—'}</div>
-              <div className="snapshot-cell payload-col">
+            <div className="snapshot-row" data-role="row" data-testid="row" data-id={String(selectedReleaseId ?? 'current-release')}>
+              <div className="snapshot-cell date-col single-line" data-role="cell" data-testid="text-cell" data-name="regressionDate">{regression?.regressionDate || '—'}</div>
+              <div className="snapshot-cell payload-col" data-role="cell" data-testid="default-cell" data-name="payload">
                 <pre className="payload-pre">{regression?.snapshot ? JSON.stringify(regression.snapshot, null, 2) : '—'}</pre>
               </div>
             </div>
@@ -295,12 +299,12 @@ export default function ReleaseAnalyticsWidget() {
   };
 
   return (
-    <div className="release-analytics-widget">
+    <div className="release-analytics-widget" data-role="widget" data-testid="release-analytics-widget" data-name="release-analytics">
       {expanded ? (
-        <div className="release-analytics-card">
+        <div className="release-analytics-card" data-role="card" data-testid="release-analytics-card" data-name="release-analytics-card">
           <div className="analytics-header">
             <div>
-              <div className="analytics-title">Release Analytics</div>
+              <div className="analytics-title" data-role="title" data-testid="title" data-name="release-analytics-title">Release Analytics</div>
               <div className="analytics-subtitle">
                 Release {regression?.name || '—'} • {regression?.status || '—'} • {formatDate(regression?.regressionDate)}
               </div>
@@ -308,6 +312,11 @@ export default function ReleaseAnalyticsWidget() {
             <div className="analytics-header-center">
               <select
                 className="release-select"
+                data-role="button"
+                data-testid="release-select"
+                data-name="releaseId"
+                data-action="select-release"
+                data-disabled={booleanDataAttribute(releasesState === 'loading')}
                 value={selectedReleaseId ?? ''}
                 onChange={(e) => setSelectedReleaseId(e.target.value)}
                 disabled={releasesState === 'loading'}
@@ -321,12 +330,15 @@ export default function ReleaseAnalyticsWidget() {
               </select>
             </div>
             <div className="analytics-actions">
-              <button type="button" className="icon-button" onClick={() => setExpanded(false)} title="Свернуть">
+              <button type="button" className="icon-button" data-role="button" data-action="collapse-analytics" onClick={() => setExpanded(false)} title="Свернуть">
                 {iconChevronDown}
               </button>
               <button
                 type="button"
                 className="primary-btn download-btn"
+                data-role="button"
+                data-action="download-snapshot"
+                data-disabled={booleanDataAttribute(!selectedReleaseId)}
                 onClick={() =>
                   selectedReleaseId && window.open(withBase(`/api/regressions/${selectedReleaseId}/snapshot.xlsx`), '_blank')
                 }
@@ -340,7 +352,7 @@ export default function ReleaseAnalyticsWidget() {
           {releasesState === 'error' && (
             <div className="analytics-error">
               <div>Не удалось загрузить список релизов.</div>
-              <button type="button" className="secondary-btn" onClick={loadReleases}>
+              <button type="button" className="secondary-btn" data-role="button" data-action="reload-releases" onClick={loadReleases}>
                 Повторить
               </button>
             </div>
@@ -349,7 +361,7 @@ export default function ReleaseAnalyticsWidget() {
           <div className="analytics-content">{renderContent()}</div>
         </div>
       ) : (
-        <button type="button" className="release-analytics-collapsed" onClick={() => setExpanded(true)}>
+        <button type="button" className="release-analytics-collapsed" data-role="button" data-action="expand-analytics" onClick={() => setExpanded(true)}>
           <div className="collapsed-left">
             <span className="collapsed-icon">📊</span>
             <span className="collapsed-title">Release Analytics</span>

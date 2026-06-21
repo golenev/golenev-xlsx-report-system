@@ -111,6 +111,17 @@ function getColumnDataTestId(column) {
   return column.dataTestId ?? column.label ?? column.key;
 }
 
+function getCellTestId(column) {
+  if (column.type === 'actions') return 'functional-cell';
+  if (column.type === 'regression' || column.type === 'generalStatus') return 'status-cell';
+  if (column.editable || column.type === 'textarea' || column.type === 'priority') return 'default-cell';
+  return 'text-cell';
+}
+
+function booleanDataAttribute(value) {
+  return String(Boolean(value));
+}
+
 function escapeHtml(rawText) {
   return (rawText || '')
     .replace(/&/g, '&amp;')
@@ -833,7 +844,7 @@ function StatusChip({ option }) {
     color: option.textColor
   };
   return (
-    <span className="status-chip" style={style}>
+    <span className="status-chip" style={style} data-role="badge" data-testid="badge">
       {option.value}
     </span>
   );
@@ -862,6 +873,11 @@ function StatusDropdown({
   return (
     <div
       className="status-dropdown"
+      data-role="button"
+      data-testid="status-dropdown"
+      data-name={dataTestId}
+      data-action="change-status"
+      data-disabled={booleanDataAttribute(disabled)}
       data-test-id={dataTestId}
       onFocusCapture={onFocus}
       onBlurCapture={onBlur}
@@ -875,6 +891,11 @@ function StatusDropdown({
             <button
               type="button"
               className="status-option"
+              data-role="button"
+              data-testid="status-option"
+              data-name={dataTestId}
+              data-action="clear-status"
+              data-disabled={booleanDataAttribute(disabled)}
               onMouseDown={(e) => e.preventDefault()}
               onClick={(event) => handleSelect('', event)}
               disabled={disabled}
@@ -888,6 +909,12 @@ function StatusDropdown({
               type="button"
               key={option.value}
               className="status-option"
+              data-role="button"
+              data-testid="status-option"
+              data-name={dataTestId}
+              data-action="select-status"
+              data-value={option.value}
+              data-disabled={booleanDataAttribute(disabled)}
               onMouseDown={(e) => e.preventDefault()}
               onClick={(event) => handleSelect(option.value, event)}
               disabled={disabled}
@@ -906,6 +933,11 @@ function RegressionStatusSelect({ value, onChange, disabled, onFocus, onBlur, da
   return (
     <select
       className="regression-select"
+      data-role="button"
+      data-testid="regression-status-select"
+      data-name={dataTestId}
+      data-action="change-regression-status"
+      data-disabled={booleanDataAttribute(disabled)}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
@@ -927,6 +959,11 @@ function PrioritySelect({ value, onChange, disabled = false, onFocus, onBlur, da
   return (
     <select
       className="cell-input"
+      data-role="button"
+      data-testid="priority-select"
+      data-name={dataTestId}
+      data-action="change-priority"
+      data-disabled={booleanDataAttribute(disabled)}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
@@ -1466,7 +1503,7 @@ export default function App() {
             </div>
             <p className="popup-message">{popup.message}</p>
             <div className="popup-actions">
-              <button type="button" className="secondary-btn" onClick={closePopup}>
+              <button type="button" className="secondary-btn" data-role="button" data-action="close-popup" onClick={closePopup}>
                 {translate('Got it')}
               </button>
             </div>
@@ -1491,6 +1528,9 @@ export default function App() {
                 type="button"
                 onClick={resetUploadSelection}
                 className="secondary-btn"
+                data-role="button"
+                data-action="cancel-upload"
+                data-disabled={booleanDataAttribute(loading || saving || uploading)}
                 disabled={loading || saving || uploading}
               >
                 {translate('Cancel')}
@@ -1500,6 +1540,9 @@ export default function App() {
                 type="button"
                 onClick={openUploadPicker}
                 className="secondary-btn"
+                data-role="button"
+                data-action="open-upload-picker"
+                data-disabled={booleanDataAttribute(loading || saving || uploading)}
                 disabled={loading || saving || uploading}
               >
                 {translate('Upload Test Cases')}
@@ -1510,6 +1553,10 @@ export default function App() {
                 type="button"
                 onClick={handleUploadSubmit}
                 className="secondary-btn"
+                data-role="button"
+                data-action="confirm-upload"
+                data-disabled={booleanDataAttribute(uploading || loading || saving)}
+                data-loading={booleanDataAttribute(uploading)}
                 disabled={uploading || loading || saving}
               >
                 {uploading ? translate('Uploading…') : translate('Confirm upload')}
@@ -1523,6 +1570,14 @@ export default function App() {
             type="button"
             onClick={startNewRow}
             className="secondary-btn"
+            data-role="button"
+            data-action="add-row"
+            data-disabled={booleanDataAttribute(
+              loading ||
+                saving ||
+                hasIncompleteNewRow ||
+                isEditingExistingRow
+            )}
             disabled={
               loading ||
                 saving ||
@@ -1532,7 +1587,7 @@ export default function App() {
           >
             {translate('Add Row')}
           </button>
-          <button type="button" onClick={handleExport} className="ghost-btn">
+          <button type="button" onClick={handleExport} className="ghost-btn" data-role="button" data-action="export-excel">
             {translate('Export to Excel')}
           </button>
           {saving && <span className="status">{translate('Saving…')}</span>}
@@ -1543,11 +1598,11 @@ export default function App() {
       {loading ? (
         <div className="loader">{translate('Loading…')}</div>
       ) : (
-        <div className="table-wrapper">
-          <table className="report-table">
+        <div className="table-wrapper" data-testid="scroll-container">
+          <table className="report-table" data-role="table" data-testid="table" data-name="test-report">
             <thead>
-              <tr>
-                <th className="row-index-header">#</th>
+              <tr data-role="header" data-testid="head-row">
+                <th className="row-index-header" data-role="headercell" data-testid="head-cell" data-name="row-index">#</th>
                 {columns.map((column, idx) => {
                   const width = getColumnWidth(column);
                   const letter = columnLetter(idx);
@@ -1564,6 +1619,9 @@ export default function App() {
                     <th
                       key={column.key}
                       style={columnSizing}
+                      data-role="headercell"
+                      data-testid="head-cell"
+                      data-name={column.key}
                       {...(columnDataTestId ? { 'data-test-id': columnDataTestId } : undefined)}
                     >
                       <div
@@ -1645,11 +1703,15 @@ export default function App() {
             </thead>
             <tbody>
               {newItems.map((item, index) => (
-                <tr className="new-row" key={`new-row-${index}`}>
-                  <td className="row-index-cell new-row-actions">
+                <tr className="new-row" key={`new-row-${index}`} data-role="row" data-testid="row" data-id={item.testId || `new-${index + 1}`} data-state="draft">
+                  <td className="row-index-cell new-row-actions" data-role="cell" data-testid="functional-cell" data-name="draft-actions-cell">
                     <button
                       type="button"
                       className="save-btn"
+                      data-role="button"
+                      data-action="save-row"
+                      data-disabled={booleanDataAttribute(saving || !isDraftReadyToSave(item))}
+                      data-loading={booleanDataAttribute(saving)}
                       onClick={() => handleCreate(index)}
                       disabled={saving || !isDraftReadyToSave(item)}
                     >
@@ -1658,6 +1720,9 @@ export default function App() {
                     <button
                       type="button"
                       className="cancel-btn"
+                      data-role="button"
+                      data-action="cancel-row"
+                      data-disabled={booleanDataAttribute(saving)}
                       onClick={() => cancelNewRow(index)}
                       disabled={saving}
                     >
@@ -1666,6 +1731,9 @@ export default function App() {
                   </td>
                   <td
                     className="action-cell"
+                    data-role="cell"
+                    data-testid="functional-cell"
+                    data-name="row-actions-buttons-cell"
                     style={{ width: `${getColumnWidth(ACTION_COLUMN)}px`, minWidth: `${getColumnWidth(ACTION_COLUMN)}px` }}
                   >
                     —
@@ -1706,6 +1774,9 @@ export default function App() {
                               }
                             : { width: `${width}px`, minWidth: `${width}px` }
                         }
+                        data-role="cell"
+                        data-testid={getCellTestId(column)}
+                        data-name={column.key}
                         className={
                           [
                             column.type === 'regression' ? 'regression-cell locked' : undefined,
@@ -1740,6 +1811,9 @@ export default function App() {
                                 onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                                 className="cell-textarea"
                                 data-test-id={columnDataTestId}
+                                data-role="input"
+                                data-name={column.key}
+                                data-disabled="false"
                               />
                             </div>
                           )
@@ -1774,6 +1848,9 @@ export default function App() {
                                 }}
                                 className="cell-textarea multiline-textarea"
                                 data-test-id={columnDataTestId}
+                                data-role="input"
+                                data-name={column.key}
+                                data-disabled="false"
                               />
                             </div>
                           ) : (
@@ -1791,15 +1868,21 @@ export default function App() {
                 </tr>
               ))}
               {sortedItems.map((item, rowIndex) => (
-                <tr key={item.testId} data-test-id={`tr-data-test-id-${item.testId}`}>
-                  <td className="row-index-cell">{rowIndex + 1}</td>
+                <tr key={item.testId} data-role="row" data-testid="row" data-id={item.testId} data-test-id={`tr-data-test-id-${item.testId}`}>
+                  <td className="row-index-cell" data-role="cell" data-testid="text-cell" data-name="row-index">{rowIndex + 1}</td>
                   <td
                     className="action-cell"
+                    data-role="cell"
+                    data-testid="functional-cell"
+                    data-name="row-actions-buttons-cell"
                     style={{ width: `${getColumnWidth(ACTION_COLUMN)}px`, minWidth: `${getColumnWidth(ACTION_COLUMN)}px` }}
                   >
                     <button
                       type="button"
                       className="delete-btn"
+                      data-role="button"
+                      data-action="delete-row"
+                      data-disabled={booleanDataAttribute(saving)}
                       onClick={() => handleDelete(item.testId)}
                       disabled={saving}
                     >
@@ -1855,6 +1938,9 @@ export default function App() {
                               }
                             : { width: `${width}px`, minWidth: `${width}px` }
                         }
+                        data-role="cell"
+                        data-testid={getCellTestId(column)}
+                        data-name={column.key}
                         className={cellClassName}
                         {...cellDataAttributes}
                       >
@@ -1923,6 +2009,9 @@ export default function App() {
                                 onFocus={incrementEditingExisting}
                                 className="cell-textarea"
                                 data-test-id={columnDataTestId}
+                                data-role="input"
+                                data-name={column.key}
+                                data-disabled="false"
                               />
                               {column.key === 'scenario' && value.trim() && (
                                 <div
@@ -1961,6 +2050,9 @@ export default function App() {
                                 onFocus={incrementEditingExisting}
                                 className="cell-textarea multiline-textarea"
                                 data-test-id={columnDataTestId}
+                                data-role="input"
+                                data-name={column.key}
+                                data-disabled="false"
                               />
                             </div>
                           ) : (
@@ -1972,7 +2064,10 @@ export default function App() {
                               onFocus={incrementEditingExisting}
                               className="cell-input"
                               data-test-id={columnDataTestId}
-                            />
+                            data-role="input"
+                            data-name={column.key}
+                            data-disabled="false"
+                          />
                           )
                         ) : (
                           <span
