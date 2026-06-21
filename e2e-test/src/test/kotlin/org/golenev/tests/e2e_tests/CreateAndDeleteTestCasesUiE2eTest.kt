@@ -80,7 +80,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
                 mainPage.shouldDisableAddRow()
                 mainPage.shouldDisableSaveNewRow()
 
-                mainPage.fillDetailedScenario(testCase.scenario.toUiText())
+                mainPage.fillDetailedScenarioSteps(testCase.scenario.toUiSteps())
                 mainPage.shouldEnableSaveNewRow()
                 mainPage.shouldEnableAddRow()
                 mainPage.saveNewRow()
@@ -121,7 +121,6 @@ class CreateAndDeleteTestCasesUiE2eTest {
         }
     }
 
-    private fun org.golenev.restapi.endpoints.ScenarioRequest?.toUiText(): String =
-        this?.steps.orEmpty()
-            .joinToString(separator = "\n") { step -> "${step.number}. ${step.text}" }
+    private fun org.golenev.restapi.endpoints.ScenarioRequest?.toUiSteps(): List<String> =
+        this?.steps.orEmpty().mapNotNull { step -> step.text }
 }

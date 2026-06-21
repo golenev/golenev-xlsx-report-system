@@ -98,6 +98,12 @@ class MainPage {
         newRowScenarioTextarea.shouldBe(visible).typeOf(scenario)
     }
 
+    fun fillDetailedScenarioSteps(steps: List<String>) {
+        steps.forEachIndexed { index, step ->
+            newRowScenarioTextareas()[index].shouldBe(visible).typeOf(step)
+        }
+    }
+
     fun fillNotes(notes: String) {
         newRowNotesTextarea.shouldBe(visible).typeOf(notes)
     }
@@ -220,6 +226,9 @@ class MainPage {
 
     private fun existingRowField(testId: String, columnDataTestId: String): SelenideElement =
         tableRowByTestId(testId).`$`("[data-test-id='${columnDataTestId}']")
+
+    private fun newRowScenarioTextareas() =
+        newRowField("scenario").`$$`("textarea.scenario-step-input")
 
     private fun newRowField(columnName: String): SelenideElement =
         newRow.`$`("td[data-role='cell'][data-name='${columnName}']")
