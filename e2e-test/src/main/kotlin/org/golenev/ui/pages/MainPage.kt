@@ -45,6 +45,14 @@ class MainPage {
         addRowButton.shouldBe(enabled)
     }
 
+    fun shouldDisableSaveNewRow() {
+        newRowSaveButton.shouldBe(disabled)
+    }
+
+    fun shouldEnableSaveNewRow() {
+        newRowSaveButton.shouldBe(enabled)
+    }
+
     fun open() {
         Selenide.open("/")
         headerTitle.shouldHave(text("Test Report"))
