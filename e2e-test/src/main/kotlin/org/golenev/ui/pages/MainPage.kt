@@ -7,6 +7,7 @@ import com.codeborne.selenide.ScrollIntoViewOptions.instant
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.Selenide.*
 import com.codeborne.selenide.SelenideElement
+import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.utils.CENTER
 import org.golenev.utils.typeOf
 
@@ -98,9 +99,19 @@ class MainPage {
         newRowScenarioTextarea.shouldBe(visible).typeOf(scenario)
     }
 
-    fun fillDetailedScenarioSteps(steps: List<String>) {
+    fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) {
         steps.forEachIndexed { index, step ->
-            newRowScenarioTextareas()[index].shouldBe(visible).typeOf(step)
+            val row = newRowScenarioRows()[index].shouldBe(visible)
+
+            row.find("textarea.scenario-step-input").shouldBe(visible).typeOf(step.text)
+
+            val attachment = step.attachments.firstOrNull()?.content.orEmpty()
+            if (attachment.isNotBlank()) {
+                row.find("button.attachment-inline-action").shouldBe(visible).click()
+                row.find("textarea.scenario-attachment-input").shouldBe(visible).typeOf(attachment)
+                row.find("button.attachment-text-action.primary").shouldBe(visible).click()
+                row.find("button.attachment-chip").shouldBe(visible)
+            }
         }
     }
 
@@ -227,8 +238,8 @@ class MainPage {
     private fun existingRowField(testId: String, columnDataTestId: String): SelenideElement =
         tableRowByTestId(testId).`$`("[data-test-id='${columnDataTestId}']")
 
-    private fun newRowScenarioTextareas() =
-        newRowField("scenario").`$$`("textarea.scenario-step-input")
+    private fun newRowScenarioRows() =
+        newRowField("scenario").`$$`(".scenario-step-row")
 
     private fun newRowField(columnName: String): SelenideElement =
         newRow.`$`("td[data-role='cell'][data-name='${columnName}']")
