@@ -155,9 +155,11 @@ class StructuredScenarioApiTest {
 
         val errorResponse = response.`as`(ErrorResponse::class.java)
 
-        step("Проверяем, что API требует scenario object") {
+        step("Проверяем, что API отклоняет scenario в виде строки") {
             response.statusCode shouldBe 400
-            errorResponse.message shouldBe "Field scenario must be an object"
+            errorResponse.status shouldBe 400
+            errorResponse.error shouldBe "Bad Request"
+            errorResponse.path shouldBe "/api/tests"
         }
     }
 
