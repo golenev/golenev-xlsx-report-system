@@ -107,15 +107,14 @@ function columnLetter(index) {
   return result;
 }
 
-function getColumnDataTestId(column) {
-  return column.dataTestId ?? column.label ?? column.key;
+function getColumnDataName(column) {
+  return column.label ?? column.key;
 }
 
-function getCellTestId(column) {
-  if (column.type === 'actions') return 'functional-cell';
-  if (column.type === 'regression' || column.type === 'generalStatus') return 'status-cell';
-  if (column.editable || column.type === 'textarea' || column.type === 'priority') return 'default-cell';
-  return 'text-cell';
+function getInputTestId(column) {
+  if (column.key === 'issueLink') return 'youtrack-link';
+  if (column.key === 'notes') return 'notes-input';
+  return undefined;
 }
 
 function booleanDataAttribute(value) {
@@ -525,21 +524,23 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
   }
 
   return (
-    <div className="scenario-preview-list" ref={previewRef}>
+    <div className="scenario-preview-list" data-testid="scenario-preview" ref={previewRef}>
       {steps.map((step, index) => {
         const hasAttachment = step.attachment.trim().length > 0;
         const isAttachmentOpen = openAttachmentIndexes.has(index);
 
         return (
-          <div className="scenario-preview-step" key={`${index}-${step.text}`}>
+          <div className="scenario-preview-step" key={`${index}-${step.text}`} data-testid="scenario-step" data-step-number={index + 1}>
             <div className="scenario-preview-step-header">
-              <span className="scenario-preview-number">{index + 1}.</span>
-              <span className="scenario-preview-text">{step.text.trim()}</span>
+              <span className="scenario-preview-number" data-testid="scenario-step-number">{index + 1}</span>
+              <span className="scenario-preview-text" data-testid="scenario-step-text">{step.text.trim()}</span>
               {hasAttachment && (
                 <span className="scenario-preview-attachment">
                   <button
                     type="button"
                     className={`scenario-preview-attachment-button ${isAttachmentOpen ? 'open' : ''}`}
+                    data-testid="scenario-attachment-button"
+                    data-step-number={index + 1}
                     title="Показать вложение"
                     aria-label={`Показать вложение шага ${index + 1}`}
                     aria-expanded={isAttachmentOpen}
@@ -556,12 +557,16 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
             {hasAttachment && isAttachmentOpen && (
               <div
                 className="scenario-preview-attachment-panel"
+                data-testid="scenario-attachment-popover"
+                data-step-number={index + 1}
                 role="region"
                 aria-label={`Вложение шага ${index + 1}`}
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="scenario-preview-attachment-title">Вложение шага {index + 1}</div>
-                <pre className="scenario-preview-attachment-content">{step.attachment.trim()}</pre>
+                <div data-testid="scenario-attachment-item" data-attachment-index="0">
+                  <pre className="scenario-preview-attachment-content" data-testid="scenario-attachment-content">{step.attachment.trim()}</pre>
+                </div>
               </div>
             )}
           </div>
@@ -571,7 +576,7 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
   );
 }
 
-function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, autoFocus = false }) {
+function ScenarioStepEditor({ value, onChange, onCommit, onFocus, autoFocus = false }) {
   const [steps, setSteps] = useState(() => parseScenarioSteps(value));
   const [openAttachmentRows, setOpenAttachmentRows] = useState(() => new Set());
   const [attachmentDrafts, setAttachmentDrafts] = useState({});
@@ -668,7 +673,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
   return (
     <div
       className="scenario-step-editor"
-      data-test-id={dataTestId}
+      data-testid="scenario-editor"
       onFocusCapture={handleFocusCapture}
       onBlurCapture={handleBlurCapture}
     >
@@ -677,7 +682,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
         const isAttachmentOpen = openAttachmentRows.has(index);
 
         return (
-          <div className="scenario-step-row" key={index}>
+          <div className="scenario-step-row" key={index} data-testid="scenario-editor-step" data-step-number={index + 1}>
             <div className="scenario-step-line">
               <div className="scenario-step-number">{index + 1}</div>
               <textarea
@@ -691,6 +696,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                   )
                 }
                 className="cell-textarea scenario-step-input"
+                data-testid="scenario-step-input"
                 placeholder={index === steps.length - 1 ? 'Добавьте следующий шаг…' : `Шаг ${index + 1}`}
                 rows={1}
                 wrap="soft"
@@ -699,6 +705,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                 <button
                   type="button"
                   className={`attachment-chip ${isAttachmentOpen ? 'open' : ''}`}
+                  data-testid="scenario-attachment-toggle"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => toggleAttachmentRow(index, step.attachment)}
                   aria-expanded={isAttachmentOpen}
@@ -711,6 +718,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                 <button
                   type="button"
                   className="attachment-inline-action"
+                  data-testid="scenario-attachment-add-button"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => openAttachmentRow(index)}
                 >
@@ -727,6 +735,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                     <button
                       type="button"
                       className="attachment-text-action primary"
+                      data-testid="scenario-attachment-edit-button"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => saveAttachmentDraft(index)}
                     >
@@ -736,6 +745,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                       <button
                         type="button"
                         className="attachment-text-action"
+                        data-testid="scenario-attachment-edit-button"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => attachmentInputRefs.current[index]?.focus()}
                       >
@@ -746,6 +756,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                       <button
                         type="button"
                         className="attachment-text-action danger"
+                        data-testid="scenario-attachment-delete-button"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => {
                           updateSteps((prev) =>
@@ -775,6 +786,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, dataTestId, au
                     setAttachmentDrafts((drafts) => ({ ...drafts, [index]: event.target.value }))
                   }
                   className="cell-textarea scenario-attachment-input"
+                  data-testid="scenario-attachment-content"
                   placeholder="request / response / json / curl"
                   rows={3}
                   wrap="soft"
@@ -837,14 +849,14 @@ function compareTestIds(a, b) {
 
 function StatusChip({ option }) {
   if (!option) {
-    return <span className="status-chip placeholder-chip">—</span>;
+    return <span className="status-chip placeholder-chip" data-testid="general-test-status-badge">—</span>;
   }
   const style = {
     backgroundColor: option.color,
     color: option.textColor
   };
   return (
-    <span className="status-chip" style={style} data-role="badge" data-testid="badge">
+    <span className="status-chip" style={style} data-role="badge" data-testid="general-test-status-badge">
       {option.value}
     </span>
   );
@@ -875,10 +887,8 @@ function StatusDropdown({
       className="status-dropdown"
       data-role="button"
       data-testid="status-dropdown"
-      data-name={dataTestId}
       data-action="change-status"
       data-disabled={booleanDataAttribute(disabled)}
-      data-test-id={dataTestId}
       onFocusCapture={onFocus}
       onBlurCapture={onBlur}
     >
@@ -929,13 +939,12 @@ function StatusDropdown({
   );
 }
 
-function RegressionStatusSelect({ value, onChange, disabled, onFocus, onBlur, dataTestId }) {
+function RegressionStatusSelect({ value, onChange, disabled, onFocus, onBlur }) {
   return (
     <select
       className="regression-select"
       data-role="button"
-      data-testid="regression-status-select"
-      data-name={dataTestId}
+      data-testid="regress-run-button"
       data-action="change-regression-status"
       data-disabled={booleanDataAttribute(disabled)}
       value={value}
@@ -943,7 +952,6 @@ function RegressionStatusSelect({ value, onChange, disabled, onFocus, onBlur, da
       disabled={disabled}
       onFocus={onFocus}
       onBlur={onBlur}
-      data-test-id={dataTestId}
     >
       <option value="">—</option>
       {REGRESSION_STATUS_OPTIONS.map((option) => (
@@ -955,13 +963,12 @@ function RegressionStatusSelect({ value, onChange, disabled, onFocus, onBlur, da
   );
 }
 
-function PrioritySelect({ value, onChange, disabled = false, onFocus, onBlur, dataTestId }) {
+function PrioritySelect({ value, onChange, disabled = false, onFocus, onBlur }) {
   return (
     <select
       className="cell-input"
       data-role="button"
       data-testid="priority-select"
-      data-name={dataTestId}
       data-action="change-priority"
       data-disabled={booleanDataAttribute(disabled)}
       value={value}
@@ -969,7 +976,6 @@ function PrioritySelect({ value, onChange, disabled = false, onFocus, onBlur, da
       disabled={disabled}
       onFocus={onFocus}
       onBlur={onBlur}
-      data-test-id={dataTestId}
     >
       {PRIORITY_OPTIONS.map((option) => (
         <option key={option} value={option}>
@@ -1598,15 +1604,15 @@ export default function App() {
       {loading ? (
         <div className="loader">{translate('Loading…')}</div>
       ) : (
-        <div className="table-wrapper" data-testid="scroll-container">
-          <table className="report-table" data-role="table" data-testid="table" data-name="test-report">
+        <div className="table-wrapper" data-testid="test-report-table">
+          <table className="report-table">
             <thead>
               <tr data-role="header" data-testid="head-row">
                 <th className="row-index-header" data-role="headercell" data-testid="head-cell" data-name="row-index">#</th>
                 {columns.map((column, idx) => {
                   const width = getColumnWidth(column);
                   const letter = columnLetter(idx);
-                  const columnDataTestId = getColumnDataTestId(column);
+                  const columnDataName = getColumnDataName(column);
                   const isScenarioColumn = column.key === 'scenario';
                   const columnSizing = isScenarioColumn
                     ? {
@@ -1621,8 +1627,8 @@ export default function App() {
                       style={columnSizing}
                       data-role="headercell"
                       data-testid="head-cell"
-                      data-name={column.key}
-                      {...(columnDataTestId ? { 'data-test-id': columnDataTestId } : undefined)}
+                      data-name={columnDataName}
+
                     >
                       <div
                         className={`header-content ${
@@ -1703,13 +1709,12 @@ export default function App() {
             </thead>
             <tbody>
               {newItems.map((item, index) => (
-                <tr className="new-row" key={`new-row-${index}`} data-role="row" data-testid="row" data-id={item.testId || `new-${index + 1}`} data-state="draft">
-                  <td className="row-index-cell new-row-actions" data-role="cell" data-testid="functional-cell" data-name="draft-actions-cell">
+                <tr className="new-row" key={`new-row-${index}`} data-testid="test-case-row" data-state="draft">
+                  <td className="row-index-cell new-row-actions" data-role="cell" data-testid="test-case-cell" data-name="Draft Actions">
                     <button
                       type="button"
                       className="save-btn"
-                      data-role="button"
-                      data-action="save-row"
+                      data-testid="save-test-case-button"
                       data-disabled={booleanDataAttribute(saving || !isDraftReadyToSave(item))}
                       data-loading={booleanDataAttribute(saving)}
                       onClick={() => handleCreate(index)}
@@ -1720,8 +1725,7 @@ export default function App() {
                     <button
                       type="button"
                       className="cancel-btn"
-                      data-role="button"
-                      data-action="cancel-row"
+                      data-testid="cancel-test-case-button"
                       data-disabled={booleanDataAttribute(saving)}
                       onClick={() => cancelNewRow(index)}
                       disabled={saving}
@@ -1732,8 +1736,8 @@ export default function App() {
                   <td
                     className="action-cell"
                     data-role="cell"
-                    data-testid="functional-cell"
-                    data-name="row-actions-buttons-cell"
+                    data-testid="test-case-cell"
+                    data-name="Actions"
                     style={{ width: `${getColumnWidth(ACTION_COLUMN)}px`, minWidth: `${getColumnWidth(ACTION_COLUMN)}px` }}
                   >
                     —
@@ -1744,24 +1748,7 @@ export default function App() {
                     const isEditable = column.editable || column.key === 'testId';
                     const isMultilineColumn = MULTILINE_TEXT_KEYS.has(column.key);
                     const isScenarioColumn = column.key === 'scenario';
-                    const cellDataAttributes = {};
-                    const columnDataTestId = getColumnDataTestId(column);
-
-                    if (column.key === 'testId') {
-                      cellDataAttributes['data-column'] = 'test-id';
-                      cellDataAttributes['data-row-id'] = item.testId || `new-${index + 1}`;
-                    } else if (column.key === 'readyDate') {
-                      cellDataAttributes['data-column'] = 'ready-date';
-                      cellDataAttributes['data-row-id'] = item.testId || `new-${index + 1}`;
-                    }
-
-                    const readonlySpanAttributes =
-                      column.key === 'testId'
-                        ? { 'data-test-id-value': value }
-                        : column.key === 'readyDate'
-                          ? { 'data-ready-date-value': value }
-                          : undefined;
-
+                    const columnDataName = getColumnDataName(column);
                     return (
                       <td
                         key={`new-${index}-${column.key}`}
@@ -1775,8 +1762,8 @@ export default function App() {
                             : { width: `${width}px`, minWidth: `${width}px` }
                         }
                         data-role="cell"
-                        data-testid={getCellTestId(column)}
-                        data-name={column.key}
+                        data-testid="test-case-cell"
+                        data-name={columnDataName}
                         className={
                           [
                             column.type === 'regression' ? 'regression-cell locked' : undefined,
@@ -1786,33 +1773,27 @@ export default function App() {
                             .filter(Boolean)
                             .join(' ') || undefined
                         }
-                        {...cellDataAttributes}
                       >
                         {!isEditable ? (
-                          <span
-                            className="readonly-value"
-                            {...readonlySpanAttributes}
-                            data-test-id={columnDataTestId}
-                          >
-                            {value}
-                          </span>
+	                          <span className="readonly-value">
+	                            {value}
+	                          </span>
                         ) : column.type === 'textarea' ? (
                           isScenarioColumn ? (
                             <ScenarioStepEditor
                               value={value}
                               onChange={(nextValue) => handleNewFieldChange(index, column.key, nextValue)}
                               onCommit={() => {}}
-                              dataTestId={columnDataTestId}
-                            />
+	                            />
                           ) : (
                             <div className="textarea-with-preview">
                               <textarea
                                 value={value}
                                 onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                                 className="cell-textarea"
-                                data-test-id={columnDataTestId}
-                                data-role="input"
-                                data-name={column.key}
+	                                data-testid={getInputTestId(column)}
+	                                data-role="input"
+                                data-name={columnDataName}
                                 data-disabled="false"
                               />
                             </div>
@@ -1821,22 +1802,19 @@ export default function App() {
                           <StatusDropdown
                             value={value}
                             onChange={(newValue) => handleNewFieldChange(index, column.key, newValue)}
-                            dataTestId={columnDataTestId}
-                          />
+	                          />
                         ) : column.type === 'priority' ? (
                           <PrioritySelect
                             value={value || PRIORITY_OPTIONS[3]}
                             onChange={(newValue) => handleNewFieldChange(index, column.key, newValue)}
-                            dataTestId={columnDataTestId}
-                          />
+	                          />
                         ) : column.type === 'regression' ? (
                           <div className="regression-cell-content">
                             <RegressionStatusSelect
                               value=""
                               onChange={() => {}}
                               disabled
-                              dataTestId={columnDataTestId}
-                            />
+	                            />
                           </div>
                         ) : isMultilineColumn ? (
                             <div className="multiline-textarea-wrapper">
@@ -1847,9 +1825,9 @@ export default function App() {
                                   autoResizeTextarea(e.target);
                                 }}
                                 className="cell-textarea multiline-textarea"
-                                data-test-id={columnDataTestId}
-                                data-role="input"
-                                data-name={column.key}
+	                                data-testid={getInputTestId(column)}
+	                                data-role="input"
+                                data-name={columnDataName}
                                 data-disabled="false"
                               />
                             </div>
@@ -1859,8 +1837,8 @@ export default function App() {
                             value={value}
                             onChange={(e) => handleNewFieldChange(index, column.key, e.target.value)}
                             className="cell-input"
-                            data-test-id={columnDataTestId}
-                          />
+	                            data-testid={getInputTestId(column)}
+	                          />
                         )}
                       </td>
                     );
@@ -1868,20 +1846,19 @@ export default function App() {
                 </tr>
               ))}
               {sortedItems.map((item, rowIndex) => (
-                <tr key={item.testId} data-role="row" data-testid="row" data-id={item.testId} data-test-id={`tr-data-test-id-${item.testId}`}>
-                  <td className="row-index-cell" data-role="cell" data-testid="text-cell" data-name="row-index">{rowIndex + 1}</td>
+                <tr key={item.testId} data-testid="test-case-row" data-test-case-id={item.testId}>
+                  <td className="row-index-cell" data-role="cell" data-testid="test-case-cell" data-name="Row Index">{rowIndex + 1}</td>
                   <td
                     className="action-cell"
                     data-role="cell"
-                    data-testid="functional-cell"
-                    data-name="row-actions-buttons-cell"
+                    data-testid="test-case-cell"
+                    data-name="Actions"
                     style={{ width: `${getColumnWidth(ACTION_COLUMN)}px`, minWidth: `${getColumnWidth(ACTION_COLUMN)}px` }}
                   >
                     <button
                       type="button"
                       className="delete-btn"
-                      data-role="button"
-                      data-action="delete-row"
+                      data-testid="delete-test-case-button"
                       data-disabled={booleanDataAttribute(saving)}
                       onClick={() => handleDelete(item.testId)}
                       disabled={saving}
@@ -1908,24 +1885,7 @@ export default function App() {
                       ]
                         .filter(Boolean)
                         .join(' ') || undefined;
-                    const cellDataAttributes = {};
-                    const columnDataTestId = getColumnDataTestId(column);
-
-                    if (column.key === 'testId') {
-                      cellDataAttributes['data-column'] = 'test-id';
-                      cellDataAttributes['data-row-id'] = item.testId;
-                    } else if (column.key === 'readyDate') {
-                      cellDataAttributes['data-column'] = 'ready-date';
-                      cellDataAttributes['data-row-id'] = item.testId;
-                    }
-
-                    const readonlySpanAttributes =
-                      column.key === 'testId'
-                        ? { 'data-test-id-value': value }
-                        : column.key === 'readyDate'
-                          ? { 'data-ready-date-value': value }
-                          : undefined;
-
+                    const columnDataName = getColumnDataName(column);
                     return (
                       <td
                         key={column.key}
@@ -1939,10 +1899,9 @@ export default function App() {
                             : { width: `${width}px`, minWidth: `${width}px` }
                         }
                         data-role="cell"
-                        data-testid={getCellTestId(column)}
-                        data-name={column.key}
+                        data-testid="test-case-cell"
+                        data-name={columnDataName}
                         className={cellClassName}
-                        {...cellDataAttributes}
                       >
                         {isRegressionColumn ? (
                           <div className="regression-cell-content">
@@ -1954,8 +1913,7 @@ export default function App() {
                               disabled={!isRegressionRunning || regressionSaving}
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
-                              dataTestId={columnDataTestId}
-                            />
+	                            />
                           </div>
                         ) : column.editable ? (
                           isScenarioColumn ? (
@@ -1965,14 +1923,12 @@ export default function App() {
                                 onChange={(nextValue) => handleFieldChange(item.testId, column.key, nextValue)}
                                 onCommit={(nextValue) => handleScenarioCommit(item, nextValue)}
                                 onFocus={incrementEditingExisting}
-                                dataTestId={columnDataTestId}
-                                autoFocus
+	                                autoFocus
                               />
                             ) : (
                               <div
                                 className="markdown-preview-wrapper scenario-preview"
-                                data-test-id={columnDataTestId}
-                                onClick={() =>
+	                                onClick={() =>
                                   setEditingScenarioIds((prev) => {
                                     const next = new Set(prev);
                                     next.add(item.testId);
@@ -2008,9 +1964,9 @@ export default function App() {
                                 onBlur={() => handleBlur(item, column.key)}
                                 onFocus={incrementEditingExisting}
                                 className="cell-textarea"
-                                data-test-id={columnDataTestId}
-                                data-role="input"
-                                data-name={column.key}
+	                                data-testid={getInputTestId(column)}
+	                                data-role="input"
+                                data-name={columnDataName}
                                 data-disabled="false"
                               />
                               {column.key === 'scenario' && value.trim() && (
@@ -2027,8 +1983,7 @@ export default function App() {
                               disabled={saving}
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
-                              dataTestId={columnDataTestId}
-                            />
+	                            />
                           ) : column.type === 'priority' ? (
                             <PrioritySelect
                               value={value || PRIORITY_OPTIONS[3]}
@@ -2036,8 +1991,7 @@ export default function App() {
                               disabled={saving}
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
-                              dataTestId={columnDataTestId}
-                            />
+	                            />
                           ) : isMultilineColumn ? (
                             <div className="multiline-textarea-wrapper">
                               <textarea
@@ -2049,9 +2003,9 @@ export default function App() {
                                 onBlur={() => handleBlur(item, column.key)}
                                 onFocus={incrementEditingExisting}
                                 className="cell-textarea multiline-textarea"
-                                data-test-id={columnDataTestId}
-                                data-role="input"
-                                data-name={column.key}
+	                                data-testid={getInputTestId(column)}
+	                                data-role="input"
+                                data-name={columnDataName}
                                 data-disabled="false"
                               />
                             </div>
@@ -2063,18 +2017,16 @@ export default function App() {
                               onBlur={() => handleBlur(item, column.key)}
                               onFocus={incrementEditingExisting}
                               className="cell-input"
-                              data-test-id={columnDataTestId}
+	                              data-testid={getInputTestId(column)}
                             data-role="input"
-                            data-name={column.key}
+                            data-name={columnDataName}
                             data-disabled="false"
                           />
                           )
                         ) : (
                           <span
                             className="readonly-value"
-                            {...readonlySpanAttributes}
-                            data-test-id={columnDataTestId}
-                          >
+	                          >
                             {value}
                           </span>
                         )}
