@@ -105,14 +105,24 @@ class MainPage {
 
             row.find("textarea.scenario-step-input").shouldBe(visible).typeOf(step.text)
 
-            val attachment = step.attachments.firstOrNull()?.content.orEmpty()
+            val attachment = step.attachments
+                .map { attachment -> attachment.content.trim() }
+                .filter { attachment -> attachment.isNotBlank() }
+                .joinToString(separator = "\n\n")
+
             if (attachment.isNotBlank()) {
-                row.find("button.attachment-inline-action").shouldBe(visible).click()
-                row.find("textarea.scenario-attachment-input").shouldBe(visible).typeOf(attachment)
-                row.find("button.attachment-text-action.primary").shouldBe(visible).click()
-                row.find("button.attachment-chip").shouldBe(visible)
+                fillScenarioStepAttachment(row, attachment)
             }
         }
+    }
+
+    private fun fillScenarioStepAttachment(row: SelenideElement, attachment: String) {
+        row.find("button.attachment-inline-action").shouldBe(visible).click()
+        row.find(".scenario-attachment-panel.open").shouldBe(visible)
+        row.find("textarea.scenario-attachment-input").shouldBe(visible).typeOf(attachment)
+        row.find("button.attachment-text-action.primary").shouldBe(visible).click()
+        row.find("button.attachment-chip").shouldBe(visible).shouldHave(text("Вложение"))
+        row.find(".scenario-attachment-panel").shouldNotHave(cssClass("open"))
     }
 
     fun fillNotes(notes: String) {
