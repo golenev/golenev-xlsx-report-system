@@ -1,11 +1,16 @@
 package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
+import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import io.kotest.matchers.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
+import org.golenev.restapi.config.Paths
+import org.golenev.restapi.endpoints.TestUpsertItem
+import org.golenev.ui.config.interceptRequestBody
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.MainPage
+import org.golenev.utils.JsonUtils
 import org.golenev.utils.TestDataGenerator
 import org.golenev.utils.getRandomTestId
 import org.golenev.utils.step
@@ -83,7 +88,25 @@ class CreateAndDeleteTestCasesUiE2eTest {
                 mainPage.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
                 mainPage.shouldEnableSaveNewRow()
                 mainPage.shouldEnableAddRow()
-                mainPage.saveNewRow()
+
+                val createRequestBody = interceptRequestBody(getSelenideProxy(), Paths.REPORTS.path) {
+                    mainPage.saveNewRow()
+                }
+                val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
+
+                step("Проверяем тело запроса создания тест-кейса ${testCase.testId}") {
+                    actualCreateRequest.testId shouldBe testCase.testId
+                    actualCreateRequest.category shouldBe testCase.category
+                    actualCreateRequest.shortTitle shouldBe testCase.shortTitle
+                    actualCreateRequest.issueLink shouldBe testCase.issueLink
+                    actualCreateRequest.readyDate shouldBe testCase.readyDate
+                    actualCreateRequest.generalStatus shouldBe testCase.generalStatus
+                    actualCreateRequest.priority shouldBe testCase.priority
+                    actualCreateRequest.scenario shouldBe testCase.scenario
+                    actualCreateRequest.notes shouldBe testCase.notes
+                    actualCreateRequest.runStatus shouldBe testCase.runStatus
+                    actualCreateRequest.runDate shouldBe testCase.runDate
+                }
             }
 
             step("Проверяем, что тест-кейс ${testCase.testId} появился на UI") {
