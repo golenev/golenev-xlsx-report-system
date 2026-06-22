@@ -531,7 +531,11 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
 
         return (
           <div className="scenario-preview-step" key={`${index}-${step.text}`} data-testid="scenario-step" data-step-number={index + 1}>
-            <div className="scenario-preview-step-header">
+            <div
+              className={`scenario-preview-step-header scenario-preview-${index + 1}-step-header`}
+              data-testid="scenario-step-header"
+              data-step-number={index + 1}
+            >
               <span className="scenario-preview-number" data-testid="scenario-step-number">{index + 1}</span>
               <span className="scenario-preview-text" data-testid="scenario-step-text">{step.text.trim()}</span>
               {hasAttachment && (
