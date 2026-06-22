@@ -7,6 +7,7 @@ import com.codeborne.selenide.ScrollIntoViewOptions.instant
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.Selenide.*
 import com.codeborne.selenide.SelenideElement
+import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.utils.CENTER
 import org.golenev.utils.typeOf
 
@@ -43,6 +44,14 @@ class MainPage {
 
     fun shouldEnableAddRow() {
         addRowButton.shouldBe(enabled)
+    }
+
+    fun shouldDisableSaveNewRow() {
+        newRowSaveButton.shouldBe(disabled)
+    }
+
+    fun shouldEnableSaveNewRow() {
+        newRowSaveButton.shouldBe(enabled)
     }
 
     fun open() {
@@ -88,6 +97,33 @@ class MainPage {
 
     fun fillDetailedScenario(scenario: String) {
         newRowScenarioTextarea.shouldBe(visible).typeOf(scenario)
+    }
+
+    fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) {
+        steps.forEachIndexed { index, step ->
+            val row = newRowScenarioRows()[index].shouldBe(visible)
+
+            row.find("textarea.scenario-step-input").shouldBe(visible).typeOf(step.text)
+
+            val attachment = step.attachments
+                .map { attachment -> attachment.content.trim() }
+                .filter { attachment -> attachment.isNotBlank() }
+                .joinToString(separator = "\n\n")
+
+            if (attachment.isNotBlank()) {
+                fillScenarioStepAttachment(row, attachment)
+            }
+        }
+    }
+
+    private fun fillScenarioStepAttachment(row: SelenideElement, attachment: String) {
+        row.find("button.attachment-inline-action").shouldBe(visible).click()
+        row.find(".scenario-attachment-panel.open").shouldBe(visible)
+        row.find("textarea.scenario-attachment-input").click()
+        row.find("textarea.scenario-attachment-input").shouldBe(visible).typeOf(attachment)
+        row.find("button.attachment-text-action.primary").shouldBe(visible).click()
+        row.find("button.attachment-chip").shouldBe(visible).shouldHave(text("Вложение"))
+        row.find(".scenario-attachment-panel").shouldNotHave(cssClass("open"))
     }
 
     fun fillNotes(notes: String) {
@@ -212,6 +248,9 @@ class MainPage {
 
     private fun existingRowField(testId: String, columnDataTestId: String): SelenideElement =
         tableRowByTestId(testId).`$`("[data-test-id='${columnDataTestId}']")
+
+    private fun newRowScenarioRows() =
+        newRowField("scenario").`$$`(".scenario-step-row")
 
     private fun newRowField(columnName: String): SelenideElement =
         newRow.`$`("td[data-role='cell'][data-name='${columnName}']")
