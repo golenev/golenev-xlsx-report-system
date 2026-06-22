@@ -119,6 +119,7 @@ class MainPage {
     private fun fillScenarioStepAttachment(row: SelenideElement, attachment: String) {
         row.find("button.attachment-inline-action").shouldBe(visible).click()
         row.find(".scenario-attachment-panel.open").shouldBe(visible)
+        row.find("textarea.scenario-attachment-input").click()
         row.find("textarea.scenario-attachment-input").shouldBe(visible).typeOf(attachment)
         row.find("button.attachment-text-action.primary").shouldBe(visible).click()
         row.find("button.attachment-chip").shouldBe(visible).shouldHave(text("Вложение"))
