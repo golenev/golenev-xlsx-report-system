@@ -7,8 +7,8 @@ import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.config.Paths
 import org.golenev.restapi.endpoints.TestUpsertItem
-import org.golenev.ui.config.interceptRequestBody
 import org.golenev.ui.config.DriverConfig
+import org.golenev.ui.config.interceptRequestBody
 import org.golenev.ui.pages.MainPage
 import org.golenev.utils.JsonUtils
 import org.golenev.utils.TestDataGenerator
@@ -103,7 +103,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
                     actualCreateRequest.generalStatus shouldBe testCase.generalStatus
                     actualCreateRequest.priority shouldBe testCase.priority
                     actualCreateRequest.scenario shouldBe testCase.scenario
-                    actualCreateRequest.notes shouldBe testCase.notes
+                    actualCreateRequest.notes.orEmpty() shouldBe testCase.notes
                     actualCreateRequest.runStatus shouldBe testCase.runStatus
                     actualCreateRequest.runDate shouldBe testCase.runDate
                 }
