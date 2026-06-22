@@ -17,18 +17,18 @@ class MainPage {
     private val addRowButton: SelenideElement =
         `$`("button[data-role='button'][data-action='add-row']")
     private val newRow: SelenideElement =
-        `$`("tbody tr[data-role='row'][data-testid='row'][data-state='draft']")
-    private val tableRowSelectorPattern = "tbody tr[data-role='row'][data-testid='row'][data-id='%s']"
-    private val newRowTestIdInput: SelenideElement = newRowField("testId").find("input")
-    private val newRowCategoryInput: SelenideElement = newRowField("category").find("textarea, input")
-    private val newRowShortTitleInput: SelenideElement = newRowField("shortTitle").find("textarea, input")
-    private val newRowIssueLinkInput: SelenideElement = newRowField("issueLink").find("input")
-    private val newRowScenarioTextarea: SelenideElement = newRowField("scenario").find("textarea")
-    private val newRowNotesTextarea: SelenideElement = newRowField("notes").find("textarea")
-    private val newRowGeneralStatusDropdown: SelenideElement = newRowField("generalStatus").find("[data-testid='status-dropdown']")
-    private val newRowPrioritySelect: SelenideElement = newRowField("priority").find("select[data-testid='priority-select']")
+        `$`("[data-testid='test-case-row'][data-state='draft']")
+    private val tableRowSelectorPattern = "[data-testid='test-case-row'][data-test-case-id='%s']"
+    private val newRowTestIdInput: SelenideElement = newRowField("Test ID").find("input")
+    private val newRowCategoryInput: SelenideElement = newRowField("Category / Feature").find("textarea, input")
+    private val newRowShortTitleInput: SelenideElement = newRowField("Short Title").find("textarea, input")
+    private val newRowIssueLinkInput: SelenideElement = newRowField("YouTrack Issue Link").find("input")
+    private val newRowScenarioTextarea: SelenideElement = newRowField("Detailed Scenario").find("textarea")
+    private val newRowNotesTextarea: SelenideElement = newRowField("Notes").find("textarea")
+    private val newRowGeneralStatusDropdown: SelenideElement = newRowField("General Test Status").find("[data-testid='status-dropdown']")
+    private val newRowPrioritySelect: SelenideElement = newRowField("Priority").find("select[data-testid='priority-select']")
     private val newRowSaveButton: SelenideElement =
-        newRow.find("button[data-role='button'][data-action='save-row']")
+        newRow.find("[data-testid='save-test-case-button']")
     private val regressionActions = `$$`("div.regression-actions")
     private val regressionStartButton: SelenideElement = regressionActions
         .findBy(text("Would you run regress"))
@@ -103,7 +103,7 @@ class MainPage {
         steps.forEachIndexed { index, step ->
             val row = newRowScenarioRows()[index].shouldBe(visible.because("элемент должен быть видимым на странице"))
 
-            row.find("textarea.scenario-step-input").shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(step.text)
+            row.find("[data-testid='scenario-step-input']").shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(step.text)
 
             val attachment = step.attachments
                 .map { attachment -> attachment.content.trim() }
@@ -117,13 +117,13 @@ class MainPage {
     }
 
     private fun fillScenarioStepAttachment(row: SelenideElement, attachment: String) {
-        row.find("button.attachment-inline-action").shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
-        row.find(".scenario-attachment-panel.open").shouldBe(visible.because("элемент должен быть видимым на странице"))
-        row.find("textarea.scenario-attachment-input").click()
-        row.find("textarea.scenario-attachment-input").shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(attachment)
-        row.find("button.attachment-text-action.primary").shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
-        row.find("button.attachment-chip").shouldBe(visible.because("элемент должен быть видимым на странице")).shouldHave(text("Вложение").because("после добавления вложения должна появиться плашка с текстом Вложение"))
-        row.find(".scenario-attachment-panel").shouldNotHave(cssClass("open").because("панель вложения должна закрыться после сохранения текста вложения"))
+        row.find("[data-testid='scenario-attachment-add-button']").shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
+        row.find("[data-testid='scenario-attachment-content']").shouldBe(visible.because("элемент должен быть видимым на странице"))
+        row.find("[data-testid='scenario-attachment-content']").click()
+        row.find("[data-testid='scenario-attachment-content']").shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(attachment)
+        row.find("[data-testid='scenario-attachment-edit-button']").shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
+        row.find("[data-testid='scenario-attachment-toggle']").shouldBe(visible.because("элемент должен быть видимым на странице")).shouldHave(text("Вложение").because("после добавления вложения должна появиться плашка с текстом Вложение"))
+        row.find("[data-testid='scenario-attachment-content']").should(disappear.because("поле вложения должно закрыться после сохранения текста вложения"))
     }
 
     fun fillNotes(notes: String) {
@@ -141,7 +141,7 @@ class MainPage {
 
     fun deleteTestCase(testId: String) {
         val row = tableRowByTestId(testId).shouldBe(visible.because("элемент должен быть видимым на странице"))
-        row.find("button[data-role='button'][data-action='delete-row']").click()
+        row.find("[data-testid='delete-test-case-button']").click()
         Selenide.confirm()
     }
 
@@ -150,16 +150,16 @@ class MainPage {
     }
 
     fun shouldHaveTestCasesCount(expectedCount: Int) {
-        `$$`("tbody tr[data-role='row'][data-testid='row']:not([data-state='draft'])").shouldHave(size(expectedCount).because("количество строк таблицы должно соответствовать ожидаемому значению"))
+        `$$`("[data-testid='test-case-row'][data-test-case-id]").shouldHave(size(expectedCount).because("количество строк таблицы должно соответствовать ожидаемому значению"))
     }
 
     fun shouldHaveReadyDateWhenNewRow(expectedDate: String) {
-        newRowField("readyDate").find("[data-ready-date-value='${expectedDate}']").shouldBe(visible.because("элемент должен быть видимым на странице"))
+        newRowField("Ready Date").shouldHave(text(expectedDate).because("ячейка Ready Date должна содержать ожидаемую дату"))
     }
 
     fun shouldHaveReadyDate(testId: String, expectedDate: String) {
-        val row = tableRowByTestId(testId).shouldBe(visible.because("элемент должен быть видимым на странице"))
-        row.`$`("td[data-name='readyDate'] [data-ready-date-value='${expectedDate}']").shouldBe(visible.because("элемент должен быть видимым на странице"))
+        tableRowByTestId(testId).shouldBe(visible.because("элемент должен быть видимым на странице"))
+        existingRowField(testId, "Ready Date").shouldHave(text(expectedDate).because("ячейка Ready Date должна содержать ожидаемую дату"))
     }
 
     fun openRegressionStartForm() {
@@ -192,8 +192,8 @@ class MainPage {
     }
 
     fun selectRegressionStatus(testId: String, status: String) {
-        val row = tableRowByTestId(testId).shouldBe(visible.because("элемент должен быть видимым на странице"))
-        row.`$`("[data-test-id='Regress Run']").shouldBe(enabled.because("селект статуса регресса должен быть доступен для выбора значения")).selectOption(status)
+        tableRowByTestId(testId).shouldBe(visible.because("элемент должен быть видимым на странице"))
+        existingRowField(testId, "Regress Run").find("[data-testid='regress-run-button']").shouldBe(enabled.because("селект статуса регресса должен быть доступен для выбора значения")).selectOption(status)
     }
 
     fun checkPopupWarning() {
@@ -222,7 +222,7 @@ class MainPage {
         element(tableRowSelectorPattern.format(testId))
 
     private fun categoryInput(testId: String): SelenideElement {
-        return existingRowField(testId, "Category")
+        return existingRowField(testId, "Category / Feature").find("textarea, input")
     }
 
     private fun existingTestIdField(testId: String): SelenideElement =
@@ -246,12 +246,12 @@ class MainPage {
     private fun existingPrioritySelect(testId: String): SelenideElement =
         existingRowField(testId, "Priority")
 
-    private fun existingRowField(testId: String, columnDataTestId: String): SelenideElement =
-        tableRowByTestId(testId).`$`("[data-test-id='${columnDataTestId}']")
+    private fun existingRowField(testId: String, columnName: String): SelenideElement =
+        tableRowByTestId(testId).`$`("[data-testid='test-case-cell'][data-name='${columnName}']")
 
     private fun newRowScenarioRows() =
-        newRowField("scenario").`$$`(".scenario-step-row")
+        newRowField("Detailed Scenario").`$$`("[data-testid='scenario-editor-step']")
 
     private fun newRowField(columnName: String): SelenideElement =
-        newRow.`$`("td[data-role='cell'][data-name='${columnName}']")
+        newRow.`$`("[data-testid='test-case-cell'][data-name='${columnName}']")
 }
