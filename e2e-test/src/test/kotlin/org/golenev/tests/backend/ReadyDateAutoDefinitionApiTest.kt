@@ -1,6 +1,6 @@
 package org.golenev.tests.backend
 
-import io.kotest.matchers.shouldBe
+import org.golenev.utils.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
@@ -83,7 +83,7 @@ class ReadyDateAutoDefinitionApiTest {
         }
 
         step("Готовая дата установлена на сегодняшнее число") {
-            createdItem.readyDate shouldBe today
+            createdItem.readyDate.shouldBe(today, "Проверяем, что createdItem.readyDate равно today")
         }
 
         val updateRequest =
@@ -111,9 +111,9 @@ class ReadyDateAutoDefinitionApiTest {
         }
 
         step("Готовая дата осталась прежней, остальные поля обновлены") {
-            updatedItem.readyDate shouldBe createdItem.readyDate
+            updatedItem.readyDate.shouldBe(createdItem.readyDate, "Проверяем, что updatedItem.readyDate равно createdItem.readyDate")
             updatedItem.scenario shouldNotBe createdItem.scenario
-            updatedItem.generalStatus shouldBe GeneralTestStatus.DONE.value
+            updatedItem.generalStatus.shouldBe(GeneralTestStatus.DONE.value, "Проверяем, что updatedItem.generalStatus равно GeneralTestStatus.DONE.value")
         }
     }
 }

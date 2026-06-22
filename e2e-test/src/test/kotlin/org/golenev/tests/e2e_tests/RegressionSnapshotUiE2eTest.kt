@@ -2,7 +2,7 @@ package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
 import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
+import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.commondto.Priority.HIGH
 import org.golenev.db.dbReportExec
@@ -138,9 +138,9 @@ class RegressionSnapshotUiE2eTest {
         }
 
         step("Проверяем поля записи регресса") {
-            regression.status shouldBe "COMPLETED"
-            regression.releaseName shouldBe releaseName
-            regression.regressionDate.toString() shouldBe readyDate
+            regression.status.shouldBe("COMPLETED", "Проверяем, что regression.status равно \"COMPLETED\"")
+            regression.releaseName.shouldBe(releaseName, "Проверяем, что regression.releaseName равно releaseName")
+            regression.regressionDate.toString().shouldBe(readyDate, "Проверяем, что regression.regressionDate.toString() равно readyDate")
         }
 
         val payload = step("Проверяем, что снапшот записан в payload") {
@@ -148,9 +148,9 @@ class RegressionSnapshotUiE2eTest {
         }
 
         step("Проверяем поля снапшота регресса") {
-            payload.regressionDate shouldBe readyDate
-            payload.status shouldBe "COMPLETED"
-            payload.releaseName shouldBe releaseName
+            payload.regressionDate.shouldBe(readyDate, "Проверяем, что payload.regressionDate равно readyDate")
+            payload.status.shouldBe("COMPLETED", "Проверяем, что payload.status равно \"COMPLETED\"")
+            payload.releaseName.shouldBe(releaseName, "Проверяем, что payload.releaseName равно releaseName")
         }
 
         val payloadTests = payload.tests.orEmpty()
@@ -171,23 +171,23 @@ class RegressionSnapshotUiE2eTest {
         )
 
         step("Проверяем, что в снапшоте есть все 11 тестов") {
-            payloadTests.size shouldBe expectedTests.size
-            payloadById.keys.toSet() shouldBe expectedTests.map { it.testId.shouldNotBeNull() }.toSet()
+            payloadTests.size.shouldBe(expectedTests.size, "Проверяем, что payloadTests.size равно expectedTests.size")
+            payloadById.keys.toSet().shouldBe(expectedTests.map { it.testId.shouldNotBeNull() }.toSet(), "Проверяем, что payloadById.keys.toSet() равно expectedTests.map { it.testId.shouldNotBeNull() }.toSet()")
         }
 
         expectedTests.forEach { expected ->
             val expectedTestId = expected.testId.shouldNotBeNull()
             step("Проверяем колонки снапшота для теста ${expected.testId}") {
                 val actual = payloadById[expectedTestId].shouldNotBeNull()
-                actual.testId shouldBe expected.testId
-                actual.category shouldBe expected.category
-                actual.shortTitle shouldBe expected.shortTitle
-                actual.issueLink shouldBe expected.issueLink
-                actual.readyDate shouldBe expected.readyDate
-                actual.generalStatus shouldBe expected.generalStatus
-                actual.priority shouldBe expected.priority
-                actual.scenario shouldBe expected.scenario
-                actual.notes shouldBe expected.notes
+                actual.testId.shouldBe(expected.testId, "Проверяем, что actual.testId равно expected.testId")
+                actual.category.shouldBe(expected.category, "Проверяем, что actual.category равно expected.category")
+                actual.shortTitle.shouldBe(expected.shortTitle, "Проверяем, что actual.shortTitle равно expected.shortTitle")
+                actual.issueLink.shouldBe(expected.issueLink, "Проверяем, что actual.issueLink равно expected.issueLink")
+                actual.readyDate.shouldBe(expected.readyDate, "Проверяем, что actual.readyDate равно expected.readyDate")
+                actual.generalStatus.shouldBe(expected.generalStatus, "Проверяем, что actual.generalStatus равно expected.generalStatus")
+                actual.priority.shouldBe(expected.priority, "Проверяем, что actual.priority равно expected.priority")
+                actual.scenario.shouldBe(expected.scenario, "Проверяем, что actual.scenario равно expected.scenario")
+                actual.notes.shouldBe(expected.notes, "Проверяем, что actual.notes равно expected.notes")
             }
         }
     }

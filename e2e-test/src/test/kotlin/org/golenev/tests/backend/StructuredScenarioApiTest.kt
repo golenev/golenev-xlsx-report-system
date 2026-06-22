@@ -1,6 +1,6 @@
 package org.golenev.tests.backend
 
-import io.kotest.matchers.shouldBe
+import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.endpoints.ReportServiceDao
@@ -49,12 +49,12 @@ class StructuredScenarioApiTest {
 
         step("Проверяем, что шаги вернулись объектами без format") {
             val steps = actualScenario?.steps
-            steps?.size shouldBe 2
-            steps?.get(0)?.number shouldBe 1
-            steps?.get(0)?.text shouldBe "Первый шаг"
-            steps?.get(0)?.attachments shouldBe emptyList()
-            steps?.get(1)?.number shouldBe 2
-            steps?.get(1)?.text shouldBe "Второй шаг"
+            steps?.size.shouldBe(2, "Проверяем, что steps?.size равно 2")
+            steps?.get(0)?.number.shouldBe(1, "Проверяем, что steps?.get(0)?.number равно 1")
+            steps?.get(0)?.text.shouldBe("Первый шаг", "Проверяем, что steps?.get(0)?.text равно \"Первый шаг\"")
+            steps?.get(0)?.attachments.shouldBe(emptyList(), "Проверяем, что steps?.get(0)?.attachments равно emptyList()")
+            steps?.get(1)?.number.shouldBe(2, "Проверяем, что steps?.get(1)?.number равно 2")
+            steps?.get(1)?.text.shouldBe("Второй шаг", "Проверяем, что steps?.get(1)?.text равно \"Второй шаг\"")
         }
     }
 
@@ -102,12 +102,12 @@ class StructuredScenarioApiTest {
 
         step("Проверяем, что вложение осталось у первого шага") {
             val steps = actualScenario?.steps
-            steps?.size shouldBe 2
+            steps?.size.shouldBe(2, "Проверяем, что steps?.size равно 2")
             val firstAttachments = steps?.get(0)?.attachments
-            firstAttachments?.size shouldBe 1
-            firstAttachments?.get(0)?.type shouldBe "text"
-            firstAttachments?.get(0)?.content shouldBe "request / response / json / curl"
-            steps?.get(1)?.attachments shouldBe emptyList()
+            firstAttachments?.size.shouldBe(1, "Проверяем, что firstAttachments?.size равно 1")
+            firstAttachments?.get(0)?.type.shouldBe("text", "Проверяем, что firstAttachments?.get(0)?.type равно \"text\"")
+            firstAttachments?.get(0)?.content.shouldBe("request / response / json / curl", "Проверяем, что firstAttachments?.get(0)?.content равно \"request / response / json / curl\"")
+            steps?.get(1)?.attachments.shouldBe(emptyList(), "Проверяем, что steps?.get(1)?.attachments равно emptyList()")
         }
     }
 
@@ -130,9 +130,9 @@ class StructuredScenarioApiTest {
 
         step("Проверяем, что пустой шаг не вернулся как полноценный шаг") {
             val steps = reportService.getReport().items.first { it.testId == testId }.scenario?.steps
-            steps?.size shouldBe 2
-            steps?.get(0)?.number shouldBe 1
-            steps?.get(1)?.number shouldBe 3
+            steps?.size.shouldBe(2, "Проверяем, что steps?.size равно 2")
+            steps?.get(0)?.number.shouldBe(1, "Проверяем, что steps?.get(0)?.number равно 1")
+            steps?.get(1)?.number.shouldBe(3, "Проверяем, что steps?.get(1)?.number равно 3")
         }
     }
 
@@ -156,10 +156,10 @@ class StructuredScenarioApiTest {
         val errorResponse = response.`as`(ErrorResponse::class.java)
 
         step("Проверяем, что API отклоняет scenario в виде строки") {
-            response.statusCode shouldBe 400
-            errorResponse.status shouldBe 400
-            errorResponse.error shouldBe "Bad Request"
-            errorResponse.path shouldBe "/api/tests"
+            response.statusCode.shouldBe(400, "Проверяем, что response.statusCode равно 400")
+            errorResponse.status.shouldBe(400, "Проверяем, что errorResponse.status равно 400")
+            errorResponse.error.shouldBe("Bad Request", "Проверяем, что errorResponse.error равно \"Bad Request\"")
+            errorResponse.path.shouldBe("/api/tests", "Проверяем, что errorResponse.path равно \"/api/tests\"")
         }
     }
 

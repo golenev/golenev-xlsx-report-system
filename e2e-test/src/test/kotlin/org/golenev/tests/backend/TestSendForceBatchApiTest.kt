@@ -2,7 +2,7 @@ package org.golenev.tests.backend
 
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
+import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.endpoints.ReportServiceDao
@@ -63,11 +63,11 @@ class TestSendForceBatchApiTest {
             batchRequest.items.forEach {
                 val testId = it.testId.shouldNotBeNull()
                 val reportItem = itemsById[testId].shouldNotBeNull()
-                reportItem.category shouldBe it.category
-                reportItem.shortTitle shouldBe it.shortTitle
-                reportItem.readyDate shouldBe reportDay
-                reportItem.generalStatus shouldBe it.generalStatus
-                reportItem.priority shouldBe it.priority
+                reportItem.category.shouldBe(it.category, "Проверяем, что reportItem.category равно it.category")
+                reportItem.shortTitle.shouldBe(it.shortTitle, "Проверяем, что reportItem.shortTitle равно it.shortTitle")
+                reportItem.readyDate.shouldBe(reportDay, "Проверяем, что reportItem.readyDate равно reportDay")
+                reportItem.generalStatus.shouldBe(it.generalStatus, "Проверяем, что reportItem.generalStatus равно it.generalStatus")
+                reportItem.priority.shouldBe(it.priority, "Проверяем, что reportItem.priority равно it.priority")
                 reportItem.updatedAt.shouldNotBeNull()
             }
         }

@@ -2,7 +2,7 @@ package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
-import io.kotest.matchers.shouldBe
+import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.config.Paths
@@ -95,17 +95,17 @@ class CreateAndDeleteTestCasesUiE2eTest {
                 val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
 
                 step("Проверяем тело запроса создания тест-кейса ${testCase.testId}") {
-                    actualCreateRequest.testId shouldBe testCase.testId
-                    actualCreateRequest.category shouldBe testCase.category
-                    actualCreateRequest.shortTitle shouldBe testCase.shortTitle
-                    actualCreateRequest.issueLink shouldBe testCase.issueLink
-                    actualCreateRequest.readyDate shouldBe testCase.readyDate
-                    actualCreateRequest.generalStatus shouldBe testCase.generalStatus
-                    actualCreateRequest.priority shouldBe testCase.priority
-                    actualCreateRequest.scenario shouldBe testCase.scenario
-                    actualCreateRequest.notes.orEmpty() shouldBe testCase.notes
-                    actualCreateRequest.runStatus shouldBe testCase.runStatus
-                    actualCreateRequest.runDate shouldBe testCase.runDate
+                    actualCreateRequest.testId.shouldBe(testCase.testId, "Проверяем, что actualCreateRequest.testId равно testCase.testId")
+                    actualCreateRequest.category.shouldBe(testCase.category, "Проверяем, что actualCreateRequest.category равно testCase.category")
+                    actualCreateRequest.shortTitle.shouldBe(testCase.shortTitle, "Проверяем, что actualCreateRequest.shortTitle равно testCase.shortTitle")
+                    actualCreateRequest.issueLink.shouldBe(testCase.issueLink, "Проверяем, что actualCreateRequest.issueLink равно testCase.issueLink")
+                    actualCreateRequest.readyDate.shouldBe(testCase.readyDate, "Проверяем, что actualCreateRequest.readyDate равно testCase.readyDate")
+                    actualCreateRequest.generalStatus.shouldBe(testCase.generalStatus, "Проверяем, что actualCreateRequest.generalStatus равно testCase.generalStatus")
+                    actualCreateRequest.priority.shouldBe(testCase.priority, "Проверяем, что actualCreateRequest.priority равно testCase.priority")
+                    actualCreateRequest.scenario.shouldBe(testCase.scenario, "Проверяем, что actualCreateRequest.scenario равно testCase.scenario")
+                    actualCreateRequest.notes.orEmpty().shouldBe(testCase.notes, "Проверяем, что actualCreateRequest.notes.orEmpty() равно testCase.notes")
+                    actualCreateRequest.runStatus.shouldBe(testCase.runStatus, "Проверяем, что actualCreateRequest.runStatus равно testCase.runStatus")
+                    actualCreateRequest.runDate.shouldBe(testCase.runDate, "Проверяем, что actualCreateRequest.runDate равно testCase.runDate")
                 }
             }
 
@@ -139,7 +139,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
             }
 
             step("Подтверждаем, что тест-кейс $testId отсутствует в базе") {
-                remainingItems shouldBe 0
+                remainingItems.shouldBe(0, "Проверяем, что remainingItems равно 0")
             }
         }
     }

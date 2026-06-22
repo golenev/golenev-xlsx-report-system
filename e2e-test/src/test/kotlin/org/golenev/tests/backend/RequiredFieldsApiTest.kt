@@ -1,7 +1,7 @@
 package org.golenev.tests.backend
 
 import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
+import org.golenev.utils.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.qameta.allure.AllureId
 import org.golenev.restapi.endpoints.ErrorResponse
@@ -37,10 +37,10 @@ class RequiredFieldsApiTest {
         val errorResponse = response.`as`(ErrorResponse::class.java)
 
         step("Проверяем статус код и упоминание для отсутствующего поля $field") {
-            response.statusCode shouldBe 400
+            response.statusCode.shouldBe(400, "Проверяем, что response.statusCode равно 400")
             val actualMessage = errorResponse.message.shouldNotBeNull()
             actualMessage shouldContain expectedMessage
-            errorResponse.missingField shouldBe field
+            errorResponse.missingField.shouldBe(field, "Проверяем, что errorResponse.missingField равно field")
         }
     }
 
