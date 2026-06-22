@@ -39,71 +39,71 @@ class MainPage {
     fun shouldDisableAddRow() {
         addRowButton
             .scrollIntoView(instant().block(start))
-            .shouldBe(disabled)
+            .shouldBe(disabled.because("кнопка должна быть недоступна, пока форма создания строки не готова к сохранению"))
     }
 
     fun shouldEnableAddRow() {
-        addRowButton.shouldBe(enabled)
+        addRowButton.shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса"))
     }
 
     fun shouldDisableSaveNewRow() {
-        newRowSaveButton.shouldBe(disabled)
+        newRowSaveButton.shouldBe(disabled.because("кнопка должна быть недоступна, пока форма создания строки не готова к сохранению"))
     }
 
     fun shouldEnableSaveNewRow() {
-        newRowSaveButton.shouldBe(enabled)
+        newRowSaveButton.shouldBe(enabled.because("кнопка сохранения должна быть доступна после заполнения обязательных полей"))
     }
 
     fun open() {
         Selenide.open("/")
-        headerTitle.shouldHave(text("Test Report"))
+        headerTitle.shouldHave(text("Test Report").because("после открытия страницы должен отображаться заголовок отчета"))
     }
 
     fun refreshCurrentPage() {
         com.codeborne.selenide.Selenide.refresh()
-        headerTitle.shouldHave(text("Test Report"))
+        headerTitle.shouldHave(text("Test Report").because("после открытия страницы должен отображаться заголовок отчета"))
     }
 
     fun startNewRow() {
-        addRowButton.shouldBe(enabled).click()
-        newRow.shouldBe(visible)
+        addRowButton.shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса")).click()
+        newRow.shouldBe(visible.because("после нажатия добавления должна появиться черновая строка"))
     }
 
     fun fillTestId(testId: String) {
-        newRowTestIdInput.shouldBe(visible).typeOf(testId)
+        newRowTestIdInput.shouldBe(visible.because("поле Test ID должно быть видимым для ввода значения")).typeOf(testId)
     }
 
     fun fillCategory(category: String) {
-        newRowCategoryInput.shouldBe(visible).typeOf(category)
+        newRowCategoryInput.shouldBe(visible.because("поле Category должно быть видимым для ввода значения")).typeOf(category)
     }
 
     fun fillShortTitle(shortTitle: String) {
-        newRowShortTitleInput.shouldBe(visible).typeOf(shortTitle)
+        newRowShortTitleInput.shouldBe(visible.because("поле Short Title должно быть видимым для ввода значения")).typeOf(shortTitle)
     }
 
     fun fillIssueLink(issueLink: String) {
-        newRowIssueLinkInput.shouldBe(visible).typeOf(issueLink)
+        newRowIssueLinkInput.shouldBe(visible.because("поле Issue Link должно быть видимым для ввода значения")).typeOf(issueLink)
     }
 
     fun selectGeneralStatus(status: String) {
-        newRowGeneralStatusDropdown.shouldBe(visible)
+        newRowGeneralStatusDropdown.shouldBe(visible.because("выпадающий список статуса должен быть видимым для выбора значения"))
         newRowGeneralStatusDropdown.find("summary").click()
         newRowGeneralStatusDropdown.findAll("button[data-testid='status-option']").findBy(text(status)).click()
     }
 
     fun selectPriority(priority: String) {
-        newRowPrioritySelect.shouldBe(visible).selectOption(priority)
+        newRowPrioritySelect.shouldBe(visible.because("выпадающий список приоритета должен быть видимым для выбора значения")).selectOption(priority)
     }
 
     fun fillDetailedScenario(scenario: String) {
-        newRowScenarioTextarea.shouldBe(visible).typeOf(scenario)
+        newRowScenarioTextarea.shouldBe(visible.because("поле сценария должно быть видимым для ввода значения")).typeOf(scenario)
     }
 
     fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) {
         steps.forEachIndexed { index, step ->
-            val row = newRowScenarioRows()[index].shouldBe(visible)
+            val row = newRowScenarioRows()[index].shouldBe(visible.because("элемент должен быть видимым на странице"))
 
-            row.find("textarea.scenario-step-input").shouldBe(visible).typeOf(step.text)
+            row.find("textarea.scenario-step-input").shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(step.text)
 
             val attachment = step.attachments
                 .map { attachment -> attachment.content.trim() }
@@ -117,63 +117,63 @@ class MainPage {
     }
 
     private fun fillScenarioStepAttachment(row: SelenideElement, attachment: String) {
-        row.find("button.attachment-inline-action").shouldBe(visible).click()
-        row.find(".scenario-attachment-panel.open").shouldBe(visible)
+        row.find("button.attachment-inline-action").shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
+        row.find(".scenario-attachment-panel.open").shouldBe(visible.because("элемент должен быть видимым на странице"))
         row.find("textarea.scenario-attachment-input").click()
-        row.find("textarea.scenario-attachment-input").shouldBe(visible).typeOf(attachment)
-        row.find("button.attachment-text-action.primary").shouldBe(visible).click()
-        row.find("button.attachment-chip").shouldBe(visible).shouldHave(text("Вложение"))
-        row.find(".scenario-attachment-panel").shouldNotHave(cssClass("open"))
+        row.find("textarea.scenario-attachment-input").shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(attachment)
+        row.find("button.attachment-text-action.primary").shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
+        row.find("button.attachment-chip").shouldBe(visible.because("элемент должен быть видимым на странице")).shouldHave(text("Вложение").because("после добавления вложения должна появиться плашка с текстом Вложение"))
+        row.find(".scenario-attachment-panel").shouldNotHave(cssClass("open").because("панель вложения должна закрыться после сохранения текста вложения"))
     }
 
     fun fillNotes(notes: String) {
-        newRowNotesTextarea.shouldBe(visible).typeOf(notes)
+        newRowNotesTextarea.shouldBe(visible.because("поле Notes должно быть видимым для ввода значения")).typeOf(notes)
     }
 
     fun saveNewRow() {
-        newRowSaveButton.shouldBe(enabled).click()
-        newRow.shouldBe(hidden)
+        newRowSaveButton.shouldBe(enabled.because("кнопка сохранения должна быть доступна после заполнения обязательных полей")).click()
+        newRow.shouldBe(hidden.because("после сохранения черновая строка должна скрыться"))
     }
 
     fun shouldSeeTestCase(testId: String) {
-        tableRowByTestId(testId).scrollIntoView(CENTER).shouldBe(visible)
+        tableRowByTestId(testId).scrollIntoView(CENTER).shouldBe(visible.because("элемент должен быть видимым на странице"))
     }
 
     fun deleteTestCase(testId: String) {
-        val row = tableRowByTestId(testId).shouldBe(visible)
+        val row = tableRowByTestId(testId).shouldBe(visible.because("элемент должен быть видимым на странице"))
         row.find("button[data-role='button'][data-action='delete-row']").click()
         Selenide.confirm()
     }
 
     fun shouldNotSeeTestCase(testId: String) {
-        tableRowByTestId(testId).should(disappear)
+        tableRowByTestId(testId).should(disappear.because("элемент должен исчезнуть после выполненного действия"))
     }
 
     fun shouldHaveTestCasesCount(expectedCount: Int) {
-        `$$`("tbody tr[data-role='row'][data-testid='row']:not([data-state='draft'])").shouldHave(size(expectedCount))
+        `$$`("tbody tr[data-role='row'][data-testid='row']:not([data-state='draft'])").shouldHave(size(expectedCount).because("количество строк таблицы должно соответствовать ожидаемому значению"))
     }
 
     fun shouldHaveReadyDateWhenNewRow(expectedDate: String) {
-        newRowField("readyDate").find("[data-ready-date-value='${expectedDate}']").shouldBe(visible)
+        newRowField("readyDate").find("[data-ready-date-value='${expectedDate}']").shouldBe(visible.because("элемент должен быть видимым на странице"))
     }
 
     fun shouldHaveReadyDate(testId: String, expectedDate: String) {
-        val row = tableRowByTestId(testId).shouldBe(visible)
-        row.`$`("td[data-name='readyDate'] [data-ready-date-value='${expectedDate}']").shouldBe(visible)
+        val row = tableRowByTestId(testId).shouldBe(visible.because("элемент должен быть видимым на странице"))
+        row.`$`("td[data-name='readyDate'] [data-ready-date-value='${expectedDate}']").shouldBe(visible.because("элемент должен быть видимым на странице"))
     }
 
     fun openRegressionStartForm() {
-        regressionStartButton.shouldBe(enabled).click()
-        regressionReleaseInput.shouldBe(visible)
+        regressionStartButton.shouldBe(enabled.because("элемент должен быть доступен перед кликом")).click()
+        regressionReleaseInput.shouldBe(visible.because("элемент должен быть видимым на странице"))
     }
 
     fun fillRegressionName(releaseName: String) {
-        regressionReleaseInput.shouldBe(visible).typeOf(releaseName)
+        regressionReleaseInput.shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(releaseName)
     }
 
     fun saveRegressionStart() {
-        regressionSaveButton.shouldBe(enabled).click()
-        regressionCancelButton.shouldBe(visible)
+        regressionSaveButton.shouldBe(enabled.because("элемент должен быть доступен перед кликом")).click()
+        regressionCancelButton.shouldBe(visible.because("элемент должен быть видимым на странице"))
     }
 
     fun startRegression(releaseName: String) {
@@ -183,31 +183,31 @@ class MainPage {
     }
 
     fun cancelRegression() {
-        regressionCancelButton.shouldBe(visible).click()
-        regressionCancelButton.should(disappear)
+        regressionCancelButton.shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
+        regressionCancelButton.should(disappear.because("элемент должен исчезнуть после выполненного действия"))
     }
 
     fun stopRegress() {
-        `$`(".regression-actions .danger-btn").shouldBe(visible).click()
+        `$`(".regression-actions .danger-btn").shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
     }
 
     fun selectRegressionStatus(testId: String, status: String) {
-        val row = tableRowByTestId(testId).shouldBe(visible)
-        row.`$`("[data-test-id='Regress Run']").shouldBe(enabled).selectOption(status)
+        val row = tableRowByTestId(testId).shouldBe(visible.because("элемент должен быть видимым на странице"))
+        row.`$`("[data-test-id='Regress Run']").shouldBe(enabled.because("селект статуса регресса должен быть доступен для выбора значения")).selectOption(status)
     }
 
     fun checkPopupWarning() {
-        `$`(".popup-message").shouldHave(exactText("Перед остановкой регресса заполните результаты для всех тест-кейсов."))
-        `$`(".popup-title").shouldHave(exactText("Не все статусы заполнены"))
+        `$`(".popup-message").shouldHave(exactText("Перед остановкой регресса заполните результаты для всех тест-кейсов.").because("попап должен объяснять, почему нельзя остановить регресс без заполненных статусов"))
+        `$`(".popup-title").shouldHave(exactText("Не все статусы заполнены").because("заголовок попапа должен указывать на незаполненные статусы"))
     }
 
     fun closePopupWarning() {
         `$`(".popup-actions .secondary-btn").click()
-        `$`(".popup-card").shouldBe(disappear)
+        `$`(".popup-card").shouldBe(disappear.because("попап должен закрыться после нажатия кнопки закрытия"))
     }
 
     fun updateCategory(testId: String, newValue: String) {
-        categoryInput(testId).shouldBe(visible).setValue(newValue)
+        categoryInput(testId).shouldBe(visible.because("поле категории должно быть видимым для изменения значения")).setValue(newValue)
     }
 
     fun unFocus() {
@@ -215,7 +215,7 @@ class MainPage {
     }
 
     fun focusOnCategory(testId: String) {
-        categoryInput(testId).shouldBe(visible).click()
+        categoryInput(testId).shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
     }
 
     private fun tableRowByTestId(testId: String): SelenideElement =
