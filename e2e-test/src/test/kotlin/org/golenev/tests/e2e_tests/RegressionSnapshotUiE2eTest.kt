@@ -2,7 +2,7 @@ package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
 import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
+import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.commondto.Priority.HIGH
 import org.golenev.db.dbReportExec
@@ -138,9 +138,9 @@ class RegressionSnapshotUiE2eTest {
         }
 
         step("Проверяем поля записи регресса") {
-            regression.status shouldBe "COMPLETED"
-            regression.releaseName shouldBe releaseName
-            regression.regressionDate.toString() shouldBe readyDate
+            regression.status.shouldBe("COMPLETED", "regression.status не совпало с ожидаемым")
+            regression.releaseName.shouldBe(releaseName, "regression.releaseName не совпало с ожидаемым")
+            regression.regressionDate.toString().shouldBe(readyDate, "regression.regressionDate.toString() не совпало с ожидаемым")
         }
 
         val payload = step("Проверяем, что снапшот записан в payload") {
@@ -148,9 +148,9 @@ class RegressionSnapshotUiE2eTest {
         }
 
         step("Проверяем поля снапшота регресса") {
-            payload.regressionDate shouldBe readyDate
-            payload.status shouldBe "COMPLETED"
-            payload.releaseName shouldBe releaseName
+            payload.regressionDate.shouldBe(readyDate, "payload.regressionDate не совпало с ожидаемым")
+            payload.status.shouldBe("COMPLETED", "payload.status не совпало с ожидаемым")
+            payload.releaseName.shouldBe(releaseName, "payload.releaseName не совпало с ожидаемым")
         }
 
         val payloadTests = payload.tests.orEmpty()
@@ -171,23 +171,23 @@ class RegressionSnapshotUiE2eTest {
         )
 
         step("Проверяем, что в снапшоте есть все 11 тестов") {
-            payloadTests.size shouldBe expectedTests.size
-            payloadById.keys.toSet() shouldBe expectedTests.map { it.testId.shouldNotBeNull() }.toSet()
+            payloadTests.size.shouldBe(expectedTests.size, "payloadTests.size не совпало с ожидаемым")
+            payloadById.keys.toSet().shouldBe(expectedTests.map { it.testId.shouldNotBeNull() }.toSet(), "payloadById.keys.toSet() не совпало с ожидаемым")
         }
 
         expectedTests.forEach { expected ->
             val expectedTestId = expected.testId.shouldNotBeNull()
             step("Проверяем колонки снапшота для теста ${expected.testId}") {
                 val actual = payloadById[expectedTestId].shouldNotBeNull()
-                actual.testId shouldBe expected.testId
-                actual.category shouldBe expected.category
-                actual.shortTitle shouldBe expected.shortTitle
-                actual.issueLink shouldBe expected.issueLink
-                actual.readyDate shouldBe expected.readyDate
-                actual.generalStatus shouldBe expected.generalStatus
-                actual.priority shouldBe expected.priority
-                actual.scenario shouldBe expected.scenario
-                actual.notes shouldBe expected.notes
+                actual.testId.shouldBe(expected.testId, "actual.testId не совпало с ожидаемым")
+                actual.category.shouldBe(expected.category, "actual.category не совпало с ожидаемым")
+                actual.shortTitle.shouldBe(expected.shortTitle, "actual.shortTitle не совпало с ожидаемым")
+                actual.issueLink.shouldBe(expected.issueLink, "actual.issueLink не совпало с ожидаемым")
+                actual.readyDate.shouldBe(expected.readyDate, "actual.readyDate не совпало с ожидаемым")
+                actual.generalStatus.shouldBe(expected.generalStatus, "actual.generalStatus не совпало с ожидаемым")
+                actual.priority.shouldBe(expected.priority, "actual.priority не совпало с ожидаемым")
+                actual.scenario.shouldBe(expected.scenario, "actual.scenario не совпало с ожидаемым")
+                actual.notes.shouldBe(expected.notes, "actual.notes не совпало с ожидаемым")
             }
         }
     }

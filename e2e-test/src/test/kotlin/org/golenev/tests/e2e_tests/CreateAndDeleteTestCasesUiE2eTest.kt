@@ -2,7 +2,7 @@ package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
-import io.kotest.matchers.shouldBe
+import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.config.Paths
@@ -95,17 +95,17 @@ class CreateAndDeleteTestCasesUiE2eTest {
                 val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
 
                 step("Проверяем тело запроса создания тест-кейса ${testCase.testId}") {
-                    actualCreateRequest.testId shouldBe testCase.testId
-                    actualCreateRequest.category shouldBe testCase.category
-                    actualCreateRequest.shortTitle shouldBe testCase.shortTitle
-                    actualCreateRequest.issueLink shouldBe testCase.issueLink
-                    actualCreateRequest.readyDate shouldBe testCase.readyDate
-                    actualCreateRequest.generalStatus shouldBe testCase.generalStatus
-                    actualCreateRequest.priority shouldBe testCase.priority
-                    actualCreateRequest.scenario shouldBe testCase.scenario
-                    actualCreateRequest.notes.orEmpty() shouldBe testCase.notes
-                    actualCreateRequest.runStatus shouldBe testCase.runStatus
-                    actualCreateRequest.runDate shouldBe testCase.runDate
+                    actualCreateRequest.testId.shouldBe(testCase.testId, "actualCreateRequest.testId не совпало с ожидаемым")
+                    actualCreateRequest.category.shouldBe(testCase.category, "actualCreateRequest.category не совпало с ожидаемым")
+                    actualCreateRequest.shortTitle.shouldBe(testCase.shortTitle, "actualCreateRequest.shortTitle не совпало с ожидаемым")
+                    actualCreateRequest.issueLink.shouldBe(testCase.issueLink, "actualCreateRequest.issueLink не совпало с ожидаемым")
+                    actualCreateRequest.readyDate.shouldBe(testCase.readyDate, "actualCreateRequest.readyDate не совпало с ожидаемым")
+                    actualCreateRequest.generalStatus.shouldBe(testCase.generalStatus, "actualCreateRequest.generalStatus не совпало с ожидаемым")
+                    actualCreateRequest.priority.shouldBe(testCase.priority, "actualCreateRequest.priority не совпало с ожидаемым")
+                    actualCreateRequest.scenario.shouldBe(testCase.scenario, "actualCreateRequest.scenario не совпало с ожидаемым")
+                    actualCreateRequest.notes.orEmpty().shouldBe(testCase.notes, "actualCreateRequest.notes.orEmpty() не совпало с ожидаемым")
+                    actualCreateRequest.runStatus.shouldBe(testCase.runStatus, "actualCreateRequest.runStatus не совпало с ожидаемым")
+                    actualCreateRequest.runDate.shouldBe(testCase.runDate, "actualCreateRequest.runDate не совпало с ожидаемым")
                 }
             }
 
@@ -139,7 +139,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
             }
 
             step("Подтверждаем, что тест-кейс $testId отсутствует в базе") {
-                remainingItems shouldBe 0
+                remainingItems.shouldBe(0, "remainingItems не совпало с ожидаемым")
             }
         }
     }
