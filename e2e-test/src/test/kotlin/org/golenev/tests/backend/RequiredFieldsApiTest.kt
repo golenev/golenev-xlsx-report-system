@@ -37,10 +37,10 @@ class RequiredFieldsApiTest {
         val errorResponse = response.`as`(ErrorResponse::class.java)
 
         step("Проверяем статус код и упоминание для отсутствующего поля $field") {
-            response.statusCode.shouldBe(400, "Проверяем, что response.statusCode равно 400")
+            response.statusCode.shouldBe(400, "response.statusCode не совпало с ожидаемым")
             val actualMessage = errorResponse.message.shouldNotBeNull()
             actualMessage shouldContain expectedMessage
-            errorResponse.missingField.shouldBe(field, "Проверяем, что errorResponse.missingField равно field")
+            errorResponse.missingField.shouldBe(field, "errorResponse.missingField не совпало с ожидаемым")
         }
     }
 

@@ -83,7 +83,7 @@ class ReadyDateAutoDefinitionApiTest {
         }
 
         step("Готовая дата установлена на сегодняшнее число") {
-            createdItem.readyDate.shouldBe(today, "Проверяем, что createdItem.readyDate равно today")
+            createdItem.readyDate.shouldBe(today, "createdItem.readyDate не совпало с ожидаемым")
         }
 
         val updateRequest =
@@ -111,9 +111,9 @@ class ReadyDateAutoDefinitionApiTest {
         }
 
         step("Готовая дата осталась прежней, остальные поля обновлены") {
-            updatedItem.readyDate.shouldBe(createdItem.readyDate, "Проверяем, что updatedItem.readyDate равно createdItem.readyDate")
+            updatedItem.readyDate.shouldBe(createdItem.readyDate, "updatedItem.readyDate не совпало с ожидаемым")
             updatedItem.scenario shouldNotBe createdItem.scenario
-            updatedItem.generalStatus.shouldBe(GeneralTestStatus.DONE.value, "Проверяем, что updatedItem.generalStatus равно GeneralTestStatus.DONE.value")
+            updatedItem.generalStatus.shouldBe(GeneralTestStatus.DONE.value, "updatedItem.generalStatus не совпало с ожидаемым")
         }
     }
 }

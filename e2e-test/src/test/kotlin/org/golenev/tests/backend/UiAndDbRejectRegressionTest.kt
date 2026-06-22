@@ -73,10 +73,10 @@ class UiAndDbRejectRegressionTest {
         }
 
         step("Убеждаемся в корректности полей регресса") {
-            regression.status.shouldBe("RUNNING", "Проверяем, что regression.status равно \"RUNNING\"")
-            regression.regressionDate.shouldBe(regressionDate, "Проверяем, что regression.regressionDate равно regressionDate")
-            regression.payload?.tests.shouldBe(null, "Проверяем, что regression.payload?.tests равно null")
-            regression.payload?.status.shouldBe(null, "Проверяем, что regression.payload?.status равно null")
+            regression.status.shouldBe("RUNNING", "regression.status не совпало с ожидаемым")
+            regression.regressionDate.shouldBe(regressionDate, "regression.regressionDate не совпало с ожидаемым")
+            regression.payload?.tests.shouldBe(null, "regression.payload?.tests не совпало с ожидаемым")
+            regression.payload?.status.shouldBe(null, "regression.payload?.status не совпало с ожидаемым")
         }
 
         step("Отменяем регресс через UI") {
@@ -84,7 +84,7 @@ class UiAndDbRejectRegressionTest {
         }
 
         step("Проверяем, что запись о регрессе удалена из БД") {
-            RegressionDao.findByReleaseName(createdReleaseName).shouldBe(null, "Проверяем, что RegressionDao.findByReleaseName(createdReleaseName) равно null")
+            RegressionDao.findByReleaseName(createdReleaseName).shouldBe(null, "RegressionDao.findByReleaseName(createdReleaseName) не совпало с ожидаемым")
         }
     }
 
@@ -129,10 +129,10 @@ class UiAndDbRejectRegressionTest {
         }
 
         step("Убеждаемся в корректности полей регресса") {
-            regression.status.shouldBe("RUNNING", "Проверяем, что regression.status равно \"RUNNING\"")
-            regression.regressionDate.shouldBe(regressionDate, "Проверяем, что regression.regressionDate равно regressionDate")
-            regression.payload?.tests.shouldBe(null, "Проверяем, что regression.payload?.tests равно null")
-            regression.payload?.status.shouldBe(null, "Проверяем, что regression.payload?.status равно null")
+            regression.status.shouldBe("RUNNING", "regression.status не совпало с ожидаемым")
+            regression.regressionDate.shouldBe(regressionDate, "regression.regressionDate не совпало с ожидаемым")
+            regression.payload?.tests.shouldBe(null, "regression.payload?.tests не совпало с ожидаемым")
+            regression.payload?.status.shouldBe(null, "regression.payload?.status не совпало с ожидаемым")
         }
 
         step("Отменяем регресс через UI") {
@@ -152,7 +152,7 @@ class UiAndDbRejectRegressionTest {
         }
 
         step("Проверяем, что запись о регрессе удалена из БД") {
-            RegressionDao.findByReleaseName(createdReleaseName).shouldBe(null, "Проверяем, что RegressionDao.findByReleaseName(createdReleaseName) равно null")
+            RegressionDao.findByReleaseName(createdReleaseName).shouldBe(null, "RegressionDao.findByReleaseName(createdReleaseName) не совпало с ожидаемым")
         }
     }
 }

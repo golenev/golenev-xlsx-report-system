@@ -138,9 +138,9 @@ class RegressionSnapshotUiE2eTest {
         }
 
         step("Проверяем поля записи регресса") {
-            regression.status.shouldBe("COMPLETED", "Проверяем, что regression.status равно \"COMPLETED\"")
-            regression.releaseName.shouldBe(releaseName, "Проверяем, что regression.releaseName равно releaseName")
-            regression.regressionDate.toString().shouldBe(readyDate, "Проверяем, что regression.regressionDate.toString() равно readyDate")
+            regression.status.shouldBe("COMPLETED", "regression.status не совпало с ожидаемым")
+            regression.releaseName.shouldBe(releaseName, "regression.releaseName не совпало с ожидаемым")
+            regression.regressionDate.toString().shouldBe(readyDate, "regression.regressionDate.toString() не совпало с ожидаемым")
         }
 
         val payload = step("Проверяем, что снапшот записан в payload") {
@@ -148,9 +148,9 @@ class RegressionSnapshotUiE2eTest {
         }
 
         step("Проверяем поля снапшота регресса") {
-            payload.regressionDate.shouldBe(readyDate, "Проверяем, что payload.regressionDate равно readyDate")
-            payload.status.shouldBe("COMPLETED", "Проверяем, что payload.status равно \"COMPLETED\"")
-            payload.releaseName.shouldBe(releaseName, "Проверяем, что payload.releaseName равно releaseName")
+            payload.regressionDate.shouldBe(readyDate, "payload.regressionDate не совпало с ожидаемым")
+            payload.status.shouldBe("COMPLETED", "payload.status не совпало с ожидаемым")
+            payload.releaseName.shouldBe(releaseName, "payload.releaseName не совпало с ожидаемым")
         }
 
         val payloadTests = payload.tests.orEmpty()
@@ -171,23 +171,23 @@ class RegressionSnapshotUiE2eTest {
         )
 
         step("Проверяем, что в снапшоте есть все 11 тестов") {
-            payloadTests.size.shouldBe(expectedTests.size, "Проверяем, что payloadTests.size равно expectedTests.size")
-            payloadById.keys.toSet().shouldBe(expectedTests.map { it.testId.shouldNotBeNull() }.toSet(), "Проверяем, что payloadById.keys.toSet() равно expectedTests.map { it.testId.shouldNotBeNull() }.toSet()")
+            payloadTests.size.shouldBe(expectedTests.size, "payloadTests.size не совпало с ожидаемым")
+            payloadById.keys.toSet().shouldBe(expectedTests.map { it.testId.shouldNotBeNull() }.toSet(), "payloadById.keys.toSet() не совпало с ожидаемым")
         }
 
         expectedTests.forEach { expected ->
             val expectedTestId = expected.testId.shouldNotBeNull()
             step("Проверяем колонки снапшота для теста ${expected.testId}") {
                 val actual = payloadById[expectedTestId].shouldNotBeNull()
-                actual.testId.shouldBe(expected.testId, "Проверяем, что actual.testId равно expected.testId")
-                actual.category.shouldBe(expected.category, "Проверяем, что actual.category равно expected.category")
-                actual.shortTitle.shouldBe(expected.shortTitle, "Проверяем, что actual.shortTitle равно expected.shortTitle")
-                actual.issueLink.shouldBe(expected.issueLink, "Проверяем, что actual.issueLink равно expected.issueLink")
-                actual.readyDate.shouldBe(expected.readyDate, "Проверяем, что actual.readyDate равно expected.readyDate")
-                actual.generalStatus.shouldBe(expected.generalStatus, "Проверяем, что actual.generalStatus равно expected.generalStatus")
-                actual.priority.shouldBe(expected.priority, "Проверяем, что actual.priority равно expected.priority")
-                actual.scenario.shouldBe(expected.scenario, "Проверяем, что actual.scenario равно expected.scenario")
-                actual.notes.shouldBe(expected.notes, "Проверяем, что actual.notes равно expected.notes")
+                actual.testId.shouldBe(expected.testId, "actual.testId не совпало с ожидаемым")
+                actual.category.shouldBe(expected.category, "actual.category не совпало с ожидаемым")
+                actual.shortTitle.shouldBe(expected.shortTitle, "actual.shortTitle не совпало с ожидаемым")
+                actual.issueLink.shouldBe(expected.issueLink, "actual.issueLink не совпало с ожидаемым")
+                actual.readyDate.shouldBe(expected.readyDate, "actual.readyDate не совпало с ожидаемым")
+                actual.generalStatus.shouldBe(expected.generalStatus, "actual.generalStatus не совпало с ожидаемым")
+                actual.priority.shouldBe(expected.priority, "actual.priority не совпало с ожидаемым")
+                actual.scenario.shouldBe(expected.scenario, "actual.scenario не совпало с ожидаемым")
+                actual.notes.shouldBe(expected.notes, "actual.notes не совпало с ожидаемым")
             }
         }
     }

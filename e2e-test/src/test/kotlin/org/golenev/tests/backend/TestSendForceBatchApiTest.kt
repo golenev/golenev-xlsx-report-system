@@ -63,11 +63,11 @@ class TestSendForceBatchApiTest {
             batchRequest.items.forEach {
                 val testId = it.testId.shouldNotBeNull()
                 val reportItem = itemsById[testId].shouldNotBeNull()
-                reportItem.category.shouldBe(it.category, "Проверяем, что reportItem.category равно it.category")
-                reportItem.shortTitle.shouldBe(it.shortTitle, "Проверяем, что reportItem.shortTitle равно it.shortTitle")
-                reportItem.readyDate.shouldBe(reportDay, "Проверяем, что reportItem.readyDate равно reportDay")
-                reportItem.generalStatus.shouldBe(it.generalStatus, "Проверяем, что reportItem.generalStatus равно it.generalStatus")
-                reportItem.priority.shouldBe(it.priority, "Проверяем, что reportItem.priority равно it.priority")
+                reportItem.category.shouldBe(it.category, "reportItem.category не совпало с ожидаемым")
+                reportItem.shortTitle.shouldBe(it.shortTitle, "reportItem.shortTitle не совпало с ожидаемым")
+                reportItem.readyDate.shouldBe(reportDay, "reportItem.readyDate не совпало с ожидаемым")
+                reportItem.generalStatus.shouldBe(it.generalStatus, "reportItem.generalStatus не совпало с ожидаемым")
+                reportItem.priority.shouldBe(it.priority, "reportItem.priority не совпало с ожидаемым")
                 reportItem.updatedAt.shouldNotBeNull()
             }
         }
