@@ -18,9 +18,11 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.Isolated
 import java.time.LocalDate
 import kotlin.random.Random
 
+@Isolated
 @DisplayName("E2E: UI сценарий создания снапшота регресса")
 class RegressionSnapshotUiE2eTest {
 
@@ -31,6 +33,10 @@ class RegressionSnapshotUiE2eTest {
 
     @BeforeEach
     fun setUp() {
+        step("Полностью очищаем таблицу тест-кейсов перед тестом") {
+            TestReportDao.truncate()
+        }
+
         step("Настраиваем драйвер Selenide") {
             DriverConfig().setup()
         }
