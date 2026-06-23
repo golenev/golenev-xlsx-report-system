@@ -21,6 +21,7 @@ data class TestUpsertItem(
     val notes: String? = null,
     val runStatus: String? = null,
     val runDate: String? = null,
+    val regressionStatus: String? = null,
 )
 
 data class TestReportResponse(

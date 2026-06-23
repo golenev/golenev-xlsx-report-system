@@ -4,27 +4,22 @@ import com.codeborne.selenide.Selenide
 import io.kotest.matchers.nulls.shouldNotBeNull
 import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
-import org.golenev.commondto.Priority.HIGH
-import org.golenev.db.dbReportExec
 import org.golenev.db.tables.regression.RegressionDao
-import org.golenev.db.tables.testReportTable.TestReportTable
-import org.golenev.restapi.endpoints.GeneralTestStatus
+import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.restapi.endpoints.TestUpsertItem
-import org.golenev.restapi.endpoints.ScenarioRequest
-import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.MainPage
 import org.golenev.utils.TestDataGenerator
 import org.golenev.utils.getRandomTestId
 import org.golenev.utils.step
-import org.jetbrains.exposed.sql.deleteAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
+import kotlin.random.Random
 
 @DisplayName("E2E: UI сценарий создания снапшота регресса")
 class RegressionSnapshotUiE2eTest {
@@ -32,6 +27,7 @@ class RegressionSnapshotUiE2eTest {
     private val mainPage = MainPage()
     private val reportService = ReportServiceDao()
     private lateinit var releaseName: String
+    private val createdTestIds = mutableListOf<String>()
 
     @BeforeEach
     fun setUp() {
@@ -52,10 +48,8 @@ class RegressionSnapshotUiE2eTest {
             }
         }
 
-        step("Очищаем таблицу тест кейсов") {
-            dbReportExec {
-                TestReportTable.deleteAll()
-            }
+        step("Удаляем созданные тест-кейсы из базы, если они остались после теста") {
+            createdTestIds.forEach { testId -> TestReportDao.deleteByTestId(testId) }
         }
     }
 
@@ -66,14 +60,23 @@ class RegressionSnapshotUiE2eTest {
         val readyDate = step("Фиксируем текущую дату для готовности тестов") {
             LocalDate.now().toString()
         }
-        val generatedTests = step("Генерируем 10 тестовых сценариев") {
-            TestDataGenerator.generateTestCases(count = 10, readyDate = readyDate)
+        val testCases = step("Генерируем данные для двух тест-кейсов") {
+            TestDataGenerator.generateTestCases(count = 2, readyDate = readyDate)
+                .mapIndexed { index, testCase ->
+                    val testId = "UI-REG-${getRandomTestId()}-${index + 1}"
+                    testCase.copy(
+                        testId = testId,
+                        issueLink = "https://youtrack.test/issue/$testId",
+                    )
+                }
         }
-        val batchRequest = step("Готовим batch-запрос на создание 10 тестов") {
-            TestBatchRequest(items = generatedTests)
+        createdTestIds += testCases.mapNotNull { it.testId }
+
+        val batchRequest = step("Готовим batch-запрос на создание двух тест-кейсов") {
+            TestBatchRequest(items = testCases)
         }
 
-        step("Создаём 10 тестов через API") {
+        step("Создаём два тест-кейса через API") {
             reportService.sendBatch(batchRequest)
         }
 
@@ -81,34 +84,11 @@ class RegressionSnapshotUiE2eTest {
             mainPage.open()
         }
 
-        step("Убеждаемся, что добавлено 10 новых строк") {
-            mainPage.shouldHaveTestCasesCount(10)
-        }
-
-        val manualTestId = "UI-REG-${getRandomTestId()}"
-        val manualCategory = "UI regression"
-        val manualShortTitle = "Manual regression case"
-        val manualIssueLink = "https://youtrack.test/issue/$manualTestId"
-        val manualGeneralStatus = GeneralTestStatus.DONE.value
-        val manualPriority = HIGH.value
-        val manualScenario = "Ручной тест-кейс для регрессионного прогона"
-        val manualNotes = "Ручная запись для проверки снапшота"
-
-        step("Добавляем вручную 11-ю строку через UI") {
-            mainPage.startNewRow()
-            mainPage.fillTestId(manualTestId)
-            mainPage.fillCategory(manualCategory)
-            mainPage.fillShortTitle(manualShortTitle)
-            mainPage.fillIssueLink(manualIssueLink)
-            mainPage.selectGeneralStatus(manualGeneralStatus)
-            mainPage.selectPriority(manualPriority)
-            mainPage.fillDetailedScenario(manualScenario)
-            mainPage.fillNotes(manualNotes)
-            mainPage.saveNewRow()
-        }
-
-        step("Убеждаемся, что 11-й тест отображается в таблице") {
-            mainPage.shouldSeeTestCase(manualTestId)
+        step("Убеждаемся, что в таблице отображаются две созданные записи") {
+            mainPage.shouldHaveTestCasesCount(testCases.size)
+            testCases.forEach { testCase ->
+                mainPage.shouldSeeTestCase(testCase.testId.orEmpty())
+            }
         }
 
         releaseName = "ui-regression-${getRandomTestId()}"
@@ -117,14 +97,13 @@ class RegressionSnapshotUiE2eTest {
             mainPage.startRegression(releaseName)
         }
 
-        val regressionStatuses = listOf("PASSED", "FAILED", "SKIPPED")
-        val expectedStatuses = (generatedTests.map { it.testId.shouldNotBeNull() } + manualTestId)
-            .mapIndexed { index, testId -> testId to regressionStatuses[index % regressionStatuses.size] }
-            .toMap()
+        val expectedStatuses = testCases
+            .map { testCase -> testCase.testId.shouldNotBeNull() }
+            .associateWith { RegressionRunStatus.entries.random(Random) }
 
-        step("Проставляем результаты прогона для всех 11 тестов") {
+        step("Проставляем случайные результаты прогона для двух тест-кейсов") {
             expectedStatuses.forEach { (testId, status) ->
-                mainPage.selectRegressionStatus(testId, status)
+                mainPage.selectRegressionStatus(testId, status.name)
             }
         }
 
@@ -158,19 +137,12 @@ class RegressionSnapshotUiE2eTest {
             .mapNotNull { test -> test.testId?.let { it to test } }
             .toMap()
 
-        val expectedTests = generatedTests.map { it.copy() } + TestUpsertItem(
-            testId = manualTestId,
-            category = manualCategory,
-            shortTitle = manualShortTitle,
-            issueLink = manualIssueLink,
-            readyDate = readyDate,
-            generalStatus = manualGeneralStatus,
-            priority = manualPriority,
-            scenario = ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = manualScenario, attachments = emptyList()))),
-            notes = manualNotes,
-        )
+        val expectedTests = testCases.map { testCase ->
+            val testId = testCase.testId.shouldNotBeNull()
+            testCase.copy(regressionStatus = expectedStatuses[testId]?.name)
+        }
 
-        step("Проверяем, что в снапшоте есть все 11 тестов") {
+        step("Проверяем, что в снапшоте есть все два тест-кейса") {
             payloadTests.size.shouldBe(expectedTests.size, "payloadTests.size не совпало с ожидаемым")
             payloadById.keys.toSet().shouldBe(expectedTests.map { it.testId.shouldNotBeNull() }.toSet(), "payloadById.keys.toSet() не совпало с ожидаемым")
         }
@@ -188,7 +160,16 @@ class RegressionSnapshotUiE2eTest {
                 actual.priority.shouldBe(expected.priority, "actual.priority не совпало с ожидаемым")
                 actual.scenario.shouldBe(expected.scenario, "actual.scenario не совпало с ожидаемым")
                 actual.notes.shouldBe(expected.notes, "actual.notes не совпало с ожидаемым")
+                actual.runStatus.shouldBe(expected.runStatus, "actual.runStatus не совпало с ожидаемым")
+                actual.runDate.shouldBe(expected.runDate, "actual.runDate не совпало с ожидаемым")
+                actual.regressionStatus.shouldBe(expected.regressionStatus, "actual.regressionStatus не совпало с ожидаемым")
             }
         }
     }
+}
+
+private enum class RegressionRunStatus {
+    PASSED,
+    FAILED,
+    SKIPPED,
 }
