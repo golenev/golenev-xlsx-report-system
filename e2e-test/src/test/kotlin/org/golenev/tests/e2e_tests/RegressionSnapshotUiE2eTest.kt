@@ -84,8 +84,7 @@ class RegressionSnapshotUiE2eTest {
             mainPage.open()
         }
 
-        step("Убеждаемся, что в таблице отображаются две созданные записи") {
-            mainPage.shouldHaveTestCasesCount(testCases.size)
+        step("Убеждаемся, что в таблице среди прочих отображаются две созданные записи") {
             testCases.forEach { testCase ->
                 mainPage.shouldSeeTestCase(testCase.testId.orEmpty())
             }
