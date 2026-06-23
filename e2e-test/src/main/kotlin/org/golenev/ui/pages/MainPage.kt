@@ -6,7 +6,6 @@ import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.Selenide.element
 import com.codeborne.selenide.SelenideElement
 import org.golenev.restapi.endpoints.ScenarioStepRequest
-import org.golenev.utils.typeOf
 
 /**
  * Page Object главной страницы Test Report, который хранит только действия уровня страницы и фасады к компонентам.
@@ -15,6 +14,9 @@ class MainPage {
 
     /** Заголовок страницы, по которому проверяется успешное открытие или обновление Test Report. */
     private val headerTitle: SelenideElement = element("h1")
+
+    /** Элемент body страницы, по которому можно снять фокус с активного поля. */
+    private val body: SelenideElement get() = `$`("body")
 
     /** Компонент таблицы тест-кейсов на главной странице. */
     val testCaseTable = TestCaseTable()
@@ -56,24 +58,16 @@ class MainPage {
     fun startNewRow() = testCaseTable.startNewRow()
 
     /** Заполняет поле Test ID в текущей draft-строке. */
-    fun fillTestId(testId: String) {
-        testCaseTable.draftRow.testIdInput.shouldBeVisibleForInput("Test ID").typeOf(testId)
-    }
+    fun fillTestId(testId: String) = testCaseTable.draftRow.fillTestId(testId)
 
     /** Заполняет поле Category / Feature в текущей draft-строке. */
-    fun fillCategory(category: String) {
-        testCaseTable.draftRow.categoryInput.shouldBeVisibleForInput("Category").typeOf(category)
-    }
+    fun fillCategory(category: String) = testCaseTable.draftRow.fillCategory(category)
 
     /** Заполняет поле Short Title в текущей draft-строке. */
-    fun fillShortTitle(shortTitle: String) {
-        testCaseTable.draftRow.shortTitleInput.shouldBeVisibleForInput("Short Title").typeOf(shortTitle)
-    }
+    fun fillShortTitle(shortTitle: String) = testCaseTable.draftRow.fillShortTitle(shortTitle)
 
     /** Заполняет поле YouTrack Issue Link в текущей draft-строке. */
-    fun fillIssueLink(issueLink: String) {
-        testCaseTable.draftRow.issueLinkInput.shouldBeVisibleForInput("Issue Link").typeOf(issueLink)
-    }
+    fun fillIssueLink(issueLink: String) = testCaseTable.draftRow.fillIssueLink(issueLink)
 
     /** Выбирает General Test Status в текущей draft-строке. */
     fun selectGeneralStatus(status: String) = testCaseTable.draftRow.selectGeneralStatus(status)
@@ -89,9 +83,7 @@ class MainPage {
         testCaseTable.draftRow.fillDetailedScenarioSteps(steps)
 
     /** Заполняет поле Notes в текущей draft-строке. */
-    fun fillNotes(notes: String) {
-        testCaseTable.draftRow.notesTextarea.shouldBeVisibleForInput("Notes").typeOf(notes)
-    }
+    fun fillNotes(notes: String) = testCaseTable.draftRow.fillNotes(notes)
 
     /** Сохраняет текущую draft-строку через компонент строки. */
     fun saveNewRow() = testCaseTable.draftRow.saveDraft()
@@ -142,21 +134,13 @@ class MainPage {
     fun closePopupWarning() = warningPopup.close()
 
     /** Обновляет значение Category / Feature у существующего тест-кейса. */
-    fun updateCategory(testId: String, newValue: String) {
-        testCaseTable.row(testId).categoryInput
-            .shouldBe(com.codeborne.selenide.Condition.visible.because("поле категории должно быть видимым для изменения значения"))
-            .setValue(newValue)
-    }
+    fun updateCategory(testId: String, newValue: String) = testCaseTable.row(testId).updateCategory(newValue)
 
     /** Снимает фокус с активного поля кликом по body страницы. */
     fun unFocus() {
-        `$`("body").click()
+        body.click()
     }
 
     /** Устанавливает фокус в поле Category / Feature у существующего тест-кейса. */
-    fun focusOnCategory(testId: String) {
-        testCaseTable.row(testId).categoryInput
-            .shouldBe(com.codeborne.selenide.Condition.visible.because("элемент должен быть видимым перед кликом"))
-            .click()
-    }
+    fun focusOnCategory(testId: String) = testCaseTable.row(testId).focusOnCategory()
 }

@@ -12,40 +12,94 @@ import org.golenev.utils.typeOf
  */
 class TestCaseRow(
     /** Корневой Selenide-элемент строки таблицы, внутри которого ищутся все ячейки и кнопки. */
-    val root: SelenideElement,
-    /** Признак draft-строки, который нужен для сохранения отличий в проверках черновика и сохранённой строки. */
-    private val isDraft: Boolean,
+    private val root: SelenideElement,
 ) {
     /** Поле ввода Test ID внутри строки. */
-    val testIdInput: SelenideElement get() = cell("Test ID").find("input")
+    private val testIdInput: SelenideElement get() = cell("Test ID").find("input")
+
     /** Поле ввода Category / Feature внутри строки. */
-    val categoryInput: SelenideElement get() = cell("Category / Feature").find("textarea, input")
+    private val categoryInput: SelenideElement get() = input("Category / Feature")
+
     /** Поле ввода Short Title внутри строки. */
-    val shortTitleInput: SelenideElement get() = cell("Short Title").find("textarea, input")
+    private val shortTitleInput: SelenideElement get() = input("Short Title")
+
     /** Поле ввода YouTrack Issue Link внутри строки. */
-    val issueLinkInput: SelenideElement get() = cell("YouTrack Issue Link").find("input")
+    private val issueLinkInput: SelenideElement get() = cell("YouTrack Issue Link").find("input")
+
     /** Ячейка Ready Date внутри строки. */
-    val readyDateCell: SelenideElement get() = cell("Ready Date")
+    private val readyDateCell: SelenideElement get() = cell("Ready Date")
+
     /** Dropdown General Test Status внутри строки. */
-    val generalStatusDropdown: SelenideElement get() = cell("General Test Status").find("[data-testid='status-dropdown']")
+    private val generalStatusDropdown: SelenideElement get() = cell("General Test Status").find("[data-testid='status-dropdown']")
+
     /** Select Priority внутри строки. */
-    val prioritySelect: SelenideElement get() = cell("Priority").find("select[data-testid='priority-select']")
+    private val prioritySelect: SelenideElement get() = cell("Priority").find("select[data-testid='priority-select']")
+
     /** Ячейка Detailed Scenario, содержащая textarea или structured scenario editor. */
-    val detailedScenarioCell: SelenideElement get() = cell("Detailed Scenario")
+    private val detailedScenarioCell: SelenideElement get() = cell("Detailed Scenario")
+
     /** Textarea простого detailed scenario внутри ячейки Detailed Scenario. */
-    val scenarioTextarea: SelenideElement get() = detailedScenarioCell.find("textarea")
+    private val scenarioTextarea: SelenideElement get() = detailedScenarioCell.find("textarea")
+
     /** Textarea Notes внутри строки. */
-    val notesTextarea: SelenideElement get() = cell("Notes").find("textarea")
+    private val notesTextarea: SelenideElement get() = cell("Notes").find("textarea")
+
     /** Ячейка Regress Run для выбора статуса регресса конкретного тест-кейса. */
-    val regressRunCell: SelenideElement get() = cell("Regress Run")
+    private val regressRunCell: SelenideElement get() = cell("Regress Run")
+
     /** Кнопка сохранения draft-строки. */
-    val saveButton: SelenideElement get() = root.find("[data-testid='save-test-case-button']")
+    private val saveButton: SelenideElement get() = root.find("[data-testid='save-test-case-button']")
+
     /** Кнопка удаления сохранённой строки тест-кейса. */
-    val deleteButton: SelenideElement get() = root.find("[data-testid='delete-test-case-button']")
+    private val deleteButton: SelenideElement get() = root.find("[data-testid='delete-test-case-button']")
+
+    /** Заполняет поле Test ID в строке. */
+    fun fillTestId(testId: String) {
+        testIdInput.shouldBeVisibleForInput("Test ID").typeOf(testId)
+    }
+
+    /** Заполняет поле Category / Feature в строке. */
+    fun fillCategory(category: String) {
+        categoryInput.shouldBeVisibleForInput("Category").typeOf(category)
+    }
+
+    /** Заполняет поле Short Title в строке. */
+    fun fillShortTitle(shortTitle: String) {
+        shortTitleInput.shouldBeVisibleForInput("Short Title").typeOf(shortTitle)
+    }
+
+    /** Заполняет поле YouTrack Issue Link в строке. */
+    fun fillIssueLink(issueLink: String) {
+        issueLinkInput.shouldBeVisibleForInput("Issue Link").typeOf(issueLink)
+    }
+
+    /** Заполняет поле Notes в строке. */
+    fun fillNotes(notes: String) {
+        notesTextarea.shouldBeVisibleForInput("Notes").typeOf(notes)
+    }
+
+    /** Обновляет значение Category / Feature у существующей строки. */
+    fun updateCategory(newValue: String) {
+        categoryInput
+            .shouldBe(visible.because("поле категории должно быть видимым для изменения значения"))
+            .setValue(newValue)
+    }
+
+    /** Устанавливает фокус в поле Category / Feature у существующей строки. */
+    fun focusOnCategory() {
+        categoryInput
+            .shouldBe(visible.because("элемент должен быть видимым перед кликом"))
+            .click()
+    }
 
     /** Прокручивает страницу к строке и проверяет, что строка видима. */
     fun shouldBeVisible() {
         root.scrollIntoView(CENTER).shouldBe(visible.because("элемент должен быть видимым на странице"))
+    }
+
+    /** Проверяет видимость draft-строки сразу после её создания. */
+    fun shouldBeVisibleAfterDraftCreation() {
+        root.shouldBe(visible.because("после нажатия добавления должна появиться черновая строка"))
     }
 
     /** Проверяет, что строка исчезла со страницы после действия. */
@@ -80,20 +134,17 @@ class TestCaseRow(
         scenarioTextarea.shouldBe(visible.because("поле сценария должно быть видимым для ввода значения")).typeOf(scenario)
     }
 
-    /** Заполняет structured detailed scenario шагами и вложениями в строке. */
+    /** Заполняет structured detailed scenario шагами и первым непустым вложением каждого шага. */
     fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) {
-        steps.forEachIndexed { index, step ->
-            val row = scenarioRows()[index].shouldBe(visible.because("элемент должен быть видимым на странице"))
+        steps.forEach { step ->
+            val row = scenarioStep(step.number).shouldBe(visible.because("элемент должен быть видимым на странице"))
 
             row.find("[data-testid='scenario-step-input']").shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(step.text)
 
-            val attachment = step.attachments
-                .map { attachment -> attachment.content.trim() }
-                .filter { attachment -> attachment.isNotBlank() }
-                .joinToString(separator = "\n\n")
+            val attachment = step.attachments.firstOrNull { attachment -> attachment.content.isNotBlank() }
 
-            if (attachment.isNotBlank()) {
-                fillScenarioStepAttachment(row, attachment)
+            if (attachment != null) {
+                fillScenarioStepAttachment(row, attachment.content.trim())
             }
         }
     }
@@ -113,9 +164,6 @@ class TestCaseRow(
 
     /** Проверяет, что ячейка Ready Date содержит ожидаемую дату. */
     fun shouldHaveReadyDate(expectedDate: String) {
-        if (!isDraft) {
-            root.shouldBe(visible.because("элемент должен быть видимым на странице"))
-        }
         readyDateCell.shouldHave(text(expectedDate).because("ячейка Ready Date должна содержать ожидаемую дату"))
     }
 
@@ -138,10 +186,14 @@ class TestCaseRow(
         row.find("[data-testid='scenario-attachment-content']").should(disappear.because("поле вложения должно закрыться после сохранения текста вложения"))
     }
 
-    /** Возвращает коллекцию строк-шагов внутри structured scenario editor этой строки. */
-    private fun scenarioRows() = detailedScenarioCell.`$$`("[data-testid='scenario-editor-step']")
+    /** Находит строку-шаг внутри structured scenario editor этой строки по номеру шага из data-step-number. */
+    private fun scenarioStep(stepNumber: Int): SelenideElement =
+        detailedScenarioCell.find("[data-testid='scenario-editor-step'][data-step-number='$stepNumber']")
+
+    /** Находит textarea или input внутри ячейки этой строки по UI-имени колонки из data-name. */
+    private fun input(columnName: String): SelenideElement = cell(columnName).find("textarea, input")
 
     /** Находит ячейку этой строки по UI-имени колонки из data-name. */
     private fun cell(columnName: String): SelenideElement =
-        root.`$`("[data-testid='test-case-cell'][data-name='${columnName}']")
+        root.find("[data-testid='test-case-cell'][data-name='$columnName']")
 }
