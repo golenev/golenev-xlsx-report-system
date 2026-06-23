@@ -106,15 +106,6 @@ class MainPage {
     /** Проверяет значение Ready Date в существующей строке по Test ID. */
     fun shouldHaveReadyDate(testId: String, expectedDate: String) = testCaseTable.row(testId).shouldHaveReadyDate(expectedDate)
 
-    /** Открывает форму старта глобального regression run через виджет регресса. */
-    fun openRegressionStartForm() = regressionWidget.openStartForm()
-
-    /** Заполняет release name в форме старта глобального regression run. */
-    fun fillRegressionName(releaseName: String) = regressionWidget.fillReleaseName(releaseName)
-
-    /** Сохраняет запуск глобального regression run после заполнения формы. */
-    fun saveRegressionStart() = regressionWidget.saveRegressionStart()
-
     /** Запускает глобальный regression run с указанным release name. */
     fun startRegression(releaseName: String) = regressionWidget.startRegression(releaseName)
 
@@ -141,6 +132,4 @@ class MainPage {
         body.click()
     }
 
-    /** Устанавливает фокус в поле Category / Feature у существующего тест-кейса. */
-    fun focusOnCategory(testId: String) = testCaseTable.row(testId).focusOnCategory()
 }
