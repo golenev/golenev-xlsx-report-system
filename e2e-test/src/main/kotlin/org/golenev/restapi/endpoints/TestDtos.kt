@@ -1,6 +1,11 @@
 package org.golenev.restapi.endpoints
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -44,6 +49,7 @@ data class TestReportItemDto(
     val runStatus: String? = null
 )
 
+@JsonDeserialize(using = ScenarioRequestDeserializer::class)
 data class ScenarioRequest(
     val steps: List<ScenarioStepRequest>,
 )
@@ -58,6 +64,39 @@ data class ScenarioAttachmentRequest(
     val type: String,
     val content: String,
 )
+
+class ScenarioRequestDeserializer : JsonDeserializer<ScenarioRequest>() {
+    override fun deserialize(parser: JsonParser, context: DeserializationContext): ScenarioRequest {
+        val codec = parser.codec
+        val node = codec.readTree<JsonNode>(parser)
+        val scenarioNode = if (node.isTextual) {
+            codec.readTree<JsonNode>(codec.factory.createParser(node.asText()))
+        } else {
+            node
+        }
+
+        val steps = scenarioNode.path("steps")
+            .takeIf { it.isArray }
+            ?.map { stepNode ->
+                ScenarioStepRequest(
+                    number = stepNode.path("number").asInt(),
+                    text = stepNode.path("text").asText(),
+                    attachments = stepNode.path("attachments")
+                        .takeIf { it.isArray }
+                        ?.map { attachmentNode ->
+                            ScenarioAttachmentRequest(
+                                type = attachmentNode.path("type").asText(),
+                                content = attachmentNode.path("content").asText(),
+                            )
+                        }
+                        .orEmpty(),
+                )
+            }
+            .orEmpty()
+
+        return ScenarioRequest(steps = steps)
+    }
+}
 
 data class ErrorResponse(
     val timestamp: String? = null,
