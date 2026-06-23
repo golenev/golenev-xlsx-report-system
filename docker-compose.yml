@@ -15,6 +15,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Gradle resolves Maven artifacts while building the image; using the
+      # host network avoids BuildKit bridge DNS/routing failures in restricted environments.
+      network: host
     environment:
       DB_URL: jdbc:postgresql://db:5432/test_report
       DB_USERNAME: report
