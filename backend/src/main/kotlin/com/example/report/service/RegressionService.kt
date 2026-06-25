@@ -10,6 +10,7 @@ import com.example.report.entity.RegressionEntity
 import com.example.report.model.RegressionStatus
 import com.example.report.repository.RegressionRepository
 import com.example.report.repository.TestReportRepository
+import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.transaction.Transactional
 import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
@@ -22,6 +23,7 @@ class RegressionService(
     private val regressionRepository: RegressionRepository,
     private val testReportRepository: TestReportRepository,
     @Lazy private val excelExportService: ExcelExportService,
+    private val objectMapper: ObjectMapper,
 ) {
 
     fun getTodayState(): RegressionStateResponse {
@@ -96,7 +98,7 @@ class RegressionService(
                     "readyDate" to it.readyDate?.toString(),
                     "generalStatus" to it.generalStatus,
                     "priority" to it.priority,
-                    "scenario" to it.scenario,
+                    "scenario" to deserializeScenario(it.scenario),
                     "notes" to it.notes,
                     "regressionStatus" to results[it.testId]
                 )
@@ -229,6 +231,31 @@ class RegressionService(
                 testId to regressionStatus
             }
             .toMap()
+    }
+
+    private fun deserializeScenario(stored: String): Any {
+        val trimmed = stored.trim()
+        if (trimmed.startsWith("{")) {
+            try {
+                return objectMapper.readValue(trimmed, Map::class.java)
+            } catch (ex: Exception) {
+                // Legacy rows may contain arbitrary text in scenario. Keep them readable in snapshots.
+            }
+        }
+        return mapOf(
+            "steps" to stored
+                .lineSequence()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .mapIndexed { index, line ->
+                    mapOf(
+                        "number" to index + 1,
+                        "text" to line.replace(Regex("""^(?:[-*+]|•)?\s*\d+(?:\.\d+)*\.?\s+"""), ""),
+                        "attachments" to emptyList<Map<String, String?>>(),
+                    )
+                }
+                .toList(),
+        )
     }
 
     private fun compareTestIds(a: String, b: String): Int {
