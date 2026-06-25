@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import java.time.LocalDate
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 
 class RegressionServiceScenarioSnapshotTest {
 
@@ -54,8 +54,9 @@ class RegressionServiceScenarioSnapshotTest {
         val tests = payload["tests"] as List<*>
         val firstTest = tests.single() as Map<*, *>
         val scenario = firstTest["scenario"]
-        assertIs<Map<*, *>>(scenario)
-        val steps = scenario["steps"] as List<*>
+        assertTrue(scenario is Map<*, *>, "scenario должен быть JSON-объектом, а не строкой")
+        val scenarioMap = scenario as Map<*, *>
+        val steps = scenarioMap["steps"] as List<*>
         val firstStep = steps.single() as Map<*, *>
         assertEquals("Открываем отчёт", firstStep["text"])
         val attachments = firstStep["attachments"] as List<*>
