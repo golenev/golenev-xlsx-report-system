@@ -82,8 +82,8 @@ class RegressionSnapshotUiE2eTest {
             TestBatchRequest(items = testCases)
         }
 
-        step("Создаём два тест-кейса через API") {
-            reportService.sendBatch(batchRequest)
+        step("Создаём два тест-кейса через API с сохранением ручных полей") {
+            reportService.sendForceBatch(batchRequest)
         }
 
         step("Открываем главную страницу") {
