@@ -4,9 +4,14 @@ import org.golenev.db.dbReportExec
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import java.time.LocalDate
 
 object TestReportDao {
+
+    fun truncate() = dbReportExec {
+        TransactionManager.current().exec("TRUNCATE TABLE ${TestReportTable.tableName} RESTART IDENTITY CASCADE")
+    }
 
     fun deleteReportsByDate(date: LocalDate = LocalDate.now()) = dbReportExec {
         TestReportTable.deleteWhere { TestReportTable.readyDate eq date }
