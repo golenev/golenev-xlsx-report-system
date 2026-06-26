@@ -22,3 +22,6 @@ server:
 
 column-config:
   path: ${COLUMN_CONFIG_PATH:/app/config/column-config.json}
+
+app:
+  time-zone: ${APP_TIME_ZONE:Europe/Moscow}

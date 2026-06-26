@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
+import java.time.Clock
 import java.time.LocalDate
 
 @Service
@@ -22,10 +23,11 @@ class RegressionService(
     private val regressionRepository: RegressionRepository,
     private val testReportRepository: TestReportRepository,
     @Lazy private val excelExportService: ExcelExportService,
+    private val clock: Clock,
 ) {
 
     fun getTodayState(): RegressionStateResponse {
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val entity = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
             ?: return RegressionStateResponse(RegressionStatus.IDLE, today.toString())
 
@@ -34,7 +36,7 @@ class RegressionService(
 
     @Transactional
     fun startRegression(request: RegressionStartRequest): RegressionStateResponse {
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val trimmedReleaseName = request.releaseName.trim()
 
         val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
@@ -112,7 +114,7 @@ class RegressionService(
 
     @Transactional
     fun cancelRegression(): RegressionStateResponse {
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val existing = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
             ?: return RegressionStateResponse(RegressionStatus.IDLE, today.toString())
 
@@ -139,7 +141,7 @@ class RegressionService(
     }
 
     fun requireRunningRegression() {
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
         if (running == null || running.regressionDate != today) {
             throw ResponseStatusException(
@@ -153,7 +155,7 @@ class RegressionService(
     fun syncRunningRegressionResults(results: Map<String, String>) {
         if (results.isEmpty()) return
 
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "регресс не запущен, сначала запустите регресс")
 

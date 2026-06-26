@@ -48,6 +48,7 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    systemProperty("user.timezone", "Europe/Moscow")
 }
 
 allure {
