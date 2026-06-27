@@ -33,7 +33,7 @@ class TestCaseTable {
     fun shouldDisableAddRow() {
         addRowButton
             .scrollIntoView(instant().block(start))
-            .shouldBe(disabled.because("кнопка должна быть недоступна, пока форма создания строки не готова к сохранению"))
+            .shouldBe(disabled.because("кнопка Add Row должна быть недоступна, пока форма создания строки не готова к сохранению"))
     }
 
     /** Проверяет, что кнопка Add Row доступна для начала создания тест-кейса. */

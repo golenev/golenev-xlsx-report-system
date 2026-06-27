@@ -88,13 +88,13 @@ class TestCaseRow(
     /** Устанавливает фокус в поле Category / Feature у существующей строки. */
     fun focusOnCategory() {
         categoryInput
-            .shouldBe(visible.because("элемент должен быть видимым перед кликом"))
+            .shouldBe(visible.because("поле Category / Feature должно быть видимым перед кликом"))
             .click()
     }
 
     /** Прокручивает страницу к строке и проверяет, что строка видима. */
     fun shouldBeVisible() {
-        root.scrollIntoView(CENTER).shouldBe(visible.because("элемент должен быть видимым на странице"))
+        root.scrollIntoView(CENTER).shouldBe(visible.because("строка тест-кейса должна быть видимой на странице после прокрутки"))
     }
 
     /** Проверяет видимость draft-строки сразу после её создания. */
@@ -104,12 +104,12 @@ class TestCaseRow(
 
     /** Проверяет, что строка исчезла со страницы после действия. */
     fun shouldDisappear() {
-        root.should(disappear.because("элемент должен исчезнуть после выполненного действия"))
+        root.should(disappear.because("строка тест-кейса должна исчезнуть после выполненного действия"))
     }
 
     /** Проверяет, что кнопка сохранения draft-строки недоступна. */
     fun shouldDisableSave() {
-        saveButton.shouldBe(disabled.because("кнопка должна быть недоступна, пока форма создания строки не готова к сохранению"))
+        saveButton.shouldBe(disabled.because("кнопка сохранения draft-строки должна быть недоступна, пока форма создания строки не готова к сохранению"))
     }
 
     /** Проверяет, что кнопка сохранения draft-строки доступна. */
@@ -137,9 +137,9 @@ class TestCaseRow(
     /** Заполняет structured detailed scenario шагами и первым непустым вложением каждого шага. */
     fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) {
         steps.forEach { step ->
-            val row = scenarioStep(step.number).shouldBe(visible.because("элемент должен быть видимым на странице"))
+            val row = scenarioStep(step.number).shouldBe(visible.because("строка шага ${step.number} detailed scenario должна быть видимой на странице"))
 
-            row.find("[data-testid='scenario-step-input']").shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(step.text)
+            row.find("[data-testid='scenario-step-input']").shouldBe(visible.because("поле ввода текста шага ${step.number} detailed scenario должно быть видимым для ввода значения")).typeOf(step.text)
 
             val attachment = step.attachments.firstOrNull { attachment -> attachment.content.isNotBlank() }
 
@@ -157,7 +157,7 @@ class TestCaseRow(
 
     /** Удаляет сохранённую строку и подтверждает browser confirm. */
     fun delete() {
-        root.shouldBe(visible.because("элемент должен быть видимым на странице"))
+        root.shouldBe(visible.because("строка тест-кейса должна быть видимой перед удалением"))
         deleteButton.click()
         Selenide.confirm()
     }
@@ -169,20 +169,20 @@ class TestCaseRow(
 
     /** Выбирает regression status в колонке Regress Run для этой строки. */
     fun selectRegressionStatus(status: String) {
-        root.shouldBe(visible.because("элемент должен быть видимым на странице"))
+        root.shouldBe(visible.because("строка тест-кейса должна быть видимой перед выбором regression status"))
         regressRunCell.find("[data-testid='regress-run-button']")
-            .shouldBe(enabled.because("селект статуса регресса должен быть доступен для выбора значения"))
+            .shouldBe(enabled.because("селект Regress Run в строке тест-кейса должен быть доступен для выбора regression status"))
             .selectOption(status)
     }
 
     /** Заполняет вложение конкретного шага structured scenario и сворачивает редактор вложения. */
     private fun fillScenarioStepAttachment(row: SelenideElement, attachment: String) {
-        row.find("[data-testid='scenario-attachment-add-button']").shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
-        row.find("[data-testid='scenario-attachment-content']").shouldBe(visible.because("элемент должен быть видимым на странице"))
+        row.find("[data-testid='scenario-attachment-add-button']").shouldBe(visible.because("кнопка добавления вложения шага detailed scenario должна быть видимой перед кликом")).click()
+        row.find("[data-testid='scenario-attachment-content']").shouldBe(visible.because("поле содержимого вложения шага detailed scenario должно быть видимым на странице"))
         row.find("[data-testid='scenario-attachment-content']").click()
-        row.find("[data-testid='scenario-attachment-content']").shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(attachment)
-        row.find("[data-testid='scenario-attachment-edit-button']").shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
-        row.find("[data-testid='scenario-attachment-toggle']").shouldBe(visible.because("элемент должен быть видимым на странице")).shouldHave(text("Вложение").because("после добавления вложения должна появиться плашка с текстом Вложение"))
+        row.find("[data-testid='scenario-attachment-content']").shouldBe(visible.because("поле содержимого вложения шага detailed scenario должно быть видимым для ввода значения")).typeOf(attachment)
+        row.find("[data-testid='scenario-attachment-edit-button']").shouldBe(visible.because("кнопка сохранения вложения шага detailed scenario должна быть видимой перед кликом")).click()
+        row.find("[data-testid='scenario-attachment-toggle']").shouldBe(visible.because("плашка вложения шага detailed scenario должна быть видимой на странице")).shouldHave(text("Вложение").because("после добавления вложения должна появиться плашка с текстом Вложение"))
         row.find("[data-testid='scenario-attachment-content']").should(disappear.because("поле вложения должно закрыться после сохранения текста вложения"))
     }
 
