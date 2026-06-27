@@ -5,6 +5,7 @@ import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.SelenideElement
 import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.utils.CENTER
+import org.golenev.utils.shouldBeVisibleForInput
 import org.golenev.utils.typeOf
 
 /**
