@@ -1,7 +1,10 @@
 package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
+import com.codeborne.selenide.Condition.visible
 import io.kotest.matchers.nulls.shouldNotBeNull
+import org.golenev.ui.pages.Application.testCaseTable
+import org.golenev.utils.CENTER
 import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.regression.RegressionDao
@@ -10,7 +13,7 @@ import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.ui.config.DriverConfig
-import org.golenev.ui.pages.MainPage
+import org.golenev.ui.pages.Application.mainPage
 import org.golenev.utils.TestDataGenerator
 import org.golenev.utils.getRandomTestId
 import org.golenev.utils.step
@@ -26,7 +29,6 @@ import kotlin.random.Random
 @DisplayName("E2E: UI сценарий создания снапшота регресса")
 class RegressionSnapshotUiE2eTest {
 
-    private val mainPage = MainPage()
     private val reportService = ReportServiceDao()
     private lateinit var releaseName: String
     private val createdTestIds = mutableListOf<String>()
@@ -92,7 +94,7 @@ class RegressionSnapshotUiE2eTest {
 
         step("Убеждаемся, что в таблице среди прочих отображаются две созданные записи") {
             testCases.forEach { testCase ->
-                mainPage.shouldSeeTestCase(testCase.testId.orEmpty())
+                testCaseTable.row(testCase.testId.orEmpty()).root.scrollIntoView(CENTER).shouldBe(visible.because("строка тест-кейса должна быть видимой на странице после прокрутки"))
             }
         }
 

@@ -1,6 +1,10 @@
 package org.golenev.tests.ui.withProxy
 
+import com.codeborne.selenide.Condition.disappear
+import com.codeborne.selenide.Condition.visible
 import com.codeborne.selenide.Selenide
+import org.golenev.ui.pages.Application.testCaseTable
+import org.golenev.utils.CENTER
 import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import com.codeborne.selenide.proxy.SelenideProxyServer
 import io.qameta.allure.AllureId
@@ -10,7 +14,7 @@ import org.golenev.restapi.endpoints.*
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.config.interceptResponseBody
 import org.golenev.ui.config.replaceResponseBody
-import org.golenev.ui.pages.MainPage
+import org.golenev.ui.pages.Application.mainPage
 import org.golenev.utils.JsonUtils
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
@@ -20,7 +24,6 @@ import org.junit.jupiter.api.Test
 
 class DisplayingRowWhenProxyReplacedResponseTest {
 
-    private val mainPage = MainPage()
     private lateinit var selenideProxy: SelenideProxyServer
 
     @BeforeEach
@@ -72,11 +75,11 @@ class DisplayingRowWhenProxyReplacedResponseTest {
             reportResponse.copy(items = reportResponse.items + injectedTestCase)
         }
 
-        step("Проверяем, что тест-кейс отсутствует до подмены") { mainPage.shouldNotSeeTestCase(injectedTestId) }
+        step("Проверяем, что тест-кейс отсутствует до подмены") { testCaseTable.row(injectedTestId).root.shouldBe(disappear.because("строка тест-кейса должна исчезнуть после выполненного действия")) }
 
         replaceResponseBody(selenideProxy, Paths.REPORTS.path, JsonUtils.toJson(modifiedResponse)) {
             step("Обновляем страницу после подмены ответа") { mainPage.refreshCurrentPage() }
-            step("Проверяем, что тест-кейс отображается после подмены") { mainPage.shouldSeeTestCase(injectedTestId) }
+            step("Проверяем, что тест-кейс отображается после подмены") { testCaseTable.row(injectedTestId).root.scrollIntoView(CENTER).shouldBe(visible.because("строка тест-кейса должна быть видимой на странице после прокрутки")) }
         }
     }
 

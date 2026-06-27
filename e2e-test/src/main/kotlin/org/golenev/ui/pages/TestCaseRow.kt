@@ -4,7 +4,6 @@ import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.SelenideElement
 import org.golenev.restapi.endpoints.ScenarioStepRequest
-import org.golenev.utils.CENTER
 import org.golenev.utils.shouldBeVisibleForInput
 import org.golenev.utils.typeOf
 
@@ -13,7 +12,7 @@ import org.golenev.utils.typeOf
  */
 class TestCaseRow(
     /** Корневой Selenide-элемент строки таблицы, внутри которого ищутся все ячейки и кнопки. */
-    private val root: SelenideElement,
+    val root: SelenideElement,
 ) {
     /** Поле ввода Test ID внутри строки. */
     private val testIdInput: SelenideElement get() = cell("Test ID").find("input")
@@ -28,7 +27,7 @@ class TestCaseRow(
     private val issueLinkInput: SelenideElement get() = cell("YouTrack Issue Link").find("input")
 
     /** Ячейка Ready Date внутри строки. */
-    private val readyDateCell: SelenideElement get() = cell("Ready Date")
+    val readyDateCell: SelenideElement get() = cell("Ready Date")
 
     /** Dropdown General Test Status внутри строки. */
     private val generalStatusDropdown: SelenideElement get() = cell("General Test Status").find("[data-testid='status-dropdown']")
@@ -49,7 +48,7 @@ class TestCaseRow(
     private val regressRunCell: SelenideElement get() = cell("Regress Run")
 
     /** Кнопка сохранения draft-строки. */
-    private val saveButton: SelenideElement get() = root.find("[data-testid='save-test-case-button']")
+    val saveButton: SelenideElement get() = root.find("[data-testid='save-test-case-button']")
 
     /** Кнопка удаления сохранённой строки тест-кейса. */
     private val deleteButton: SelenideElement get() = root.find("[data-testid='delete-test-case-button']")
@@ -93,30 +92,10 @@ class TestCaseRow(
             .click()
     }
 
-    /** Прокручивает страницу к строке и проверяет, что строка видима. */
-    fun shouldBeVisible() {
-        root.scrollIntoView(CENTER).shouldBe(visible.because("строка тест-кейса должна быть видимой на странице после прокрутки"))
-    }
 
-    /** Проверяет видимость draft-строки сразу после её создания. */
-    fun shouldBeVisibleAfterDraftCreation() {
-        root.shouldBe(visible.because("после нажатия добавления должна появиться черновая строка"))
-    }
 
-    /** Проверяет, что строка исчезла со страницы после действия. */
-    fun shouldDisappear() {
-        root.should(disappear.because("строка тест-кейса должна исчезнуть после выполненного действия"))
-    }
 
-    /** Проверяет, что кнопка сохранения draft-строки недоступна. */
-    fun shouldDisableSave() {
-        saveButton.shouldBe(disabled.because("кнопка сохранения draft-строки должна быть недоступна, пока форма создания строки не готова к сохранению"))
-    }
 
-    /** Проверяет, что кнопка сохранения draft-строки доступна. */
-    fun shouldEnableSave() {
-        saveButton.shouldBe(enabled.because("кнопка сохранения должна быть доступна после заполнения обязательных полей"))
-    }
 
     /** Выбирает значение General Test Status в строке. */
     fun selectGeneralStatus(status: String) {
@@ -163,10 +142,6 @@ class TestCaseRow(
         Selenide.confirm()
     }
 
-    /** Проверяет, что ячейка Ready Date содержит ожидаемую дату. */
-    fun shouldHaveReadyDate(expectedDate: String) {
-        readyDateCell.shouldHave(text(expectedDate).because("ячейка Ready Date должна содержать ожидаемую дату"))
-    }
 
     /** Выбирает regression status в колонке Regress Run для этой строки. */
     fun selectRegressionStatus(status: String) {

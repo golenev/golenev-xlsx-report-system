@@ -18,114 +18,84 @@ class MainPage {
     /** Элемент body страницы, по которому можно снять фокус с активного поля. */
     private val body: SelenideElement get() = `$`("body")
 
-    /** Компонент таблицы тест-кейсов на главной странице. */
-    val testCaseTable = TestCaseTable()
-    /** Компонент глобального виджета управления regression run в шапке страницы. */
-    val regressionWidget = RegressionWidget()
-    /** Компонент warning popup, который появляется при невозможности выполнить действие. */
-    val warningPopup = WarningPopup()
-
     /** Открывает главную страницу Test Report и проверяет, что заголовок отображается. */
     fun open() {
         Selenide.open("/")
-        shouldHaveTitle()
+        checkTitle()
     }
 
     /** Обновляет текущую страницу браузера и повторно проверяет заголовок Test Report. */
     fun refreshCurrentPage() {
         Selenide.refresh()
-        shouldHaveTitle()
+        checkTitle()
     }
 
     /** Проверяет, что на странице отображается ожидаемый заголовок Test Report. */
-    fun shouldHaveTitle() {
+    fun checkTitle() {
         headerTitle.shouldHave(text("Test Report").because("после открытия страницы должен отображаться заголовок отчета"))
     }
 
-    /** Фасадная проверка, что кнопка добавления строки временно недоступна. */
-    fun shouldDisableAddRow() = testCaseTable.shouldDisableAddRow()
-
-    /** Фасадная проверка, что кнопка добавления строки доступна. */
-    fun shouldEnableAddRow() = testCaseTable.shouldEnableAddRow()
-
-    /** Фасадная проверка, что кнопка сохранения draft-строки недоступна. */
-    fun shouldDisableSaveNewRow() = testCaseTable.draftRow.shouldDisableSave()
-
-    /** Фасадная проверка, что кнопка сохранения draft-строки доступна. */
-    fun shouldEnableSaveNewRow() = testCaseTable.draftRow.shouldEnableSave()
 
     /** Фасадное действие, которое создаёт draft-строку через таблицу тест-кейсов. */
-    fun startNewRow() = testCaseTable.startNewRow()
+    fun startNewRow() = Application.testCaseTable.startNewRow()
 
     /** Заполняет поле Test ID в текущей draft-строке. */
-    fun fillTestId(testId: String) = testCaseTable.draftRow.fillTestId(testId)
+    fun fillTestId(testId: String) = Application.testCaseTable.draftRow.fillTestId(testId)
 
     /** Заполняет поле Category / Feature в текущей draft-строке. */
-    fun fillCategory(category: String) = testCaseTable.draftRow.fillCategory(category)
+    fun fillCategory(category: String) = Application.testCaseTable.draftRow.fillCategory(category)
 
     /** Заполняет поле Short Title в текущей draft-строке. */
-    fun fillShortTitle(shortTitle: String) = testCaseTable.draftRow.fillShortTitle(shortTitle)
+    fun fillShortTitle(shortTitle: String) = Application.testCaseTable.draftRow.fillShortTitle(shortTitle)
 
     /** Заполняет поле YouTrack Issue Link в текущей draft-строке. */
-    fun fillIssueLink(issueLink: String) = testCaseTable.draftRow.fillIssueLink(issueLink)
+    fun fillIssueLink(issueLink: String) = Application.testCaseTable.draftRow.fillIssueLink(issueLink)
 
     /** Выбирает General Test Status в текущей draft-строке. */
-    fun selectGeneralStatus(status: String) = testCaseTable.draftRow.selectGeneralStatus(status)
+    fun selectGeneralStatus(status: String) = Application.testCaseTable.draftRow.selectGeneralStatus(status)
 
     /** Выбирает Priority в текущей draft-строке. */
-    fun selectPriority(priority: String) = testCaseTable.draftRow.selectPriority(priority)
+    fun selectPriority(priority: String) = Application.testCaseTable.draftRow.selectPriority(priority)
 
     /** Заполняет текстовый detailed scenario в текущей draft-строке. */
-    fun fillDetailedScenario(scenario: String) = testCaseTable.draftRow.fillDetailedScenario(scenario)
+    fun fillDetailedScenario(scenario: String) = Application.testCaseTable.draftRow.fillDetailedScenario(scenario)
 
     /** Заполняет structured detailed scenario шагами и вложениями в текущей draft-строке. */
     fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) =
-        testCaseTable.draftRow.fillDetailedScenarioSteps(steps)
+        Application.testCaseTable.draftRow.fillDetailedScenarioSteps(steps)
 
     /** Заполняет поле Notes в текущей draft-строке. */
-    fun fillNotes(notes: String) = testCaseTable.draftRow.fillNotes(notes)
+    fun fillNotes(notes: String) = Application.testCaseTable.draftRow.fillNotes(notes)
 
     /** Сохраняет текущую draft-строку через компонент строки. */
-    fun saveNewRow() = testCaseTable.draftRow.saveDraft()
+    fun saveNewRow() = Application.testCaseTable.draftRow.saveDraft()
 
-    /** Проверяет, что существующая строка тест-кейса с указанным Test ID отображается. */
-    fun shouldSeeTestCase(testId: String) = testCaseTable.row(testId).shouldBeVisible()
 
     /** Удаляет существующий тест-кейс с указанным Test ID и подтверждает browser confirm. */
-    fun deleteTestCase(testId: String) = testCaseTable.row(testId).delete()
+    fun deleteTestCase(testId: String) = Application.testCaseTable.row(testId).delete()
 
-    /** Проверяет, что строка тест-кейса с указанным Test ID исчезла со страницы. */
-    fun shouldNotSeeTestCase(testId: String) = testCaseTable.row(testId).shouldDisappear()
 
-    /** Проверяет количество существующих строк тест-кейсов в таблице. */
-    fun shouldHaveTestCasesCount(expectedCount: Int) = testCaseTable.shouldHaveRowsCount(expectedCount)
 
-    /** Проверяет значение Ready Date в текущей draft-строке. */
-    fun shouldHaveReadyDateWhenNewRow(expectedDate: String) = testCaseTable.draftRow.shouldHaveReadyDate(expectedDate)
 
-    /** Проверяет значение Ready Date в существующей строке по Test ID. */
-    fun shouldHaveReadyDate(testId: String, expectedDate: String) = testCaseTable.row(testId).shouldHaveReadyDate(expectedDate)
 
     /** Запускает глобальный regression run с указанным release name. */
-    fun startRegression(releaseName: String) = regressionWidget.startRegression(releaseName)
+    fun startRegression(releaseName: String) = Application.regressionWidget.startRegression(releaseName)
 
     /** Отменяет текущий глобальный regression run через виджет регресса. */
-    fun cancelRegression() = regressionWidget.cancelRegression()
+    fun cancelRegression() = Application.regressionWidget.cancelRegression()
 
     /** Останавливает текущий глобальный regression run через виджет регресса. */
-    fun stopRegress() = regressionWidget.stopRegress()
+    fun stopRegress() = Application.regressionWidget.stopRegress()
 
     /** Выбирает regression status в колонке Regress Run для конкретного тест-кейса. */
-    fun selectRegressionStatus(testId: String, status: String) = testCaseTable.row(testId).selectRegressionStatus(status)
+    fun selectRegressionStatus(testId: String, status: String) = Application.testCaseTable.row(testId).selectRegressionStatus(status)
 
-    /** Проверяет стандартный warning popup о незаполненных regression status. */
-    fun checkPopupWarning() = warningPopup.shouldHaveDefaultRegressionWarning()
 
     /** Закрывает текущий warning popup. */
-    fun closePopupWarning() = warningPopup.close()
+    fun closePopupWarning() = Application.warningPopup.close()
 
     /** Обновляет значение Category / Feature у существующего тест-кейса. */
-    fun updateCategory(testId: String, newValue: String) = testCaseTable.row(testId).updateCategory(newValue)
+    fun updateCategory(testId: String, newValue: String) = Application.testCaseTable.row(testId).updateCategory(newValue)
 
     /** Снимает фокус с активного поля кликом по body страницы. */
     fun unFocus() {

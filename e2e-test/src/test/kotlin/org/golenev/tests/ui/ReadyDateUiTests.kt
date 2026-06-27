@@ -1,12 +1,16 @@
 package org.golenev.tests.ui
 
+import com.codeborne.selenide.Condition.text
+import com.codeborne.selenide.Condition.visible
 import com.codeborne.selenide.Selenide
+import org.golenev.ui.pages.Application.testCaseTable
+import org.golenev.utils.CENTER
 import io.qameta.allure.AllureId
 import org.golenev.commondto.Priority
 import org.golenev.db.dbReportExec
 import org.golenev.db.tables.testReportTable.TestReportTable
 import org.golenev.ui.config.DriverConfig
-import org.golenev.ui.pages.MainPage
+import org.golenev.ui.pages.Application.mainPage
 import org.golenev.utils.getRandomTestId
 import org.golenev.utils.step
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -20,7 +24,6 @@ import java.time.LocalDate
 @DisplayName("UI: Автоматическое проставление Ready Date при добавлении тест кейса")
 class ReadyDateUiTests {
 
-    private val mainPage = MainPage()
     private val randomTestId = "UI-LOCK-${getRandomTestId()}"
 
     @BeforeEach
@@ -56,7 +59,7 @@ class ReadyDateUiTests {
 
         step("Открываем главную страницу") { mainPage.open() }
         step("Начинаем создание новой строки") { mainPage.startNewRow() }
-        step("Проверяем, что Ready Date сразу автоматически заполнена сегодняшней датой") { mainPage.shouldHaveReadyDateWhenNewRow(today) }
+        step("Проверяем, что Ready Date сразу автоматически заполнена сегодняшней датой") { testCaseTable.draftRow.readyDateCell.shouldHave(text(today).because("ячейка Ready Date должна содержать ожидаемую дату")) }
         step("Заполняем поле Test ID значением $randomTestId") { mainPage.fillTestId(randomTestId) }
         step("Заполняем поле Category / Feature значением $category") { mainPage.fillCategory(category) }
         step("Заполняем поле Short Title значением $shortTitle") { mainPage.fillShortTitle(shortTitle) }
@@ -65,8 +68,8 @@ class ReadyDateUiTests {
         step("Выбираем значение Priority: $priority") { mainPage.selectPriority(priority) }
         step("Заполняем поле Detailed Scenario значением $detailedScenario") { mainPage.fillDetailedScenario(detailedScenario) }
         step("Сохраняем новую строку без указания Ready Date") { mainPage.saveNewRow() }
-        step("Проверяем, что тест-кейс появился в таблице") { mainPage.shouldSeeTestCase(randomTestId) }
-        step("Проверяем, что Ready Date всё ещё заполнена сегодняшней датой") { mainPage.shouldHaveReadyDate(randomTestId, today) }
+        step("Проверяем, что тест-кейс появился в таблице") { testCaseTable.row(randomTestId).root.scrollIntoView(CENTER).shouldBe(visible.because("строка тест-кейса должна быть видимой на странице после прокрутки")) }
+        step("Проверяем, что Ready Date всё ещё заполнена сегодняшней датой") { testCaseTable.row(randomTestId).readyDateCell.shouldHave(text(today).because("ячейка Ready Date должна содержать ожидаемую дату")) }
     }
 
 }
