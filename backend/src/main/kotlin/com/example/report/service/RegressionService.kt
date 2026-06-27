@@ -10,12 +10,12 @@ import com.example.report.entity.RegressionEntity
 import com.example.report.model.RegressionStatus
 import com.example.report.repository.RegressionRepository
 import com.example.report.repository.TestReportRepository
-import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.transaction.Transactional
 import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
+import java.time.Clock
 import java.time.LocalDate
 
 @Service
@@ -23,11 +23,11 @@ class RegressionService(
     private val regressionRepository: RegressionRepository,
     private val testReportRepository: TestReportRepository,
     @Lazy private val excelExportService: ExcelExportService,
-    private val objectMapper: ObjectMapper,
+    private val clock: Clock,
 ) {
 
     fun getTodayState(): RegressionStateResponse {
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val entity = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
             ?: return RegressionStateResponse(RegressionStatus.IDLE, today.toString())
 
@@ -36,7 +36,7 @@ class RegressionService(
 
     @Transactional
     fun startRegression(request: RegressionStartRequest): RegressionStateResponse {
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val trimmedReleaseName = request.releaseName.trim()
 
         val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
@@ -98,7 +98,7 @@ class RegressionService(
                     "readyDate" to it.readyDate?.toString(),
                     "generalStatus" to it.generalStatus,
                     "priority" to it.priority,
-                    "scenario" to deserializeScenario(it.scenario),
+                    "scenario" to it.scenario,
                     "notes" to it.notes,
                     "regressionStatus" to results[it.testId]
                 )
@@ -114,7 +114,7 @@ class RegressionService(
 
     @Transactional
     fun cancelRegression(): RegressionStateResponse {
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val existing = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
             ?: return RegressionStateResponse(RegressionStatus.IDLE, today.toString())
 
@@ -141,7 +141,7 @@ class RegressionService(
     }
 
     fun requireRunningRegression() {
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
         if (running == null || running.regressionDate != today) {
             throw ResponseStatusException(
@@ -155,7 +155,7 @@ class RegressionService(
     fun syncRunningRegressionResults(results: Map<String, String>) {
         if (results.isEmpty()) return
 
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "регресс не запущен, сначала запустите регресс")
 
@@ -231,31 +231,6 @@ class RegressionService(
                 testId to regressionStatus
             }
             .toMap()
-    }
-
-    private fun deserializeScenario(stored: String): Any {
-        val trimmed = stored.trim()
-        if (trimmed.startsWith("{")) {
-            try {
-                return objectMapper.readValue(trimmed, Map::class.java)
-            } catch (ex: Exception) {
-                // Legacy rows may contain arbitrary text in scenario. Keep them readable in snapshots.
-            }
-        }
-        return mapOf(
-            "steps" to stored
-                .lineSequence()
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-                .mapIndexed { index, line ->
-                    mapOf(
-                        "number" to index + 1,
-                        "text" to line.replace(Regex("""^(?:[-*+]|•)?\s*\d+(?:\.\d+)*\.?\s+"""), ""),
-                        "attachments" to emptyList<Map<String, String?>>(),
-                    )
-                }
-                .toList(),
-        )
     }
 
     private fun compareTestIds(a: String, b: String): Int {

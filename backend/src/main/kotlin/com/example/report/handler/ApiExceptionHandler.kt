@@ -5,10 +5,13 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.server.ResponseStatusException
+import java.time.Clock
 import java.time.OffsetDateTime
 
 @RestControllerAdvice
-class ApiExceptionHandler {
+class ApiExceptionHandler(
+    private val clock: Clock,
+) {
 
     private val missingFieldPattern = Regex("Required field (\\w+) is missing")
 
@@ -19,7 +22,7 @@ class ApiExceptionHandler {
         val missingField = reason?.let { missingFieldPattern.find(it)?.groupValues?.getOrNull(1) }
 
         val body = buildMap<String, Any?> {
-            put("timestamp", OffsetDateTime.now())
+            put("timestamp", OffsetDateTime.now(clock))
             put("status", status.value())
             put("error", ex.cause)
             put("message", reason)

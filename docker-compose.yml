@@ -6,6 +6,7 @@ services:
       POSTGRES_DB: test_report
       POSTGRES_USER: report
       POSTGRES_PASSWORD: report
+      TZ: Europe/Moscow
     ports:
       - "55489:5432"
     volumes:
@@ -21,6 +22,9 @@ services:
       DB_PASSWORD: report
       COLUMN_CONFIG_PATH: /app/config/column-config.json
       PORT: 18080
+      TZ: Europe/Moscow
+      APP_TIME_ZONE: Europe/Moscow
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Europe/Moscow
     volumes:
       - ./config:/app/config:ro
     depends_on:

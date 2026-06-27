@@ -17,6 +17,7 @@ import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
+import java.time.Clock
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
@@ -26,6 +27,7 @@ class TestReportService(
     private val columnConfigService: ColumnConfigService,
     private val regressionService: RegressionService,
     private val objectMapper: ObjectMapper,
+    private val clock: Clock,
 ) {
     private companion object {
         const val DEFAULT_GENERAL_STATUS = "Готово"
@@ -124,7 +126,7 @@ class TestReportService(
             if (isRegressRunning) {
                 entity.runStatus = item.runStatus
             }
-            entity.updatedAt = OffsetDateTime.now()
+            entity.updatedAt = OffsetDateTime.now(clock)
             testReportRepository.save(entity)
             return
         }
@@ -133,7 +135,7 @@ class TestReportService(
         newEntity.category = item.category
         newEntity.shortTitle = item.shortTitle
         newEntity.scenario = item.scenario
-        newEntity.readyDate = item.readyDate ?: LocalDate.now()
+        newEntity.readyDate = item.readyDate ?: LocalDate.now(clock)
 
         newEntity.issueLink = when {
             forceUpdate && item.manualFields.issueLink.provided ->
@@ -158,7 +160,7 @@ class TestReportService(
         if (isRegressRunning) {
             newEntity.runStatus = item.runStatus
         }
-        newEntity.updatedAt = OffsetDateTime.now()
+        newEntity.updatedAt = OffsetDateTime.now(clock)
         testReportRepository.save(newEntity)
     }
 

@@ -26,7 +26,10 @@ ENV DB_URL=jdbc:postgresql://db:5432/test_report \
     DB_USERNAME=report \
     DB_PASSWORD=report \
     COLUMN_CONFIG_PATH=/app/config/column-config.json \
-    PORT=18080
+    PORT=18080 \
+    TZ=Europe/Moscow \
+    APP_TIME_ZONE=Europe/Moscow \
+    JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
 COPY --from=backend-build /workspace/backend/build/libs/*.jar app.jar
 COPY --from=backend-build /workspace/config ./config
 EXPOSE 18080
