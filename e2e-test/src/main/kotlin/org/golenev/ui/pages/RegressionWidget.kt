@@ -26,19 +26,19 @@ class RegressionWidget {
 
     /** Открывает форму запуска regression run и проверяет видимость поля release name. */
     fun openStartForm() {
-        regressionStartButton.shouldBe(enabled.because("элемент должен быть доступен перед кликом")).click()
-        regressionReleaseInput.shouldBe(visible.because("элемент должен быть видимым на странице"))
+        regressionStartButton.shouldBe(enabled.because("кнопка открытия формы запуска regression run должна быть доступна перед кликом")).click()
+        regressionReleaseInput.shouldBe(visible.because("поле ввода release name должно быть видимым после открытия формы запуска regression run"))
     }
 
     /** Заполняет release name в форме запуска regression run. */
     fun fillReleaseName(releaseName: String) {
-        regressionReleaseInput.shouldBe(visible.because("элемент должен быть видимым для ввода значения")).typeOf(releaseName)
+        regressionReleaseInput.shouldBe(visible.because("поле ввода release name должно быть видимым для ввода значения")).typeOf(releaseName)
     }
 
     /** Сохраняет форму запуска regression run и проверяет, что появилась кнопка отмены. */
     fun saveRegressionStart() {
-        regressionSaveButton.shouldBe(enabled.because("элемент должен быть доступен перед кликом")).click()
-        regressionCancelButton.shouldBe(visible.because("элемент должен быть видимым на странице"))
+        regressionSaveButton.shouldBe(enabled.because("кнопка сохранения формы запуска regression run должна быть доступна перед кликом")).click()
+        regressionCancelButton.shouldBe(visible.because("кнопка отмены regression run должна быть видимой после запуска regression run"))
     }
 
     /** Полностью запускает regression run: открывает форму, вводит release name и сохраняет. */
@@ -50,12 +50,12 @@ class RegressionWidget {
 
     /** Отменяет активный regression run и проверяет исчезновение кнопки отмены. */
     fun cancelRegression() {
-        regressionCancelButton.shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
-        regressionCancelButton.should(disappear.because("элемент должен исчезнуть после выполненного действия"))
+        regressionCancelButton.shouldBe(visible.because("кнопка отмены regression run должна быть видимой перед кликом")).click()
+        regressionCancelButton.should(disappear.because("кнопка отмены regression run должна исчезнуть после отмены regression run"))
     }
 
     /** Нажимает кнопку остановки активного regression run. */
     fun stopRegress() {
-        regressionStopButton.shouldBe(visible.because("элемент должен быть видимым перед кликом")).click()
+        regressionStopButton.shouldBe(visible.because("кнопка остановки regression run должна быть видимой перед кликом")).click()
     }
 }

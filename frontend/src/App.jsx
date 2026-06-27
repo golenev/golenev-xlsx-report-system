@@ -580,6 +580,17 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
   );
 }
 
+
+function getTextareaLineCount(value) {
+  const normalized = String(value ?? '').replace(/\r\n/g, '\n');
+  if (!normalized.length) return 1;
+  return normalized.split('\n').length;
+}
+
+function getScenarioStepInputRows(value) {
+  return getTextareaLineCount(value) + 1;
+}
+
 function ScenarioStepEditor({ value, onChange, onCommit, onFocus, autoFocus = false }) {
   const [steps, setSteps] = useState(() => parseScenarioSteps(value));
   const [openAttachmentRows, setOpenAttachmentRows] = useState(() => new Set());
@@ -702,7 +713,7 @@ function ScenarioStepEditor({ value, onChange, onCommit, onFocus, autoFocus = fa
                 className="cell-textarea scenario-step-input"
                 data-testid="scenario-step-input"
                 placeholder={index === steps.length - 1 ? 'Добавьте следующий шаг…' : `Шаг ${index + 1}`}
-                rows={1}
+                rows={getScenarioStepInputRows(step.text)}
                 wrap="soft"
               />
               {hasAttachment ? (
