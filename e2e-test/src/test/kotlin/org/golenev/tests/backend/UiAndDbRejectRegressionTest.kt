@@ -1,9 +1,6 @@
 package org.golenev.tests.backend
 
 import com.codeborne.selenide.Selenide
-import com.codeborne.selenide.Condition.exactText
-import com.codeborne.selenide.Condition.disappear
-import com.codeborne.selenide.Selenide.`$`
 import io.kotest.matchers.nulls.shouldNotBeNull
 import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
@@ -18,6 +15,7 @@ import org.golenev.restapi.endpoints.ScenarioRequest
 import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.Application.mainPage
+import org.golenev.ui.pages.Application.warningPopup
 import org.golenev.utils.getRandomTestId
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
@@ -142,13 +140,11 @@ class UiAndDbRejectRegressionTest {
         }
 
         step("Убеждаемся, что появился popup warning с предупреждением и необходимости заполнения результатов прогона") {
-            `$`(".popup-message").shouldHave(exactText("Перед остановкой регресса заполните результаты для всех тест-кейсов.").because("попап должен объяснять, почему нельзя остановить регресс без заполненных статусов"))
-            `$`(".popup-title").shouldHave(exactText("Не все статусы заполнены").because("заголовок попапа должен указывать на незаполненные статусы"))
+            warningPopup.checkDefaultRegressionWarning()
         }
 
         step("Закрываем popup warning") {
-            `$`(".popup-actions .secondary-btn").click()
-            `$`(".popup-card").shouldBe(disappear.because("попап должен закрыться после нажатия кнопки закрытия"))
+            warningPopup.close()
         }
 
         step("Отменяем регресс через UI") {

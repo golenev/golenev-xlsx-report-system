@@ -1,13 +1,7 @@
 package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
-import com.codeborne.selenide.Condition.disabled
-import com.codeborne.selenide.Condition.enabled
-import com.codeborne.selenide.Condition.visible
-import com.codeborne.selenide.ScrollIntoViewOptions.Block.start
-import com.codeborne.selenide.ScrollIntoViewOptions.instant
 import org.golenev.ui.pages.Application.testCaseTable
-import org.golenev.utils.CENTER
 import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
@@ -76,35 +70,24 @@ class CreateAndDeleteTestCasesUiE2eTest {
         testCases.forEachIndexed { index, testCase ->
             step("Создаём тест-кейс ${index + 1} через UI и проверяем блокировки кнопок") {
                 mainPage.startNewRow()
-                testCaseTable.addRowButton
-                    .scrollIntoView(instant().block(start))
-                    .shouldBe(disabled.because("кнопка Add Row должна быть недоступна, пока форма создания строки не готова к сохранению"))
-                testCaseTable.draftRow.saveButton
-                    .shouldBe(disabled.because("кнопка сохранения draft-строки должна быть недоступна, пока форма создания строки не готова к сохранению"))
+                testCaseTable.checkAddRowDisabled()
+                testCaseTable.draftRow.checkSaveDisabled()
 
                 mainPage.fillTestId(testCase.testId.orEmpty())
-                testCaseTable.addRowButton
-                    .scrollIntoView(instant().block(start))
-                    .shouldBe(disabled.because("кнопка Add Row должна быть недоступна, пока форма создания строки не готова к сохранению"))
-                testCaseTable.draftRow.saveButton
-                    .shouldBe(disabled.because("кнопка сохранения draft-строки должна быть недоступна, пока форма создания строки не готова к сохранению"))
+                testCaseTable.checkAddRowDisabled()
+                testCaseTable.draftRow.checkSaveDisabled()
 
                 mainPage.fillCategory(testCase.category.orEmpty())
                 mainPage.fillShortTitle(testCase.shortTitle.orEmpty())
                 mainPage.fillIssueLink(testCase.issueLink.orEmpty())
                 mainPage.selectGeneralStatus(testCase.generalStatus.orEmpty())
                 mainPage.selectPriority(testCase.priority.orEmpty())
-                testCaseTable.addRowButton
-                    .scrollIntoView(instant().block(start))
-                    .shouldBe(disabled.because("кнопка Add Row должна быть недоступна, пока форма создания строки не готова к сохранению"))
-                testCaseTable.draftRow.saveButton
-                    .shouldBe(disabled.because("кнопка сохранения draft-строки должна быть недоступна, пока форма создания строки не готова к сохранению"))
+                testCaseTable.checkAddRowDisabled()
+                testCaseTable.draftRow.checkSaveDisabled()
 
                 mainPage.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
-                testCaseTable.draftRow.saveButton
-                    .shouldBe(enabled.because("кнопка сохранения должна быть доступна после заполнения обязательных полей"))
-                testCaseTable.addRowButton
-                    .shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса"))
+                testCaseTable.draftRow.checkSaveEnabled()
+                testCaseTable.checkAddRowEnabled()
 
                 val createRequestBody = interceptRequestBody(getSelenideProxy(), Paths.REPORTS.path) {
                     mainPage.saveNewRow()
@@ -127,9 +110,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
             }
 
             step("Проверяем, что тест-кейс ${testCase.testId} появился на UI") {
-                testCaseTable.row(testCase.testId.orEmpty()).root
-                    .scrollIntoView(CENTER)
-                    .shouldBe(visible.because("строка тест-кейса должна быть видимой на странице после прокрутки"))
+                testCaseTable.checkRowVisible(testCase.testId.orEmpty())
             }
         }
 
@@ -139,12 +120,9 @@ class CreateAndDeleteTestCasesUiE2eTest {
 
             step("Редактируем Category тест-кейса $testId и проверяем блокировку Add Row") {
                 mainPage.updateCategory(testId, updatedCategory)
-                testCaseTable.addRowButton
-                    .scrollIntoView(instant().block(start))
-                    .shouldBe(disabled.because("кнопка Add Row должна быть недоступна, пока форма создания строки не готова к сохранению"))
+                testCaseTable.checkAddRowDisabled()
                 mainPage.unFocus()
-                testCaseTable.addRowButton
-                    .shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса"))
+                testCaseTable.checkAddRowEnabled()
             }
         }
 
@@ -153,8 +131,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
 
             step("Удаляем тест-кейс $testId через UI") {
                 mainPage.deleteTestCase(testId)
-                testCaseTable.row(testId).root
-                    .shouldBe(com.codeborne.selenide.Condition.disappear.because("строка тест-кейса должна исчезнуть после выполненного действия"))
+                testCaseTable.checkRowDisappeared(testId)
             }
 
             val remainingItems = step("Проверяем отсутствие тест-кейса $testId в базе данных") {

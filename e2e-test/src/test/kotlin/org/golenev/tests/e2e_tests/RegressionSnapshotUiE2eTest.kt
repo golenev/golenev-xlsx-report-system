@@ -1,10 +1,8 @@
 package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
-import com.codeborne.selenide.Condition.visible
 import io.kotest.matchers.nulls.shouldNotBeNull
 import org.golenev.ui.pages.Application.testCaseTable
-import org.golenev.utils.CENTER
 import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.regression.RegressionDao
@@ -94,7 +92,7 @@ class RegressionSnapshotUiE2eTest {
 
         step("Убеждаемся, что в таблице среди прочих отображаются две созданные записи") {
             testCases.forEach { testCase ->
-                testCaseTable.row(testCase.testId.orEmpty()).root.scrollIntoView(CENTER).shouldBe(visible.because("строка тест-кейса должна быть видимой на странице после прокрутки"))
+                testCaseTable.checkRowVisible(testCase.testId.orEmpty())
             }
         }
 

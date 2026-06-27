@@ -35,7 +35,6 @@ class MainPage {
         headerTitle.shouldHave(text("Test Report").because("после открытия страницы должен отображаться заголовок отчета"))
     }
 
-
     /** Фасадное действие, которое создаёт draft-строку через таблицу тест-кейсов. */
     fun startNewRow() = Application.testCaseTable.startNewRow()
 
@@ -70,13 +69,8 @@ class MainPage {
     /** Сохраняет текущую draft-строку через компонент строки. */
     fun saveNewRow() = Application.testCaseTable.draftRow.saveDraft()
 
-
     /** Удаляет существующий тест-кейс с указанным Test ID и подтверждает browser confirm. */
     fun deleteTestCase(testId: String) = Application.testCaseTable.row(testId).delete()
-
-
-
-
 
     /** Запускает глобальный regression run с указанным release name. */
     fun startRegression(releaseName: String) = Application.regressionWidget.startRegression(releaseName)
@@ -89,7 +83,6 @@ class MainPage {
 
     /** Выбирает regression status в колонке Regress Run для конкретного тест-кейса. */
     fun selectRegressionStatus(testId: String, status: String) = Application.testCaseTable.row(testId).selectRegressionStatus(status)
-
 
     /** Закрывает текущий warning popup. */
     fun closePopupWarning() = Application.warningPopup.close()
