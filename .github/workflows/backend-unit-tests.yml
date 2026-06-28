@@ -28,3 +28,11 @@ jobs:
       - name: Run backend unit tests
         working-directory: backend
         run: gradle test
+
+      - name: Upload backend test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: backend/build/reports/tests/test
+          if-no-files-found: ignore

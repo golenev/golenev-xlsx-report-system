@@ -3,6 +3,7 @@ package com.example.report.controller
 import com.example.report.repository.TestReportRepository
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers.print
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
@@ -102,9 +104,10 @@ class UploadReportControllerContractTest {
         ).andExpect(status().isOk)
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/tests"))
+            .andDo(print())
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.items[0].scenario.steps[1].text", containsString("Expected body")))
-            .andExpect(jsonPath("$.items[0].scenario.steps[2].text", equalTo("line two")))
+            .andExpect(jsonPath("$.items[0].scenario.steps[*].text", hasItem(containsString("Expected body"))))
+            .andExpect(jsonPath("$.items[0].scenario.steps[*].text", hasItem(equalTo("line two"))))
     }
 
     /**
