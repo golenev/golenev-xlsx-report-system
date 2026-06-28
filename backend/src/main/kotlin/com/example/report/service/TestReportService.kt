@@ -37,6 +37,9 @@ class TestReportService(
 
     private val DEFAULT_PRIORITY = Priority.MEDIUM.value
 
+    /**
+     * Возвращает полный отчёт по тест-кейсам с сортировкой, настройками колонок и переводами.
+     */
     fun getReport(): TestReportResponse {
         val items = testReportRepository.findAll()
             .sortedWith { a, b -> compareTestIds(a.testId, b.testId) }
@@ -49,6 +52,10 @@ class TestReportService(
         )
     }
 
+    /**
+     * Создаёт или обновляет один тест-кейс после нормализации и валидации входных данных.
+     * Аннотация `@Transactional` выполняет валидацию и сохранение тест-кейса в одной транзакции.
+     */
     @Transactional
     fun upsertTest(request: TestUpsertItem, forceUpdate: Boolean) {
         val normalizedId = normalizeTestId(request.testId)
@@ -64,6 +71,10 @@ class TestReportService(
         upsertSingle(validated, existing, forceUpdate, false)
     }
 
+    /**
+     * Создаёт или обновляет набор тест-кейсов и при активном регрессе синхронизирует статусы прогона.
+     * Аннотация `@Transactional` делает пакетное сохранение и синхронизацию регресса атомарными.
+     */
     @Transactional
     fun upsertBatch(request: TestBatchRequest, isRegressRunning: Boolean = false, forceUpdate: Boolean = false) {
         val regressionResults = mutableMapOf<String, String>()
@@ -92,6 +103,10 @@ class TestReportService(
         }
     }
 
+    /**
+     * Удаляет тест-кейс по идентификатору или возвращает HTTP-ошибку, если запись не найдена.
+     * Аннотация `@Transactional` выполняет поиск и удаление в одной транзакции.
+     */
     @Transactional
     fun deleteTest(testId: String) {
         val entity = testReportRepository.findByTestId(testId)
@@ -101,6 +116,9 @@ class TestReportService(
         testReportRepository.delete(entity)
     }
 
+    /**
+     * Сохраняет один уже провалидированный тест-кейс, обновляя существующую запись или создавая новую.
+     */
     private fun upsertSingle(
         item: ValidatedUpsert,
         existing: TestReportEntity?,
@@ -164,6 +182,9 @@ class TestReportService(
         testReportRepository.save(newEntity)
     }
 
+    /**
+     * Проверяет входные поля тест-кейса, применяет fallback-значения и готовит нормализованную модель сохранения.
+     */
     private fun validateAndNormalize(
         item: TestUpsertItem,
         existing: TestReportEntity?,
@@ -237,6 +258,9 @@ class TestReportService(
         )
     }
 
+    /**
+     * Преобразует сущность тест-кейса из базы данных в DTO для ответа API.
+     */
     private fun TestReportEntity.toDto(): TestReportItemDto = TestReportItemDto(
         testId = testId,
         category = category,
@@ -251,6 +275,9 @@ class TestReportService(
         runStatus = runStatus,
     )
 
+    /**
+     * Проверяет, что общий статус теста входит в разрешённый справочник.
+     */
     private fun validateGeneralStatus(generalStatus: String): String {
         return try {
             GeneralTestStatus.requireValid(generalStatus) ?: requiredFieldMissing("generalStatus")
@@ -259,6 +286,9 @@ class TestReportService(
         }
     }
 
+    /**
+     * Проверяет, что приоритет теста входит в разрешённый справочник.
+     */
     private fun validatePriority(priority: String): String {
         return try {
             Priority.requireValid(priority) ?: requiredFieldMissing("priority")
@@ -267,6 +297,9 @@ class TestReportService(
         }
     }
 
+    /**
+     * Парсит дату готовности из строки в формате ISO и возвращает HTTP-ошибку при неверном формате.
+     */
     private fun parseReadyDate(raw: String): LocalDate {
         return try {
             LocalDate.parse(raw.trim())
@@ -275,6 +308,9 @@ class TestReportService(
         }
     }
 
+    /**
+     * Проверяет статус прогона регресса и контролирует обязательность этого поля.
+     */
     private fun validateRunStatus(runStatus: String?, required: Boolean): String? {
         val validated = try {
             RegressionRunStatus.requireValid(runStatus)
@@ -289,6 +325,9 @@ class TestReportService(
         return validated
     }
 
+    /**
+     * Очищает идентификатор теста от пробелов и проверяет, что он не пустой.
+     */
     private fun normalizeTestId(testId: String?): String {
         val normalizedId = testId?.trim().orEmpty()
         if (normalizedId.isEmpty()) {
@@ -297,11 +336,17 @@ class TestReportService(
         return normalizedId
     }
 
+    /**
+     * Формирует HTTP-ошибку о пропущенном обязательном поле.
+     */
     private fun requiredFieldMissing(fieldName: String): Nothing {
         throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Required field $fieldName is missing")
     }
 
 
+    /**
+     * Нормализует сценарий теста или берёт существующее значение, если fallback разрешён.
+     */
     private fun normalizeScenarioField(
         incoming: ScenarioRequest?,
         existing: String?,
@@ -316,6 +361,9 @@ class TestReportService(
         requiredFieldMissing("scenario")
     }
 
+    /**
+     * Валидирует структурированный сценарий и сериализует непустые шаги в JSON для хранения.
+     */
     private fun normalizeStructuredScenario(scenario: ScenarioRequest): String {
         val normalizedSteps = scenario.steps.mapNotNull { step ->
             val number = step.number
@@ -341,6 +389,9 @@ class TestReportService(
         return objectMapper.writeValueAsString(ScenarioRequest(steps = normalizedSteps))
     }
 
+    /**
+     * Преобразует сохранённый сценарий из JSON или старого текстового формата в структурированный DTO.
+     */
     private fun deserializeScenario(stored: String): ScenarioRequest {
         val trimmed = stored.trim()
         if (trimmed.startsWith("{")) {
@@ -353,6 +404,9 @@ class TestReportService(
         return buildScenarioFromText(stored)
     }
 
+    /**
+     * Строит структурированный сценарий из многострочного текста, превращая непустые строки в шаги.
+     */
     fun buildScenarioFromText(rawScenario: String): ScenarioRequest {
         val steps = rawScenario
             .lineSequence()
@@ -370,6 +424,9 @@ class TestReportService(
         return ScenarioRequest(steps = steps)
     }
 
+    /**
+     * Нормализует обязательное строковое поле или использует существующее значение при разрешённом fallback.
+     */
     private fun normalizeRequiredField(
         incoming: String?,
         existing: String?,
@@ -407,11 +464,17 @@ class TestReportService(
         val notes: ManualField<String?>,
     )
 
+    /**
+     * Применяет ручное обновление поля только если это поле было явно передано в запросе.
+     */
     private fun <T> applyManualUpdate(field: ManualField<T>, updater: (T) -> Unit) {
         if (!field.provided) return
         field.value?.let { updater(it) }
     }
 
+    /**
+     * Сравнивает идентификаторы тестов с учётом числовой части и суффикса для стабильной сортировки.
+     */
     private fun compareTestIds(a: String, b: String): Int {
         val left = ParsedTestId.from(a)
         val right = ParsedTestId.from(b)
@@ -444,6 +507,9 @@ class TestReportService(
         companion object {
             private val pattern = Regex("^(\\d+)(?:-(\\d+))?$")
 
+    /**
+     * Разбирает строковый идентификатор теста на исходное значение, числовую часть и опциональный суффикс.
+     */
             fun from(raw: String): ParsedTestId {
                 val trimmed = raw.trim()
                 val match = pattern.matchEntire(trimmed)

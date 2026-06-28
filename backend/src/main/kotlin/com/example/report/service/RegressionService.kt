@@ -26,6 +26,9 @@ class RegressionService(
     private val clock: Clock,
 ) {
 
+    /**
+     * Возвращает состояние активного регресса или `IDLE`, если сейчас регресс не запущен.
+     */
     fun getTodayState(): RegressionStateResponse {
         val today = LocalDate.now(clock)
         val entity = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
@@ -34,6 +37,10 @@ class RegressionService(
         return entity.toResponse()
     }
 
+    /**
+     * Запускает новый регресс для релиза, проверяя отсутствие другого активного запуска и дубля имени релиза.
+     * Аннотация `@Transactional` выполняет проверку и сохранение в одной транзакции базы данных.
+     */
     @Transactional
     fun startRegression(request: RegressionStartRequest): RegressionStateResponse {
         val today = LocalDate.now(clock)
@@ -64,6 +71,10 @@ class RegressionService(
         return entity.toResponse()
     }
 
+    /**
+     * Завершает активный регресс, валидирует результаты по всем тестам и сохраняет итоговый снимок.
+     * Аннотация `@Transactional` гарантирует атомарное обновление статуса и payload регресса.
+     */
     @Transactional
     fun stopRegression(request: RegressionStopRequest): RegressionStateResponse {
         val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
@@ -112,6 +123,10 @@ class RegressionService(
         return running.toResponse(emptyMap())
     }
 
+    /**
+     * Отменяет активный регресс: удаляет пустой запуск или помечает запуск с данными как завершённый.
+     * Аннотация `@Transactional` объединяет чтение, удаление или обновление записи в одну транзакцию.
+     */
     @Transactional
     fun cancelRegression(): RegressionStateResponse {
         val today = LocalDate.now(clock)
@@ -128,6 +143,9 @@ class RegressionService(
         return existing.toResponse(emptyMap())
     }
 
+    /**
+     * Возвращает краткую историю регрессионных запусков, отсортированную от новых к старым.
+     */
     fun listReleases(): List<RegressionReleaseSummary> {
         return regressionRepository.findAllByOrderByRegressionDateDesc()
             .map {
@@ -140,6 +158,9 @@ class RegressionService(
             }
     }
 
+    /**
+     * Проверяет, что на текущую дату существует активный регресс, иначе возвращает HTTP-ошибку.
+     */
     fun requireRunningRegression() {
         val today = LocalDate.now(clock)
         val running = regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)
@@ -151,6 +172,10 @@ class RegressionService(
         }
     }
 
+    /**
+     * Обновляет накопленные результаты активного регресса новыми статусами тестов.
+     * Аннотация `@Transactional` сохраняет слияние старых и новых результатов как атомарное изменение.
+     */
     @Transactional
     fun syncRunningRegressionResults(results: Map<String, String>) {
         if (results.isEmpty()) return
@@ -183,6 +208,9 @@ class RegressionService(
         regressionRepository.save(running)
     }
 
+    /**
+     * Возвращает сохранённый payload конкретного регресса вместе с его метаданными.
+     */
     fun getRegressionSnapshot(regressionId: Long): RegressionSnapshotResponse {
         val entity = regressionRepository.findById(regressionId)
             .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Regression $regressionId not found") }
@@ -197,6 +225,9 @@ class RegressionService(
         )
     }
 
+    /**
+     * Генерирует XLSX-файл из сохранённого снимка регресса.
+     */
     fun getRegressionSnapshotWorkbook(regressionId: Long): ByteArray {
         val entity = regressionRepository.findById(regressionId)
             .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Regression $regressionId not found") }
@@ -207,6 +238,9 @@ class RegressionService(
         return excelExportService.generateWorkbookFromSnapshot(snapshotPayload)
     }
 
+    /**
+     * Преобразует сущность регресса в DTO ответа API с актуальной картой результатов.
+     */
     private fun RegressionEntity.toResponse(results: Map<String, String>? = null): RegressionStateResponse {
         val effectiveResults = when {
             results != null -> results
@@ -221,6 +255,9 @@ class RegressionService(
         )
     }
 
+    /**
+     * Извлекает статусы тестов из payload регресса в виде мапы `testId -> regressionStatus`.
+     */
     private fun RegressionEntity.extractResultsFromPayload(): Map<String, String> {
         val payloadResults = payload?.get("tests") as? List<*> ?: return emptyMap()
         return payloadResults
@@ -233,6 +270,9 @@ class RegressionService(
             .toMap()
     }
 
+    /**
+     * Сравнивает идентификаторы тестов с учётом числовой части и суффикса для стабильной сортировки.
+     */
     private fun compareTestIds(a: String, b: String): Int {
         val left = ParsedTestId.from(a)
         val right = ParsedTestId.from(b)
@@ -265,6 +305,9 @@ class RegressionService(
         companion object {
             private val pattern = Regex("^(\\d+)(?:-(\\d+))?$")
 
+            /**
+             * Разбирает строковый идентификатор теста на исходное значение, числовую часть и опциональный суффикс.
+             */
             fun from(raw: String): ParsedTestId {
                 val trimmed = raw.trim()
                 val match = pattern.matchEntire(trimmed)
