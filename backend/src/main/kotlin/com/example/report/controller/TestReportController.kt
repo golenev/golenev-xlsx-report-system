@@ -38,6 +38,9 @@ class TestReportController(
 
     /**
      * Создаёт или обновляет один тест-кейс по данным из тела запроса.
+     *
+     * @param forceUpdate request-параметр, который разрешает обновлять ручные поля (`issueLink`, `generalStatus`,
+     * `priority`, `notes`) и явно переданную `readyDate`; при `false` эти поля не изменяются у существующей записи.
      */
     @PostMapping("/tests")
     fun upsertTest(
@@ -49,6 +52,11 @@ class TestReportController(
 
     /**
      * Массово создаёт или обновляет тест-кейсы; при активном регрессе проверяет его наличие и синхронизирует статусы прогона.
+     *
+     * @param isRegressRunning request-параметр, который включает режим регресса: при `true` поле `runStatus`
+     * становится обязательным, обновляется в строках тестов и добавляется в payload текущего регресса.
+     * @param forceUpdate request-параметр, который управляет ручными полями (`issueLink`, `generalStatus`, `priority`,
+     * `notes`) и `readyDate`: при `true` переданные значения применяются, при `false` существующие значения сохраняются.
      */
     @PostMapping("/tests/batch")
     fun upsertBatch(
