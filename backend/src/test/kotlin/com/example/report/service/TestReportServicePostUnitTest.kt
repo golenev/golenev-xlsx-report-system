@@ -19,7 +19,7 @@ class TestReportServicePostUnitTest {
     private val columnConfigService: ColumnConfigService = Mockito.mock(ColumnConfigService::class.java)
     private val regressionService: RegressionService = Mockito.mock(RegressionService::class.java)
     private val objectMapper = jacksonObjectMapper()
-    private val service = TestReportService(testReportRepository, columnConfigService, regressionService, objectMapper)
+    private val service = TestReportService(testReportRepository, columnConfigService, regressionService, objectMapper, fixedClock)
 
     /**
      * Юнит-тест моделирует сервисный слой POST /api/tests для нового testId: валидный structured scenario

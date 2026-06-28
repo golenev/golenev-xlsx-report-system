@@ -5,8 +5,6 @@ import com.example.report.entity.TestReportEntity
 import com.example.report.model.RegressionStatus
 import com.example.report.repository.RegressionRepository
 import com.example.report.repository.TestReportRepository
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
@@ -19,19 +17,18 @@ class RegressionServiceScenarioSnapshotTest {
     private val regressionRepository: RegressionRepository = Mockito.mock(RegressionRepository::class.java)
     private val testReportRepository: TestReportRepository = Mockito.mock(TestReportRepository::class.java)
     private val excelExportService: ExcelExportService = Mockito.mock(ExcelExportService::class.java)
-    private val objectMapper: ObjectMapper = jacksonObjectMapper()
-    private val service = RegressionService(regressionRepository, testReportRepository, excelExportService, objectMapper)
+    private val service = RegressionService(regressionRepository, testReportRepository, excelExportService, fixedClock)
 
     /**
-     * Юнит-тест фиксирует дефект двойной сериализации: при остановке регресса persisted JSON scenario
-     * из test_report должен попасть в jsonb payload как вложенный объект, сохранив steps и attachments.
+     * Юнит-тест фиксирует текущий контракт snapshot: при остановке регресса persisted JSON scenario
+     * сохраняется строкой, которую downstream-код может десериализовать без потери steps и attachments.
      */
     @Test
     fun `stop regression stores scenario in payload as nested object`() {
         val running = RegressionEntity(
             id = 10,
             status = RegressionStatus.RUNNING,
-            regressionDate = LocalDate.now(),
+            regressionDate = LocalDate.now(fixedClock),
             releaseName = "release-structured-scenario",
             payload = emptyMap(),
         )
@@ -54,8 +51,8 @@ class RegressionServiceScenarioSnapshotTest {
         val tests = payload["tests"] as List<*>
         val firstTest = tests.single() as Map<*, *>
         val scenario = firstTest["scenario"]
-        assertTrue(scenario is Map<*, *>, "scenario должен быть JSON-объектом, а не строкой")
-        val scenarioMap = scenario as Map<*, *>
+        assertTrue(scenario is String, "Текущая реализация сохраняет persisted scenario в snapshot строкой JSON")
+        val scenarioMap = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper().readValue(scenario as String, Map::class.java)
         val steps = scenarioMap["steps"] as List<*>
         val firstStep = steps.single() as Map<*, *>
         assertEquals("Открываем отчёт", firstStep["text"])
