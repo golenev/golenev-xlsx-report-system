@@ -1,0 +1,30 @@
+name: Backend unit tests
+
+on:
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  test:
+    name: Run backend unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.14.4
+
+      - name: Run backend unit tests
+        working-directory: backend
+        run: gradle test

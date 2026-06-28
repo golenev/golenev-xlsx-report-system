@@ -112,4 +112,26 @@ class PostTestsContractTest {
             status { isBadRequest() }
         }
     }
+
+    /**
+     * Граничный негативный кейс для нормализации scenario: шаг из пустого текста и пустого массива attachments
+     * отбрасывается сервисом, поэтому тело без содержательных шагов должно возвращать 400 и не создавать запись.
+     */
+    @Test
+    fun `post tests rejects scenario with only empty step`() {
+        mockMvc.post("/api/tests") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """
+                {
+                  "testId": "CONTRACT-EMPTY-STEP",
+                  "category": "API",
+                  "shortTitle": "Scenario must contain meaningful steps",
+                  "scenario": {"steps": [{"number": 1, "text": "   ", "attachments": []}]}
+                }
+            """.trimIndent()
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
+
 }
