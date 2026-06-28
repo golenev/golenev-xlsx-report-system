@@ -8,6 +8,12 @@ import org.springframework.web.server.ResponseStatusException
 import java.time.Clock
 import java.time.OffsetDateTime
 
+/**
+ * Глобальный обработчик API-ошибок для REST-контроллеров.
+ *
+ * Аннотация `@RestControllerAdvice` подключает класс как общий advice для контроллеров:
+ * Spring вызывает методы с `@ExceptionHandler`, когда endpoint выбрасывает поддерживаемое исключение.
+ */
 @RestControllerAdvice
 class ApiExceptionHandler(
     private val clock: Clock,
@@ -15,6 +21,13 @@ class ApiExceptionHandler(
 
     private val missingFieldPattern = Regex("Required field (\\w+) is missing")
 
+    /**
+     * Преобразует `ResponseStatusException` в единый JSON-ответ с HTTP-статусом, сообщением, путём запроса и временем.
+     * Если сообщение соответствует шаблону пропущенного обязательного поля, добавляет в тело ответа `missingField`.
+     *
+     * Аннотация `@ExceptionHandler(ResponseStatusException::class)` говорит Spring вызывать этот метод
+     * для исключений `ResponseStatusException`, выброшенных из контроллеров или сервисов во время обработки запроса.
+     */
     @ExceptionHandler(ResponseStatusException::class)
     fun handleResponseStatusException(ex: ResponseStatusException, request: HttpServletRequest): ResponseEntity<Map<String, Any?>> {
         val status = ex.statusCode
