@@ -1,6 +1,5 @@
 package org.golenev.ui.pages
 
-import com.codeborne.selenide.CollectionCondition.size
 import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.ScrollIntoViewOptions.Block.start
 import com.codeborne.selenide.ScrollIntoViewOptions.instant
@@ -30,26 +29,31 @@ class TestCaseTable {
     fun row(testId: String): TestCaseRow = TestCaseRow(rowElementByTestId(testId))
 
     /** Проверяет, что кнопка Add Row недоступна, пока нельзя начать создание новой строки. */
-    fun shouldDisableAddRow() {
+    fun checkAddRowDisabled() {
         addRowButton
             .scrollIntoView(instant().block(start))
             .shouldBe(disabled.because("кнопка Add Row должна быть недоступна, пока форма создания строки не готова к сохранению"))
     }
 
     /** Проверяет, что кнопка Add Row доступна для начала создания тест-кейса. */
-    fun shouldEnableAddRow() {
+    fun checkAddRowEnabled() {
         addRowButton.shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса"))
+    }
+
+    /** Проверяет, что сохранённая строка тест-кейса с указанным Test ID отображается. */
+    fun checkRowVisible(testId: String) {
+        row(testId).checkVisible()
+    }
+
+    /** Проверяет, что строка тест-кейса с указанным Test ID исчезла со страницы. */
+    fun checkRowDisappeared(testId: String) {
+        row(testId).checkDisappeared()
     }
 
     /** Нажимает Add Row и проверяет, что на странице появилась draft-строка. */
     fun startNewRow() {
         addRowButton.shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса")).click()
-        draftRow.shouldBeVisibleAfterDraftCreation()
-    }
-
-    /** Проверяет количество сохранённых строк тест-кейсов в таблице. */
-    fun shouldHaveRowsCount(expectedCount: Int) {
-        root.`$$`("[data-testid='test-case-row'][data-test-case-id]").shouldHave(size(expectedCount).because("количество строк таблицы должно соответствовать ожидаемому значению"))
+        draftRow.checkVisibleAfterDraftCreation()
     }
 
     /** Находит Selenide-элемент существующей строки таблицы по Test ID внутри root таблицы. */

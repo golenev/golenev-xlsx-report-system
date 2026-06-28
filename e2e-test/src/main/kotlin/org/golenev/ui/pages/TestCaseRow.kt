@@ -94,27 +94,27 @@ class TestCaseRow(
     }
 
     /** Прокручивает страницу к строке и проверяет, что строка видима. */
-    fun shouldBeVisible() {
+    fun checkVisible() {
         root.scrollIntoView(CENTER).shouldBe(visible.because("строка тест-кейса должна быть видимой на странице после прокрутки"))
     }
 
     /** Проверяет видимость draft-строки сразу после её создания. */
-    fun shouldBeVisibleAfterDraftCreation() {
+    fun checkVisibleAfterDraftCreation() {
         root.shouldBe(visible.because("после нажатия добавления должна появиться черновая строка"))
     }
 
     /** Проверяет, что строка исчезла со страницы после действия. */
-    fun shouldDisappear() {
-        root.should(disappear.because("строка тест-кейса должна исчезнуть после выполненного действия"))
+    fun checkDisappeared() {
+        root.shouldBe(disappear.because("строка тест-кейса должна исчезнуть после выполненного действия"))
     }
 
     /** Проверяет, что кнопка сохранения draft-строки недоступна. */
-    fun shouldDisableSave() {
+    fun checkSaveDisabled() {
         saveButton.shouldBe(disabled.because("кнопка сохранения draft-строки должна быть недоступна, пока форма создания строки не готова к сохранению"))
     }
 
     /** Проверяет, что кнопка сохранения draft-строки доступна. */
-    fun shouldEnableSave() {
+    fun checkSaveEnabled() {
         saveButton.shouldBe(enabled.because("кнопка сохранения должна быть доступна после заполнения обязательных полей"))
     }
 
@@ -164,7 +164,7 @@ class TestCaseRow(
     }
 
     /** Проверяет, что ячейка Ready Date содержит ожидаемую дату. */
-    fun shouldHaveReadyDate(expectedDate: String) {
+    fun checkReadyDate(expectedDate: String) {
         readyDateCell.shouldHave(text(expectedDate).because("ячейка Ready Date должна содержать ожидаемую дату"))
     }
 

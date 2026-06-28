@@ -14,7 +14,8 @@ import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.restapi.endpoints.ScenarioRequest
 import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.ui.config.DriverConfig
-import org.golenev.ui.pages.MainPage
+import org.golenev.ui.pages.Application.mainPage
+import org.golenev.ui.pages.Application.warningPopup
 import org.golenev.utils.getRandomTestId
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
@@ -26,7 +27,6 @@ import java.time.LocalDate
 @DisplayName("API + UI + DB: Тесты отмены и остановки регресса")
 class UiAndDbRejectRegressionTest {
 
-    private val mainPage = MainPage()
     private val createdTestId: String = "UI-LOCK-${getRandomTestId()}"
     private val createdReleaseName: String = "regress-zopa-${getRandomTestId()}"
     private val reportService = ReportServiceDao()
@@ -140,11 +140,11 @@ class UiAndDbRejectRegressionTest {
         }
 
         step("Убеждаемся, что появился popup warning с предупреждением и необходимости заполнения результатов прогона") {
-            mainPage.checkPopupWarning()
+            warningPopup.checkDefaultRegressionWarning()
         }
 
         step("Закрываем popup warning") {
-            mainPage.closePopupWarning()
+            warningPopup.close()
         }
 
         step("Отменяем регресс через UI") {
