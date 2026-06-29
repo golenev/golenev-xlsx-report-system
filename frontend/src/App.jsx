@@ -97,16 +97,6 @@ function withBase(path) {
   return `${API_BASE}${path}`;
 }
 
-function columnLetter(index) {
-  let n = index;
-  let result = '';
-  while (n >= 0) {
-    result = String.fromCharCode((n % 26) + 65) + result;
-    n = Math.floor(n / 26) - 1;
-  }
-  return result;
-}
-
 function getColumnDataName(column) {
   return column.label ?? column.key;
 }
@@ -1624,9 +1614,8 @@ export default function App() {
             <thead>
               <tr data-role="header" data-testid="head-row">
                 <th className="row-index-header" data-role="headercell" data-testid="head-cell" data-name="row-index">#</th>
-                {columns.map((column, idx) => {
+                {columns.map((column) => {
                   const width = getColumnWidth(column);
-                  const letter = columnLetter(idx);
                   const columnDataName = getColumnDataName(column);
                   const isScenarioColumn = column.key === 'scenario';
                   const columnSizing = isScenarioColumn
@@ -1651,7 +1640,6 @@ export default function App() {
                         }`}
                       >
                         <div className="header-title">
-                          <span className="column-letter">{letter}</span>
                           <span>{translate(column.label)}</span>
                         </div>
                         {column.key === 'regressionStatus' && (
