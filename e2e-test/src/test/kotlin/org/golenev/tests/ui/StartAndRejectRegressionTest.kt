@@ -18,8 +18,8 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
-@DisplayName("API + UI + DB: Тесты отмены и остановки регресса")
-class UiAndDbRejectRegressionTest {
+@DisplayName("Тесты отмены и остановки регресса. Валидации")
+class StartAndRejectRegressionTest {
 
     private val createdTestId: String = "UI-LOCK-${getRandomTestId()}"
     private val createdReleaseName: String = "regress-zopa-${getRandomTestId()}"
