@@ -63,7 +63,6 @@ const REGRESSION_COLUMN = {
 
 const TABLE_COLUMNS = [...FIELD_DEFINITIONS, REGRESSION_COLUMN];
 
-const ACTION_COLUMN = { key: 'actions', label: '', type: 'actions', editable: false };
 
 const DEFAULT_ISSUE_LINK = 'https://youtrackru/issue/';
 
@@ -1441,27 +1440,6 @@ export default function App() {
     sendUpdate(item, { priority: value });
   };
 
-  const handleDelete = async (testId) => {
-    if (!window.confirm(`Delete test ${testId}?`)) {
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      const response = await fetch(withBase(`/api/tests/${encodeURIComponent(testId)}`), {
-        method: 'DELETE'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to delete test');
-      }
-      await loadData();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleExport = async () => {
     setError(null);
     try {
@@ -1489,16 +1467,12 @@ export default function App() {
     downloadTextFile(fileName, content);
   };
 
-  const columns = [ACTION_COLUMN, ...TABLE_COLUMNS];
+  const columns = TABLE_COLUMNS;
   const translate = (text) => translations[text] ?? text;
   const hasSelectedFiles = selectedUploadFiles.length > 0;
 
-  const getColumnWidth = (column) => {
-    if (column.key === ACTION_COLUMN.key) {
-      return columnConfig[column.key] ?? 72;
-    }
-    return columnConfig[column.key] ?? (column.type === 'textarea' ? 280 : 160);
-  };
+  const getColumnWidth = (column) =>
+    columnConfig[column.key] ?? (column.type === 'textarea' ? 280 : 160);
 
   return (
     <div className="app-container">
@@ -1736,15 +1710,6 @@ export default function App() {
                       Cancel
                     </button>
                   </td>
-                  <td
-                    className="action-cell"
-                    data-role="cell"
-                    data-testid="test-case-cell"
-                    data-name="Actions"
-                    style={{ width: `${getColumnWidth(ACTION_COLUMN)}px`, minWidth: `${getColumnWidth(ACTION_COLUMN)}px` }}
-                  >
-                    —
-                  </td>
                   {TABLE_COLUMNS.map((column) => {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
@@ -1851,24 +1816,6 @@ export default function App() {
               {sortedItems.map((item, rowIndex) => (
                 <tr key={item.testId} data-testid="test-case-row" data-test-case-id={item.testId}>
                   <td className="row-index-cell" data-role="cell" data-testid="test-case-cell" data-name="Row Index">{rowIndex + 1}</td>
-                  <td
-                    className="action-cell"
-                    data-role="cell"
-                    data-testid="test-case-cell"
-                    data-name="Actions"
-                    style={{ width: `${getColumnWidth(ACTION_COLUMN)}px`, minWidth: `${getColumnWidth(ACTION_COLUMN)}px` }}
-                  >
-                    <button
-                      type="button"
-                      className="delete-btn"
-                      data-testid="delete-test-case-button"
-                      data-disabled={booleanDataAttribute(saving)}
-                      onClick={() => handleDelete(item.testId)}
-                      disabled={saving}
-                    >
-                      ✕
-                    </button>
-                  </td>
                   {TABLE_COLUMNS.map((column) => {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';

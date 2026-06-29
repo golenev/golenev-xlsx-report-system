@@ -1,7 +1,6 @@
 package org.golenev.ui.pages
 
 import com.codeborne.selenide.Condition.*
-import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.SelenideElement
 import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.utils.CENTER
@@ -50,9 +49,6 @@ class TestCaseRow(
 
     /** Кнопка сохранения draft-строки. */
     private val saveButton: SelenideElement get() = root.find("[data-testid='save-test-case-button']")
-
-    /** Кнопка удаления сохранённой строки тест-кейса. */
-    private val deleteButton: SelenideElement get() = root.find("[data-testid='delete-test-case-button']")
 
     /** Заполняет поле Test ID в строке. */
     fun fillTestId(testId: String) {
@@ -154,13 +150,6 @@ class TestCaseRow(
     fun saveDraft() {
         saveButton.shouldBe(enabled.because("кнопка сохранения должна быть доступна после заполнения обязательных полей")).click()
         root.shouldBe(hidden.because("после сохранения черновая строка должна скрыться"))
-    }
-
-    /** Удаляет сохранённую строку и подтверждает browser confirm. */
-    fun delete() {
-        root.shouldBe(visible.because("строка тест-кейса должна быть видимой перед удалением"))
-        deleteButton.click()
-        Selenide.confirm()
     }
 
     /** Проверяет, что ячейка Ready Date содержит ожидаемую дату. */

@@ -1,5 +1,6 @@
 package org.golenev.ui.pages
 
+import com.codeborne.selenide.CollectionCondition.size
 import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.ScrollIntoViewOptions.Block.start
 import com.codeborne.selenide.ScrollIntoViewOptions.instant
@@ -48,6 +49,12 @@ class TestCaseTable {
     /** Проверяет, что строка тест-кейса с указанным Test ID исчезла со страницы. */
     fun checkRowDisappeared(testId: String) {
         row(testId).checkDisappeared()
+    }
+
+    /** Проверяет количество сохранённых строк тест-кейсов без учёта draft-строки. */
+    fun checkSavedRowsCount(expectedCount: Int) {
+        root.findAll("[data-testid='test-case-row']:not([data-state='draft'])")
+            .shouldHave(size(expectedCount).because("количество сохранённых строк тест-кейсов должно соответствовать ожидаемому"))
     }
 
     /** Нажимает Add Row и проверяет, что на странице появилась draft-строка. */

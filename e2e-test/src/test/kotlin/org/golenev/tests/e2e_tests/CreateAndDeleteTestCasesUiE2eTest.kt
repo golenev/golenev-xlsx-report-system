@@ -7,6 +7,7 @@ import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.config.Paths
+import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.config.interceptRequestBody
@@ -21,9 +22,10 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
-@DisplayName("E2E: Создание и удаление тест-кейсов через UI")
+@DisplayName("E2E: Создание тест-кейсов через UI и удаление через API")
 class CreateAndDeleteTestCasesUiE2eTest {
 
+    private val reportService = ReportServiceDao()
     private val createdTestIds = mutableListOf<String>()
 
     @BeforeEach
@@ -46,8 +48,8 @@ class CreateAndDeleteTestCasesUiE2eTest {
 
     @Test
     @AllureId("302")
-    @DisplayName("Создаём два кейса через UI, проверяем блокировки, удаляем через UI и проверяем отсутствие")
-    fun shouldCreateTwoCasesWithUiValidationAndDeleteThemViaUi() {
+    @DisplayName("Создаём два кейса через UI, проверяем блокировки, удаляем через API и проверяем отсутствие")
+    fun shouldCreateTwoCasesWithUiValidationAndDeleteThemViaApi() {
         val readyDate = step("Фиксируем текущую дату для генерации тест-кейсов") {
             LocalDate.now().toString()
         }
@@ -129,8 +131,9 @@ class CreateAndDeleteTestCasesUiE2eTest {
         testCases.forEach { testCase ->
             val testId = testCase.testId.orEmpty()
 
-            step("Удаляем тест-кейс $testId через UI") {
-                mainPage.deleteTestCase(testId)
+            step("Удаляем тест-кейс $testId через API и обновляем UI") {
+                reportService.deleteTest(testId)
+                mainPage.refreshCurrentPage()
                 testCaseTable.checkRowDisappeared(testId)
             }
 
