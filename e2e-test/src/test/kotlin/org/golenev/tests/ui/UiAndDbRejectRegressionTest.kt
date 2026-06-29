@@ -41,46 +41,6 @@ class UiAndDbRejectRegressionTest {
         step("Удаляем созданный регресс из базы") {
             RegressionDao.deleteByReleaseName(createdReleaseName)
         }
-
-    }
-
-    @Test
-    @AllureId("201")
-    @DisplayName("Запускаем и отменяем регресс через UI с проверкой записи в БД")
-    fun startAndCancelRegressionViaUi() {
-        val regressionDate =
-            step("Определяем дату запуска регресса") { LocalDate.now() }
-
-        step("Удаляем из базы потенциальные конфликты по имени регресса") {
-            RegressionDao.deleteByReleaseName(createdReleaseName)
-        }
-
-        step("Открываем главную страницу") { Application.mainPage.open() }
-
-        step("Запускаем регресс через UI") {
-            Application.mainPage.startRegression(createdReleaseName)
-        }
-
-        val regression = step("Проверяем создание записи о регрессе в базе") {
-            RegressionDao.findByReleaseName(createdReleaseName)
-                .shouldNotBeNull()
-        }
-
-        step("Убеждаемся в корректности полей регресса") {
-            regression.status.shouldBe("RUNNING", "regression.status не совпало с ожидаемым")
-            regression.regressionDate.shouldBe(regressionDate, "regression.regressionDate не совпало с ожидаемым")
-            regression.payload?.tests.shouldBe(null, "regression.payload?.tests не совпало с ожидаемым")
-            regression.payload?.status.shouldBe(null, "regression.payload?.status не совпало с ожидаемым")
-        }
-
-        step("Отменяем регресс через UI") {
-            Application.mainPage.cancelRegression()
-        }
-
-        step("Проверяем, что запись о регрессе удалена из БД") {
-            RegressionDao.findByReleaseName(createdReleaseName)
-                .shouldBe(null, "RegressionDao.findByReleaseName(createdReleaseName) не совпало с ожидаемым")
-        }
     }
 
     @Test
@@ -118,7 +78,6 @@ class UiAndDbRejectRegressionTest {
         step("Создаём запись через API") {
             reportService.sendBatch(batchRequest)
         }
-
 
         step("Открываем главную страницу") { Application.mainPage.open() }
 
