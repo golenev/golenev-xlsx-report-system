@@ -30,9 +30,18 @@ class TestReportController(
     private val regressionService: RegressionService,
 ) {
 
+    /**
+     * Возвращает текущий список тест-кейсов вместе с настройками колонок и переводами для UI.
+     */
     @GetMapping("/tests")
     fun getTests() = testReportService.getReport()
 
+    /**
+     * Создаёт или обновляет один тест-кейс по данным из тела запроса.
+     *
+     * @param forceUpdate request-параметр, который разрешает обновлять ручные поля (`issueLink`, `generalStatus`,
+     * `priority`, `notes`) и явно переданную `readyDate`; при `false` эти поля не изменяются у существующей записи.
+     */
     @PostMapping("/tests")
     fun upsertTest(
         @RequestParam(defaultValue = "false") forceUpdate: Boolean,
@@ -41,6 +50,14 @@ class TestReportController(
         testReportService.upsertTest(request, forceUpdate)
     }
 
+    /**
+     * Массово создаёт или обновляет тест-кейсы; при активном регрессе проверяет его наличие и синхронизирует статусы прогона.
+     *
+     * @param isRegressRunning request-параметр, который включает режим регресса: при `true` поле `runStatus`
+     * становится обязательным, обновляется в строках тестов и добавляется в payload текущего регресса.
+     * @param forceUpdate request-параметр, который управляет ручными полями (`issueLink`, `generalStatus`, `priority`,
+     * `notes`) и `readyDate`: при `true` переданные значения применяются, при `false` существующие значения сохраняются.
+     */
     @PostMapping("/tests/batch")
     fun upsertBatch(
         @RequestParam(defaultValue = "false") isRegressRunning: Boolean,
@@ -54,11 +71,17 @@ class TestReportController(
         testReportService.upsertBatch(request, isRegressRunning, forceUpdate)
     }
 
+    /**
+     * Удаляет тест-кейс по его идентификатору.
+     */
     @DeleteMapping("/tests/{testId}")
     fun deleteTest(@PathVariable testId: String) {
         testReportService.deleteTest(testId)
     }
 
+    /**
+     * Формирует Excel-файл с актуальным отчётом по тест-кейсам и возвращает его как вложение для скачивания.
+     */
     @GetMapping("/tests/export/excel")
     fun exportExcel(): ResponseEntity<ByteArray> {
         val body = excelExportService.generateWorkbook()
@@ -68,30 +91,54 @@ class TestReportController(
             .body(body)
     }
 
+    /**
+     * Возвращает конфигурацию колонок отчёта для клиентского приложения.
+     */
     @GetMapping("/config/columns")
     fun getColumnConfig() = columnConfigService.getConfig()
 
+    /**
+     * Возвращает состояние текущего или последнего запущенного регресса за сегодня.
+     */
     @GetMapping("/regressions/current")
     fun getCurrentRegression() = regressionService.getTodayState()
 
+    /**
+     * Запускает новый регресс для указанного релиза.
+     */
     @PostMapping("/regressions/start")
     fun startRegression(@Valid @RequestBody request: RegressionStartRequest) =
         regressionService.startRegression(request)
 
+    /**
+     * Завершает активный регресс и сохраняет снимок результатов по всем тест-кейсам.
+     */
     @PostMapping("/regressions/stop")
     fun stopRegression(@Valid @RequestBody request: RegressionStopRequest) =
         regressionService.stopRegression(request)
 
+    /**
+     * Отменяет активный регресс: удаляет пустой запуск или закрывает запуск с уже накопленными данными.
+     */
     @PostMapping("/regressions/cancel")
     fun cancelRegression() = regressionService.cancelRegression()
 
+    /**
+     * Возвращает список релизов, для которых создавались регрессионные прогоны.
+     */
     @GetMapping("/regressions/releases")
     fun getRegressionReleases() = regressionService.listReleases()
 
+    /**
+     * Возвращает сохранённый снимок конкретного регресса по его идентификатору.
+     */
     @GetMapping("/regressions/{regressionId}")
     fun getRegressionSnapshot(@PathVariable regressionId: Long) =
         regressionService.getRegressionSnapshot(regressionId)
 
+    /**
+     * Формирует Excel-файл из снимка регресса и возвращает его как вложение для скачивания.
+     */
     @GetMapping("/regressions/{regressionId}/snapshot.xlsx")
     fun downloadRegressionSnapshot(@PathVariable regressionId: Long): ResponseEntity<ByteArray> {
         val body = regressionService.getRegressionSnapshotWorkbook(regressionId)

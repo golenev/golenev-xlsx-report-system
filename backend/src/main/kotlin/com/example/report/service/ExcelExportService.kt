@@ -28,6 +28,9 @@ class ExcelExportService(
         "notes"
     )
 
+    /**
+     * Формирует Excel-книгу с актуальным отчётом по тест-кейсам.
+     */
     fun generateWorkbook(): ByteArray {
         val report = testReportService.getReport()
         val rows = report.items.map {
@@ -46,6 +49,9 @@ class ExcelExportService(
         return renderWorkbook(rows, report.columnConfig)
     }
 
+    /**
+     * Формирует Excel-книгу на основе сохранённого снимка регресса.
+     */
     fun generateWorkbookFromSnapshot(snapshot: Map<String, Any?>): ByteArray {
         val columnConfig = columnConfigService.getConfig().columns
         val tests = extractTestsFromSnapshot(snapshot)
@@ -65,6 +71,9 @@ class ExcelExportService(
         return renderWorkbook(rows, columnConfig)
     }
 
+    /**
+     * Рендерит набор строк отчёта в XLSX-файл с заголовками, стилями и шириной колонок из конфигурации.
+     */
     private fun renderWorkbook(
         rows: List<Map<String, String?>>,
         columnConfig: Map<String, Int>
@@ -129,6 +138,9 @@ class ExcelExportService(
         }
     }
 
+    /**
+     * Преобразует структурированный сценарий в многострочный человекочитаемый текст для ячейки Excel.
+     */
     private fun formatScenario(scenario: ScenarioRequest?): String? {
         if (scenario == null) return null
         return scenario.steps
@@ -149,6 +161,9 @@ class ExcelExportService(
             }
     }
 
+    /**
+     * Нормализует сценарий из снимка регресса к строковому виду независимо от способа его хранения.
+     */
     private fun formatSnapshotScenario(rawScenario: Any?): String? {
         return when (rawScenario) {
             null -> null
@@ -179,6 +194,9 @@ class ExcelExportService(
         }
     }
 
+    /**
+     * Извлекает тест-кейсы из payload-снимка регресса и приводит их к внутренней модели экспорта.
+     */
     private fun extractTestsFromSnapshot(snapshot: Map<String, Any?>): List<SnapshotTest> {
         val tests = snapshot["tests"] as? List<*> ?: return emptyList()
         return tests.mapNotNull { entry ->

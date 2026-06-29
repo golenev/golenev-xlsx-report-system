@@ -20,6 +20,18 @@ class UploadReportController(
     private val regressionService: RegressionService,
 ) {
 
+    /**
+     * Принимает multipart-файлы Allure-отчёта, парсит из них тест-кейсы и передаёт их на сохранение.
+     * Если загрузка выполняется во время регресса, дополнительно проверяет, что регресс действительно запущен.
+     *
+     * @param isRegressRunning request-параметр, который включает режим регресса: при `true` из отчёта берётся
+     * `runStatus`, статусы синхронизируются с текущим регрессом, а перед импортом проверяется наличие активного прогона.
+     * @param forceUpdate request-параметр, который разрешает перезаписывать ручные поля существующих тест-кейсов
+     * (`issueLink`, `generalStatus`, `priority`, `notes`) и явно переданную `readyDate`; при `false` эти поля сохраняются.
+     * @param files multipart request-параметр со всеми файлами выбранной директории `allure-results`, включая JSON-результаты и вложения.
+     * @param paths опциональный multipart request-параметр с относительными путями файлов; элемент `paths[i]`
+     * соответствует `files[i]` и помогает парсеру сопоставлять JSON-результаты с attachment-файлами.
+     */
     @PostMapping("/uploadReport", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun uploadReport(
         @RequestParam(defaultValue = "false") isRegressRunning: Boolean,
