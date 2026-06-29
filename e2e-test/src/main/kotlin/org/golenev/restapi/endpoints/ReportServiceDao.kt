@@ -46,6 +46,15 @@ class ReportServiceDao : RequestExecutor<Unit>(
         ).`as`(TestReportResponse::class.java)
     }
 
+    //Удаляем тест-кейс по Test ID через API
+    fun deleteTest(testId: String, expectedStatus: Int = 200): Response {
+        return deleteRequest(
+            url = "${Paths.REPORTS.path}/${testId}",
+            requestSpecification = baseRequest(),
+            expectedStatus = expectedStatus,
+        )
+    }
+
     //Сбрасываем данные Run-колонок через API
     fun resetRuns(expectedStatus: Int = 200): Response {
         return postRequest(

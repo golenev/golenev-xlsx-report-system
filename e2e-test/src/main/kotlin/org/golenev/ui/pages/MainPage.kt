@@ -69,9 +69,6 @@ class MainPage {
     /** Сохраняет текущую draft-строку через компонент строки. */
     fun saveNewRow() = Application.testCaseTable.draftRow.saveDraft()
 
-    /** Удаляет существующий тест-кейс с указанным Test ID и подтверждает browser confirm. */
-    fun deleteTestCase(testId: String) = Application.testCaseTable.row(testId).delete()
-
     /** Запускает глобальный regression run с указанным release name. */
     fun startRegression(releaseName: String) = Application.regressionWidget.startRegression(releaseName)
 
