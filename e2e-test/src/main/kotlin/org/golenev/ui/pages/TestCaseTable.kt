@@ -12,6 +12,10 @@ import org.golenev.restapi.endpoints.ScenarioStepRequest
  * Component Object таблицы тест-кейсов на главной странице Test Report.
  */
 class TestCaseTable {
+
+    /** Объект draft-строки таблицы; создаётся лениво, чтобы не требовать наличие строки до Add Row. */
+    val draftRow: TestCaseRow get() = TestCaseRow(draftRowElement)
+
     /** Корневой элемент таблицы, внутри которого ищутся строки и кнопки таблицы. */
     private val root: SelenideElement get() = `$`("[data-testid='test-report-table']")
 
@@ -20,9 +24,6 @@ class TestCaseTable {
 
     /** Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row. */
     private val draftRowElement: SelenideElement get() = root.find("[data-testid='test-case-row'][data-state='draft']")
-
-    /** Объект draft-строки таблицы; создаётся лениво, чтобы не требовать наличие строки до Add Row. */
-    val draftRow: TestCaseRow get() = TestCaseRow(draftRowElement)
 
     /** Возвращает объект существующей строки по Test ID через операторный доступ table[testId]. */
     operator fun get(testId: String): TestCaseRow = row(testId)

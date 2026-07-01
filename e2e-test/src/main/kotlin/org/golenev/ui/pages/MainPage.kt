@@ -11,6 +11,15 @@ import com.codeborne.selenide.SelenideElement
  */
 class MainPage {
 
+    /** Таблица тест-кейсов на главной странице. */
+    val testCaseTable: TestCaseTable by lazy { TestCaseTable() }
+
+    /** Глобальный виджет управления regression run в шапке страницы. */
+    val regressionWidget: RegressionWidget by lazy { RegressionWidget() }
+
+    /** Warning popup, который появляется при невозможности выполнить действие. */
+    val warningPopup: WarningPopup by lazy { WarningPopup() }
+
     /** Заголовок страницы, по которому проверяется успешное открытие или обновление Test Report. */
     private val headerTitle: SelenideElement = element("h1")
 
@@ -33,15 +42,6 @@ class MainPage {
     fun checkTitle() {
         headerTitle.shouldHave(text("Test Report").because("после открытия страницы должен отображаться заголовок отчета"))
     }
-
-    /** Таблица тест-кейсов на главной странице. */
-    val testCaseTable: TestCaseTable by lazy { TestCaseTable() }
-
-    /** Глобальный виджет управления regression run в шапке страницы. */
-    val regressionWidget: RegressionWidget by lazy { RegressionWidget() }
-
-    /** Warning popup, который появляется при невозможности выполнить действие. */
-    val warningPopup: WarningPopup by lazy { WarningPopup() }
 
     /** Снимает фокус с активного поля кликом по body страницы. */
     fun unFocus() {
