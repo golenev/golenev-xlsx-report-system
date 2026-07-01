@@ -8,7 +8,7 @@ import org.golenev.db.tables.regression.RegressionDao
 import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.endpoints.*
 import org.golenev.ui.config.DriverConfig
-import org.golenev.ui.pages.Application
+import org.golenev.ui.pages.mainPage
 import org.golenev.utils.getRandomTestId
 import org.golenev.utils.shouldBe
 import org.golenev.utils.step
@@ -79,10 +79,10 @@ class StartAndRejectRegressionTest {
             reportService.sendBatch(batchRequest)
         }
 
-        step("Открываем главную страницу") { Application.mainPage.open() }
+        step("Открываем главную страницу") { mainPage.open() }
 
         step("Запускаем регресс через UI") {
-            Application.mainPage.startRegression(createdReleaseName)
+            mainPage.regressionWidget.startRegression(createdReleaseName)
         }
 
         val regression = step("Проверяем создание записи о регрессе в базе") {
@@ -98,19 +98,19 @@ class StartAndRejectRegressionTest {
         }
 
         step("Отменяем регресс через UI") {
-            Application.mainPage.stopRegress()
+            mainPage.regressionWidget.stopRegress()
         }
 
         step("Убеждаемся, что появился popup warning с предупреждением и необходимости заполнения результатов прогона") {
-            Application.warningPopup.checkDefaultRegressionWarning()
+            mainPage.warningPopup.checkDefaultRegressionWarning()
         }
 
         step("Закрываем popup warning") {
-            Application.warningPopup.close()
+            mainPage.warningPopup.close()
         }
 
         step("Отменяем регресс через UI") {
-            Application.mainPage.cancelRegression()
+            mainPage.regressionWidget.cancelRegression()
         }
 
         step("Проверяем, что запись о регрессе удалена из БД") {

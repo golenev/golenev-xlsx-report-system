@@ -6,8 +6,7 @@ import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.ui.config.DriverConfig
-import org.golenev.ui.pages.Application.mainPage
-import org.golenev.ui.pages.Application.testCaseTable
+import org.golenev.ui.pages.mainPage
 import org.golenev.utils.TestDataGenerator
 import org.golenev.utils.getRandomTestId
 import org.golenev.utils.step
@@ -71,8 +70,8 @@ class ApiDeletionRefreshUiTest {
         }
 
         step("Проверяем, что в таблице отображаются ровно три строки") {
-            testCaseTable.checkSavedRowsCount(3)
-            testCases.forEach { testCase -> testCaseTable.checkRowVisible(testCase.testId.orEmpty()) }
+            mainPage.testCaseTable.checkSavedRowsCount(3)
+            testCases.forEach { testCase -> mainPage.testCaseTable.checkRowVisible(testCase.testId.orEmpty()) }
         }
 
         val deletedTestId = testCases[1].testId.orEmpty()
@@ -84,9 +83,9 @@ class ApiDeletionRefreshUiTest {
 
         step("Обновляем страницу и проверяем, что удалился именно $deletedTestId, а в таблице осталось две строки") {
             mainPage.refreshCurrentPage()
-            testCaseTable.checkSavedRowsCount(2)
-            testCaseTable.checkRowDisappeared(deletedTestId)
-            remainingTestIds.forEach { testId -> testCaseTable.checkRowVisible(testId) }
+            mainPage.testCaseTable.checkSavedRowsCount(2)
+            mainPage.testCaseTable.checkRowDisappeared(deletedTestId)
+            remainingTestIds.forEach { testId -> mainPage.testCaseTable.checkRowVisible(testId) }
         }
 
         step("Удаляем через API оставшиеся тест-кейсы") {
@@ -95,8 +94,8 @@ class ApiDeletionRefreshUiTest {
 
         step("Снова обновляем страницу и проверяем, что таблица пустая") {
             mainPage.refreshCurrentPage()
-            testCaseTable.checkSavedRowsCount(0)
-            remainingTestIds.forEach { testId -> testCaseTable.checkRowDisappeared(testId) }
+            mainPage.testCaseTable.checkSavedRowsCount(0)
+            remainingTestIds.forEach { testId -> mainPage.testCaseTable.checkRowDisappeared(testId) }
         }
     }
 }

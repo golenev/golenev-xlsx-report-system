@@ -1,7 +1,6 @@
 package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
-import org.golenev.ui.pages.Application.testCaseTable
 import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
@@ -11,7 +10,7 @@ import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.config.interceptRequestBody
-import org.golenev.ui.pages.Application.mainPage
+import org.golenev.ui.pages.mainPage
 import org.golenev.utils.JsonUtils
 import org.golenev.utils.TestDataGenerator
 import org.golenev.utils.getRandomTestId
@@ -71,28 +70,28 @@ class CreateAndDeleteTestCasesUiE2eTest {
 
         testCases.forEachIndexed { index, testCase ->
             step("Создаём тест-кейс ${index + 1} через UI и проверяем блокировки кнопок") {
-                mainPage.startNewRow()
-                testCaseTable.checkAddRowDisabled()
-                testCaseTable.draftRow.checkSaveDisabled()
+                mainPage.testCaseTable.startNewRow()
+                mainPage.testCaseTable.checkAddRowDisabled()
+                mainPage.testCaseTable.draftRow.checkSaveDisabled()
 
-                mainPage.fillTestId(testCase.testId.orEmpty())
-                testCaseTable.checkAddRowDisabled()
-                testCaseTable.draftRow.checkSaveDisabled()
+                mainPage.testCaseTable.fillTestId(testCase.testId.orEmpty())
+                mainPage.testCaseTable.checkAddRowDisabled()
+                mainPage.testCaseTable.draftRow.checkSaveDisabled()
 
-                mainPage.fillCategory(testCase.category.orEmpty())
-                mainPage.fillShortTitle(testCase.shortTitle.orEmpty())
-                mainPage.fillIssueLink(testCase.issueLink.orEmpty())
-                mainPage.selectGeneralStatus(testCase.generalStatus.orEmpty())
-                mainPage.selectPriority(testCase.priority.orEmpty())
-                testCaseTable.checkAddRowDisabled()
-                testCaseTable.draftRow.checkSaveDisabled()
+                mainPage.testCaseTable.fillCategory(testCase.category.orEmpty())
+                mainPage.testCaseTable.fillShortTitle(testCase.shortTitle.orEmpty())
+                mainPage.testCaseTable.fillIssueLink(testCase.issueLink.orEmpty())
+                mainPage.testCaseTable.selectGeneralStatus(testCase.generalStatus.orEmpty())
+                mainPage.testCaseTable.selectPriority(testCase.priority.orEmpty())
+                mainPage.testCaseTable.checkAddRowDisabled()
+                mainPage.testCaseTable.draftRow.checkSaveDisabled()
 
-                mainPage.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
-                testCaseTable.draftRow.checkSaveEnabled()
-                testCaseTable.checkAddRowEnabled()
+                mainPage.testCaseTable.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
+                mainPage.testCaseTable.draftRow.checkSaveEnabled()
+                mainPage.testCaseTable.checkAddRowEnabled()
 
                 val createRequestBody = interceptRequestBody(getSelenideProxy(), Paths.REPORTS.path) {
-                    mainPage.saveNewRow()
+                    mainPage.testCaseTable.saveNewRow()
                 }
                 val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
 
@@ -112,7 +111,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
             }
 
             step("Проверяем, что тест-кейс ${testCase.testId} появился на UI") {
-                testCaseTable.checkRowVisible(testCase.testId.orEmpty())
+                mainPage.testCaseTable.checkRowVisible(testCase.testId.orEmpty())
             }
         }
 
@@ -121,10 +120,10 @@ class CreateAndDeleteTestCasesUiE2eTest {
             val updatedCategory = "${testCase.category}-edited-${index + 1}"
 
             step("Редактируем Category тест-кейса $testId и проверяем блокировку Add Row") {
-                mainPage.updateCategory(testId, updatedCategory)
-                testCaseTable.checkAddRowDisabled()
+                mainPage.testCaseTable.updateCategory(testId, updatedCategory)
+                mainPage.testCaseTable.checkAddRowDisabled()
                 mainPage.unFocus()
-                testCaseTable.checkAddRowEnabled()
+                mainPage.testCaseTable.checkAddRowEnabled()
             }
         }
 
@@ -134,7 +133,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
             step("Удаляем тест-кейс $testId через API и обновляем UI") {
                 reportService.deleteTest(testId)
                 mainPage.refreshCurrentPage()
-                testCaseTable.checkRowDisappeared(testId)
+                mainPage.testCaseTable.checkRowDisappeared(testId)
             }
 
             val remainingItems = step("Проверяем отсутствие тест-кейса $testId в базе данных") {

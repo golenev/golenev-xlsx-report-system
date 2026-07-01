@@ -1,7 +1,6 @@
 package org.golenev.tests.ui.withProxy
 
 import com.codeborne.selenide.Selenide
-import org.golenev.ui.pages.Application.testCaseTable
 import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
 import com.codeborne.selenide.proxy.SelenideProxyServer
 import io.qameta.allure.AllureId
@@ -11,7 +10,7 @@ import org.golenev.restapi.endpoints.*
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.config.interceptResponseBody
 import org.golenev.ui.config.replaceResponseBody
-import org.golenev.ui.pages.Application.mainPage
+import org.golenev.ui.pages.mainPage
 import org.golenev.utils.JsonUtils
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
@@ -72,11 +71,11 @@ class DisplayingRowWhenProxyReplacedResponseTest {
             reportResponse.copy(items = reportResponse.items + injectedTestCase)
         }
 
-        step("Проверяем, что тест-кейс отсутствует до подмены") { testCaseTable.checkRowDisappeared(injectedTestId) }
+        step("Проверяем, что тест-кейс отсутствует до подмены") { mainPage.testCaseTable.checkRowDisappeared(injectedTestId) }
 
         replaceResponseBody(selenideProxy, Paths.REPORTS.path, JsonUtils.toJson(modifiedResponse)) {
             step("Обновляем страницу после подмены ответа") { mainPage.refreshCurrentPage() }
-            step("Проверяем, что тест-кейс отображается после подмены") { testCaseTable.checkRowVisible(injectedTestId) }
+            step("Проверяем, что тест-кейс отображается после подмены") { mainPage.testCaseTable.checkRowVisible(injectedTestId) }
         }
     }
 

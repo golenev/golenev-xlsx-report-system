@@ -2,7 +2,6 @@ package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
 import io.kotest.matchers.nulls.shouldNotBeNull
-import org.golenev.ui.pages.Application.testCaseTable
 import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.regression.RegressionDao
@@ -11,7 +10,7 @@ import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.ui.config.DriverConfig
-import org.golenev.ui.pages.Application.mainPage
+import org.golenev.ui.pages.mainPage
 import org.golenev.utils.TestDataGenerator
 import org.golenev.utils.getRandomTestId
 import org.golenev.utils.step
@@ -92,14 +91,14 @@ class RegressionSnapshotUiE2eTest {
 
         step("Убеждаемся, что в таблице среди прочих отображаются две созданные записи") {
             testCases.forEach { testCase ->
-                testCaseTable.checkRowVisible(testCase.testId.orEmpty())
+                mainPage.testCaseTable.checkRowVisible(testCase.testId.orEmpty())
             }
         }
 
         releaseName = "ui-regression-${getRandomTestId()}"
 
         step("Запускаем регресс через UI с уникальным именем релиза") {
-            mainPage.startRegression(releaseName)
+            mainPage.regressionWidget.startRegression(releaseName)
         }
 
         val expectedStatuses = testCases
@@ -108,12 +107,12 @@ class RegressionSnapshotUiE2eTest {
 
         step("Проставляем случайные результаты прогона для двух тест-кейсов") {
             expectedStatuses.forEach { (testId, status) ->
-                mainPage.selectRegressionStatus(testId, status.name)
+                mainPage.testCaseTable.selectRegressionStatus(testId, status.name)
             }
         }
 
         step("Завершаем регресс через UI") {
-            mainPage.stopRegress()
+            mainPage.regressionWidget.stopRegress()
         }
 
         val regression = step("Проверяем появление записи в таблице regressions") {

@@ -6,11 +6,16 @@ import com.codeborne.selenide.ScrollIntoViewOptions.Block.start
 import com.codeborne.selenide.ScrollIntoViewOptions.instant
 import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.SelenideElement
+import org.golenev.restapi.endpoints.ScenarioStepRequest
 
 /**
  * Component Object таблицы тест-кейсов на главной странице Test Report.
  */
 class TestCaseTable {
+
+    /** Объект draft-строки таблицы; создаётся лениво, чтобы не требовать наличие строки до Add Row. */
+    val draftRow: TestCaseRow get() = TestCaseRow(draftRowElement)
+
     /** Корневой элемент таблицы, внутри которого ищутся строки и кнопки таблицы. */
     private val root: SelenideElement get() = `$`("[data-testid='test-report-table']")
 
@@ -20,14 +25,48 @@ class TestCaseTable {
     /** Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row. */
     private val draftRowElement: SelenideElement get() = root.find("[data-testid='test-case-row'][data-state='draft']")
 
-    /** Объект draft-строки таблицы; создаётся лениво, чтобы не требовать наличие строки до Add Row. */
-    val draftRow: TestCaseRow get() = TestCaseRow(draftRowElement)
-
     /** Возвращает объект существующей строки по Test ID через операторный доступ table[testId]. */
     operator fun get(testId: String): TestCaseRow = row(testId)
 
     /** Возвращает объект существующей строки таблицы по Test ID. */
     fun row(testId: String): TestCaseRow = TestCaseRow(rowElementByTestId(testId))
+
+    /** Заполняет поле Test ID в текущей draft-строке. */
+    fun fillTestId(testId: String) = draftRow.fillTestId(testId)
+
+    /** Заполняет поле Category / Feature в текущей draft-строке. */
+    fun fillCategory(category: String) = draftRow.fillCategory(category)
+
+    /** Заполняет поле Short Title в текущей draft-строке. */
+    fun fillShortTitle(shortTitle: String) = draftRow.fillShortTitle(shortTitle)
+
+    /** Заполняет поле YouTrack Issue Link в текущей draft-строке. */
+    fun fillIssueLink(issueLink: String) = draftRow.fillIssueLink(issueLink)
+
+    /** Выбирает General Test Status в текущей draft-строке. */
+    fun selectGeneralStatus(status: String) = draftRow.selectGeneralStatus(status)
+
+    /** Выбирает Priority в текущей draft-строке. */
+    fun selectPriority(priority: String) = draftRow.selectPriority(priority)
+
+    /** Заполняет текстовый detailed scenario в текущей draft-строке. */
+    fun fillDetailedScenario(scenario: String) = draftRow.fillDetailedScenario(scenario)
+
+    /** Заполняет structured detailed scenario шагами и вложениями в текущей draft-строке. */
+    fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) =
+        draftRow.fillDetailedScenarioSteps(steps)
+
+    /** Заполняет поле Notes в текущей draft-строке. */
+    fun fillNotes(notes: String) = draftRow.fillNotes(notes)
+
+    /** Сохраняет текущую draft-строку. */
+    fun saveNewRow() = draftRow.saveDraft()
+
+    /** Выбирает regression status в колонке Regress Run для конкретного тест-кейса. */
+    fun selectRegressionStatus(testId: String, status: String) = row(testId).selectRegressionStatus(status)
+
+    /** Обновляет значение Category / Feature у существующего тест-кейса. */
+    fun updateCategory(testId: String, newValue: String) = row(testId).updateCategory(newValue)
 
     /** Проверяет, что кнопка Add Row недоступна, пока нельзя начать создание новой строки. */
     fun checkAddRowDisabled() {
