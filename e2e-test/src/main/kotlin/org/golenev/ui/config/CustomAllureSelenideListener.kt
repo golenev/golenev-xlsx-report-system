@@ -33,6 +33,8 @@ class CustomAllureSelenideListener : LogEventListener {
     )
 
     override fun beforeEvent(event: LogEvent) {
+        if (!event.isElementInteraction()) return
+
         val stepId = UUID.randomUUID().toString()
 
         stepIds.getOrSet { mutableListOf() }.add(stepId)
@@ -44,6 +46,8 @@ class CustomAllureSelenideListener : LogEventListener {
     }
 
     override fun afterEvent(event: LogEvent) {
+        if (!event.isElementInteraction()) return
+
         attachReadableSelenideInfo(event)
 
         if (event.status == FAIL) {
@@ -77,8 +81,6 @@ class CustomAllureSelenideListener : LogEventListener {
     }
 
     private fun attachReadableSelenideInfo(event: LogEvent) {
-        if (!event.shouldAttachReadableSelenideInfo()) return
-
         val attachmentText = buildString {
             appendLine("Алиас элемента:")
             appendLine(event.element.extractAlias() ?: "Алиас не определён")
@@ -129,7 +131,7 @@ class CustomAllureSelenideListener : LogEventListener {
         )
     }
 
-    private fun LogEvent.shouldAttachReadableSelenideInfo(): Boolean {
+    private fun LogEvent.isElementInteraction(): Boolean {
         if (element.isBlank()) return false
 
         val interaction = subject.removeBecauseBlock()
