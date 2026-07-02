@@ -10,16 +10,12 @@ import com.codeborne.selenide.SelenideElement
  */
 class WarningPopup {
 
-    /** Текст warning popup. */
     private val message: SelenideElement get() = `$`(".popup-message").`as`("Текст warning popup.")
 
-    /** Заголовок warning popup. */
     private val title: SelenideElement get() = `$`(".popup-title").`as`("Заголовок warning popup.")
 
-    /** Кнопка закрытия warning popup. */
     private val closeButton: SelenideElement get() = `$`(".popup-actions .secondary-btn").`as`("Кнопка закрытия warning popup.")
 
-    /** Карточка warning popup. */
     private val card: SelenideElement get() = `$`(".popup-card").`as`("Карточка warning popup.")
 
     /** Проверяет стандартный warning popup о незаполненных статусах перед остановкой регресса. */

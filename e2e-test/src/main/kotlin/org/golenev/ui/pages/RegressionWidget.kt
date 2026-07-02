@@ -11,22 +11,16 @@ import org.golenev.utils.typeOf
  * Component Object глобального виджета управления regression run в шапке страницы.
  */
 class RegressionWidget {
-    /** Контейнеры действий regression widget, внутри которых находится кнопка старта регресса. */
     private val regressionActions =
         `$$`("div.regression-actions").`as`("Контейнеры действий regression widget, внутри которых находится кнопка старта регресса.")
-    /** Кнопка открытия формы запуска regression run. */
     private val regressionStartButton: SelenideElement get() =
         regressionActions.findBy(text("Would you run regress")).`as`("Кнопка открытия формы запуска regression run.")
-    /** Поле ввода release name для нового regression run. */
     private val regressionReleaseInput: SelenideElement =
         element("input.release-input").`as`("Поле ввода release name для нового regression run.")
-    /** Кнопка сохранения формы запуска regression run. */
     private val regressionSaveButton: SelenideElement =
         element("div.regression-start-form button.success-btn").`as`("Кнопка сохранения формы запуска regression run.")
-    /** Кнопка отмены текущего regression run. */
     private val regressionCancelButton: SelenideElement =
         `$`(".regression-actions .secondary-btn").`as`("Кнопка отмены текущего regression run.")
-    /** Кнопка остановки текущего regression run. */
     private val regressionStopButton: SelenideElement =
         `$`(".regression-actions .danger-btn").`as`("Кнопка остановки текущего regression run.")
 
