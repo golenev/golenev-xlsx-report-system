@@ -18,13 +18,16 @@ class TestCaseTable {
     val draftRow: TestCaseRow get() = TestCaseRow(draftRowElement)
 
     /** Корневой элемент таблицы, внутри которого ищутся строки и кнопки таблицы. */
-    private val root: SelenideElement get() = `$`("[data-testid='test-report-table']")
+    private val root: SelenideElement get() =
+        `$`("[data-testid='test-report-table']").`as`("Корневой элемент таблицы, внутри которого ищутся строки и кнопки таблицы.")
 
     /** Кнопка Add Row, которая открывает draft-строку для создания нового тест-кейса. */
-    private val addRowButton: SelenideElement get() = `$`("button[data-role='button'][data-action='add-row']").`as`("Кнопка Add Row для создания draft строки")
+    private val addRowButton: SelenideElement get() =
+        `$`("button[data-role='button'][data-action='add-row']").`as`("Кнопка Add Row, которая открывает draft-строку для создания нового тест-кейса.")
 
     /** Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row. */
-    private val draftRowElement: SelenideElement get() = root.find("[data-testid='test-case-row'][data-state='draft']")
+    private val draftRowElement: SelenideElement get() =
+        root.find("[data-testid='test-case-row'][data-state='draft']").`as`("Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row.")
 
     /** Возвращает объект существующей строки по Test ID через операторный доступ table[testId]. */
     operator fun get(testId: String): TestCaseRow = row(testId)

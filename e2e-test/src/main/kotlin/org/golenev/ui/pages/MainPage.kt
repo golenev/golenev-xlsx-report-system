@@ -21,10 +21,11 @@ class MainPage {
     val warningPopup: WarningPopup by lazy { WarningPopup() }
 
     /** Заголовок страницы, по которому проверяется успешное открытие или обновление Test Report. */
-    private val headerTitle: SelenideElement = element("h1")
+    private val headerTitle: SelenideElement =
+        element("h1").`as`("Заголовок страницы, по которому проверяется успешное открытие или обновление Test Report.")
 
     /** Элемент body страницы, по которому можно снять фокус с активного поля. */
-    private val body: SelenideElement get() = `$`("body")
+    private val body: SelenideElement get() = `$`("body").`as`("Элемент body страницы, по которому можно снять фокус с активного поля.")
 
     /** Открывает главную страницу Test Report и проверяет, что заголовок отображается. */
     fun open() {
