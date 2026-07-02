@@ -2,8 +2,8 @@ package org.golenev.ui.config
 
 import com.codeborne.selenide.Configuration
 import com.codeborne.selenide.WebDriverRunner
+import com.codeborne.selenide.logevents.LogEventListener
 import com.codeborne.selenide.logevents.SelenideLogger
-import io.qameta.allure.selenide.AllureSelenide
 import org.openqa.selenium.MutableCapabilities
 import org.openqa.selenium.chrome.ChromeOptions
 
@@ -19,7 +19,13 @@ class DriverConfig {
         Configuration.baseUrl = System.getProperty("baseUrl", "http://localhost:18080")
         Configuration.proxyEnabled = true
 
-        SelenideLogger.addListener("AllureSelenide", AllureSelenide())
+        SelenideLogger.removeListener<LogEventListener>("AllureSelenide")
+        SelenideLogger.removeListener<LogEventListener>("ReadableAllureSelenide")
+
+        SelenideLogger.addListener(
+            "ReadableAllureSelenide",
+            CustomAllureSelenideListener()
+        )
 
         val capabilities: MutableCapabilities =
             if (WebDriverRunner.isChrome()) getChromeOptions() else MutableCapabilities()

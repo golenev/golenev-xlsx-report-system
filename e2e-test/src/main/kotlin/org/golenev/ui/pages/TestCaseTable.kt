@@ -1,7 +1,8 @@
 package org.golenev.ui.pages
 
 import com.codeborne.selenide.CollectionCondition.size
-import com.codeborne.selenide.Condition.*
+import com.codeborne.selenide.Condition.disabled
+import com.codeborne.selenide.Condition.enabled
 import com.codeborne.selenide.ScrollIntoViewOptions.Block.start
 import com.codeborne.selenide.ScrollIntoViewOptions.instant
 import com.codeborne.selenide.Selenide.`$`
@@ -20,7 +21,7 @@ class TestCaseTable {
     private val root: SelenideElement get() = `$`("[data-testid='test-report-table']")
 
     /** Кнопка Add Row, которая открывает draft-строку для создания нового тест-кейса. */
-    private val addRowButton: SelenideElement get() = `$`("button[data-role='button'][data-action='add-row']")
+    private val addRowButton: SelenideElement get() = `$`("button[data-role='button'][data-action='add-row']").`as`("Кнопка Add Row для создания draft строки")
 
     /** Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row. */
     private val draftRowElement: SelenideElement get() = root.find("[data-testid='test-case-row'][data-state='draft']")
