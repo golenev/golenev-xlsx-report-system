@@ -45,7 +45,10 @@ class TestCaseRow(
         cell("Regress Run").`as`("Ячейка Regress Run для выбора статуса регресса конкретного тест-кейса.")
 
     private val saveButton: SelenideElement get() =
-        root.find("[data-testid='save-test-case-button']").`as`("Кнопка сохранения draft-строки.")
+        root.find(SAVE_BUTTON_LOCATOR).asReportElement(
+            alias = "Кнопка сохранения draft-строки.",
+            locator = SAVE_BUTTON_LOCATOR,
+        )
 
     /** Заполняет поле Test ID в строке. */
     fun fillTestId(testId: String) {
@@ -183,4 +186,8 @@ class TestCaseRow(
     /** Находит ячейку этой строки по UI-имени колонки из data-name. */
     private fun cell(columnName: String): SelenideElement =
         root.find("[data-testid='test-case-cell'][data-name='$columnName']")
+
+    private companion object {
+        private const val SAVE_BUTTON_LOCATOR = "[data-testid='save-test-case-button']"
+    }
 }
