@@ -18,7 +18,10 @@ class TestCaseTable {
     val draftRow: TestCaseRow get() = TestCaseRow(draftRowElement)
 
     private val root: SelenideElement get() =
-        `$`("[data-testid='test-report-table']").`as`("Корневой элемент таблицы, внутри которого ищутся строки и кнопки таблицы.")
+        `$`(TABLE_LOCATOR).asReportElement(
+            alias = "Корневой элемент таблицы, внутри которого ищутся строки и кнопки таблицы.",
+            locator = TABLE_LOCATOR,
+        )
 
     private val addRowButton: SelenideElement get() =
         `$`(ADD_ROW_BUTTON_LOCATOR).asReportElement(
@@ -27,7 +30,10 @@ class TestCaseTable {
         )
 
     private val draftRowElement: SelenideElement get() =
-        root.find("[data-testid='test-case-row'][data-state='draft']").`as`("Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row.")
+        root.find(DRAFT_ROW_LOCATOR).asReportElement(
+            alias = "Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row.",
+            locator = DRAFT_ROW_LOCATOR,
+        )
 
     /** Возвращает объект существующей строки по Test ID через операторный доступ table[testId]. */
     operator fun get(testId: String): TestCaseRow = row(testId)
@@ -108,9 +114,16 @@ class TestCaseTable {
 
     /** Находит Selenide-элемент существующей строки таблицы по Test ID внутри root таблицы. */
     fun rowElementByTestId(testId: String): SelenideElement =
-        root.find("[data-testid='test-case-row'][data-test-case-id='$testId']")
+        root.find(rowByTestIdLocator(testId)).asReportElement(
+            alias = "Строка тест-кейса $testId в таблице.",
+            locator = rowByTestIdLocator(testId),
+        )
+
+    private fun rowByTestIdLocator(testId: String): String = "[data-testid='test-case-row'][data-test-case-id='$testId']"
 
     private companion object {
+        private const val TABLE_LOCATOR = "[data-testid='test-report-table']"
         private const val ADD_ROW_BUTTON_LOCATOR = "button[data-role='button'][data-action='add-row']"
+        private const val DRAFT_ROW_LOCATOR = "[data-testid='test-case-row'][data-state='draft']"
     }
 }

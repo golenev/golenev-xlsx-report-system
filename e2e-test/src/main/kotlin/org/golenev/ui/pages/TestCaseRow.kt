@@ -13,36 +13,35 @@ import org.golenev.utils.typeOf
 class TestCaseRow(
     root: SelenideElement,
 ) {
-    private val root: SelenideElement =
-        root.`as`("Корневой Selenide-элемент строки таблицы, внутри которого ищутся все ячейки и кнопки.")
+    private val root: SelenideElement = root
 
-    private val testIdInput: SelenideElement get() = cell("Test ID").find("input").`as`("Поле ввода Test ID внутри строки.")
+    private val testIdInput: SelenideElement get() = cell("Test ID").find("input").asReportElement("Поле ввода Test ID внутри строки.", "${cellLocator("Test ID")} >> input")
 
-    private val categoryInput: SelenideElement get() = input("Category / Feature").`as`("Поле ввода Category / Feature внутри строки.")
+    private val categoryInput: SelenideElement get() = input("Category / Feature").asReportElement("Поле ввода Category / Feature внутри строки.", "${cellLocator("Category / Feature")} >> textarea, input")
 
-    private val shortTitleInput: SelenideElement get() = input("Short Title").`as`("Поле ввода Short Title внутри строки.")
+    private val shortTitleInput: SelenideElement get() = input("Short Title").asReportElement("Поле ввода Short Title внутри строки.", "${cellLocator("Short Title")} >> textarea, input")
 
     private val issueLinkInput: SelenideElement get() =
-        cell("YouTrack Issue Link").find("input").`as`("Поле ввода YouTrack Issue Link внутри строки.")
+        cell("YouTrack Issue Link").find("input").asReportElement("Поле ввода YouTrack Issue Link внутри строки.", "${cellLocator("YouTrack Issue Link")} >> input")
 
-    private val readyDateCell: SelenideElement get() = cell("Ready Date").`as`("Ячейка Ready Date внутри строки.")
+    private val readyDateCell: SelenideElement get() = cell("Ready Date").asReportElement("Ячейка Ready Date внутри строки.", cellLocator("Ready Date"))
 
     private val generalStatusDropdown: SelenideElement get() =
-        cell("General Test Status").find("[data-testid='status-dropdown']").`as`("Dropdown General Test Status внутри строки.")
+        cell("General Test Status").find(STATUS_DROPDOWN_LOCATOR).asReportElement("Dropdown General Test Status внутри строки.", "${cellLocator("General Test Status")} >> $STATUS_DROPDOWN_LOCATOR")
 
     private val prioritySelect: SelenideElement get() =
-        cell("Priority").find("select[data-testid='priority-select']").`as`("Select Priority внутри строки.")
+        cell("Priority").find(PRIORITY_SELECT_LOCATOR).asReportElement("Select Priority внутри строки.", "${cellLocator("Priority")} >> $PRIORITY_SELECT_LOCATOR")
 
     private val detailedScenarioCell: SelenideElement get() =
-        cell("Detailed Scenario").`as`("Ячейка Detailed Scenario, содержащая textarea или structured scenario editor.")
+        cell("Detailed Scenario").asReportElement("Ячейка Detailed Scenario, содержащая textarea или structured scenario editor.", cellLocator("Detailed Scenario"))
 
     private val scenarioTextarea: SelenideElement get() =
-        detailedScenarioCell.find("textarea").`as`("Textarea простого detailed scenario внутри ячейки Detailed Scenario.")
+        detailedScenarioCell.find("textarea").asReportElement("Textarea простого detailed scenario внутри ячейки Detailed Scenario.", "${cellLocator("Detailed Scenario")} >> textarea")
 
-    private val notesTextarea: SelenideElement get() = cell("Notes").find("textarea").`as`("Textarea Notes внутри строки.")
+    private val notesTextarea: SelenideElement get() = cell("Notes").find("textarea").asReportElement("Textarea Notes внутри строки.", "${cellLocator("Notes")} >> textarea")
 
     private val regressRunCell: SelenideElement get() =
-        cell("Regress Run").`as`("Ячейка Regress Run для выбора статуса регресса конкретного тест-кейса.")
+        cell("Regress Run").asReportElement("Ячейка Regress Run для выбора статуса регресса конкретного тест-кейса.", cellLocator("Regress Run"))
 
     private val saveButton: SelenideElement get() =
         root.find(SAVE_BUTTON_LOCATOR).asReportElement(
@@ -184,10 +183,13 @@ class TestCaseRow(
     private fun input(columnName: String): SelenideElement = cell(columnName).find("textarea, input")
 
     /** Находит ячейку этой строки по UI-имени колонки из data-name. */
-    private fun cell(columnName: String): SelenideElement =
-        root.find("[data-testid='test-case-cell'][data-name='$columnName']")
+    private fun cell(columnName: String): SelenideElement = root.find(cellLocator(columnName))
+
+    private fun cellLocator(columnName: String): String = "[data-testid='test-case-cell'][data-name='$columnName']"
 
     private companion object {
         private const val SAVE_BUTTON_LOCATOR = "[data-testid='save-test-case-button']"
+        private const val STATUS_DROPDOWN_LOCATOR = "[data-testid='status-dropdown']"
+        private const val PRIORITY_SELECT_LOCATOR = "select[data-testid='priority-select']"
     }
 }

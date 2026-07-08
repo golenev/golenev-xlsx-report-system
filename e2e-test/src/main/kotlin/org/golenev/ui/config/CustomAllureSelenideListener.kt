@@ -35,11 +35,13 @@ class CustomAllureSelenideListener : LogEventListener {
         "append",
         "send keys",
         "type",
+        "select option",
+        "scroll into view",
         "hover",
     )
 
     override fun beforeEvent(event: LogEvent) {
-        if (!event.isElementInteraction()) return
+        if (!event.isReportableElementEvent()) return
 
         val stepId = UUID.randomUUID().toString()
 
@@ -52,14 +54,13 @@ class CustomAllureSelenideListener : LogEventListener {
     }
 
     override fun afterEvent(event: LogEvent) {
-        if (event.isElementCondition()) {
-            rememberElementCondition(event)
-            return
-        }
-
-        if (!event.isElementInteraction()) return
+        if (!event.isReportableElementEvent()) return
 
         attachReadableSelenideInfo(event)
+
+        if (event.isElementCondition()) {
+            rememberElementCondition(event)
+        }
 
         if (event.status == FAIL) {
             attachScreenshot()
@@ -144,6 +145,8 @@ class CustomAllureSelenideListener : LogEventListener {
         )
     }
 
+    private fun LogEvent.isReportableElementEvent(): Boolean = isElementInteraction() || isElementCondition()
+
     private fun LogEvent.isElementInteraction(): Boolean {
         if (element.isBlank()) return false
 
@@ -170,6 +173,13 @@ class CustomAllureSelenideListener : LogEventListener {
     }
 
     private fun LogEvent.conditionDetails(): ElementConditionDetails {
+        if (isElementCondition()) {
+            return ElementConditionDetails(
+                condition = subject.extractCondition(),
+                because = subject.extractBecause(),
+            )
+        }
+
         return pendingElementConditions.getOrSet { mutableMapOf() }.remove(element)
             ?: ElementConditionDetails(
                 condition = subject.extractCondition(),

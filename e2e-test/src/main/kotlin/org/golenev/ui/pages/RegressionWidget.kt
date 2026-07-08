@@ -12,17 +12,17 @@ import org.golenev.utils.typeOf
  */
 class RegressionWidget {
     private val regressionActions =
-        `$$`("div.regression-actions").`as`("Контейнеры действий regression widget, внутри которых находится кнопка старта регресса.")
+        `$$`(REGRESSION_ACTIONS_LOCATOR).`as`("Контейнеры действий regression widget, внутри которых находится кнопка старта регресса.")
     private val regressionStartButton: SelenideElement get() =
-        regressionActions.findBy(text("Would you run regress")).`as`("Кнопка открытия формы запуска regression run.")
+        regressionActions.findBy(text("Would you run regress")).asReportElement("Кнопка открытия формы запуска regression run.", "$REGRESSION_ACTIONS_LOCATOR >> text(Would you run regress)")
     private val regressionReleaseInput: SelenideElement =
-        element("input.release-input").`as`("Поле ввода release name для нового regression run.")
+        element(RELEASE_INPUT_LOCATOR).asReportElement("Поле ввода release name для нового regression run.", RELEASE_INPUT_LOCATOR)
     private val regressionSaveButton: SelenideElement =
-        element("div.regression-start-form button.success-btn").`as`("Кнопка сохранения формы запуска regression run.")
+        element(REGRESSION_SAVE_BUTTON_LOCATOR).asReportElement("Кнопка сохранения формы запуска regression run.", REGRESSION_SAVE_BUTTON_LOCATOR)
     private val regressionCancelButton: SelenideElement =
-        `$`(".regression-actions .secondary-btn").`as`("Кнопка отмены текущего regression run.")
+        `$`(REGRESSION_CANCEL_BUTTON_LOCATOR).asReportElement("Кнопка отмены текущего regression run.", REGRESSION_CANCEL_BUTTON_LOCATOR)
     private val regressionStopButton: SelenideElement =
-        `$`(".regression-actions .danger-btn").`as`("Кнопка остановки текущего regression run.")
+        `$`(REGRESSION_STOP_BUTTON_LOCATOR).asReportElement("Кнопка остановки текущего regression run.", REGRESSION_STOP_BUTTON_LOCATOR)
 
     /** Открывает форму запуска regression run и проверяет видимость поля release name. */
     fun openStartForm() {
@@ -57,5 +57,12 @@ class RegressionWidget {
     /** Нажимает кнопку остановки активного regression run. */
     fun stopRegress() {
         regressionStopButton.shouldBe(visible.because("кнопка остановки regression run должна быть видимой перед кликом")).click()
+    }
+    private companion object {
+        private const val REGRESSION_ACTIONS_LOCATOR = "div.regression-actions"
+        private const val RELEASE_INPUT_LOCATOR = "input.release-input"
+        private const val REGRESSION_SAVE_BUTTON_LOCATOR = "div.regression-start-form button.success-btn"
+        private const val REGRESSION_CANCEL_BUTTON_LOCATOR = ".regression-actions .secondary-btn"
+        private const val REGRESSION_STOP_BUTTON_LOCATOR = ".regression-actions .danger-btn"
     }
 }

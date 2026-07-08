@@ -10,13 +10,13 @@ import com.codeborne.selenide.SelenideElement
  */
 class WarningPopup {
 
-    private val message: SelenideElement get() = `$`(".popup-message").`as`("Текст warning popup.")
+    private val message: SelenideElement get() = `$`(MESSAGE_LOCATOR).asReportElement("Текст warning popup.", MESSAGE_LOCATOR)
 
-    private val title: SelenideElement get() = `$`(".popup-title").`as`("Заголовок warning popup.")
+    private val title: SelenideElement get() = `$`(TITLE_LOCATOR).asReportElement("Заголовок warning popup.", TITLE_LOCATOR)
 
-    private val closeButton: SelenideElement get() = `$`(".popup-actions .secondary-btn").`as`("Кнопка закрытия warning popup.")
+    private val closeButton: SelenideElement get() = `$`(CLOSE_BUTTON_LOCATOR).asReportElement("Кнопка закрытия warning popup.", CLOSE_BUTTON_LOCATOR)
 
-    private val card: SelenideElement get() = `$`(".popup-card").`as`("Карточка warning popup.")
+    private val card: SelenideElement get() = `$`(CARD_LOCATOR).asReportElement("Карточка warning popup.", CARD_LOCATOR)
 
     /** Проверяет стандартный warning popup о незаполненных статусах перед остановкой регресса. */
     fun checkDefaultRegressionWarning() {
@@ -28,5 +28,11 @@ class WarningPopup {
     fun close() {
         closeButton.click()
         card.shouldBe(disappear.because("попап должен закрыться после нажатия кнопки закрытия"))
+    }
+    private companion object {
+        private const val MESSAGE_LOCATOR = ".popup-message"
+        private const val TITLE_LOCATOR = ".popup-title"
+        private const val CLOSE_BUTTON_LOCATOR = ".popup-actions .secondary-btn"
+        private const val CARD_LOCATOR = ".popup-card"
     }
 }
