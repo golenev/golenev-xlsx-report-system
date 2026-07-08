@@ -216,22 +216,33 @@ class CustomAllureSelenideListener : LogEventListener {
 
     private fun String.extractCondition(): String {
         return removeBecauseBlock()
+            .normalizeSelenideCondition()
             .ifBlank { "Условие не определено" }
     }
 
     private fun String.extractBecause(): String {
-        val becauseRegex = Regex("""\(because\s+(.+?)\)\s*$""")
+        val becauseRegex = Regex("""\(because\s+(.+?)\)+\s*$""")
 
         return becauseRegex.find(this)
             ?.groupValues
             ?.getOrNull(1)
+            ?.trim()
             ?.ifBlank { null }
             ?: "Because не указан"
     }
 
     private fun String.removeBecauseBlock(): String {
-        return replace(Regex("""\s*\(because\s+.+?\)\s*$"""), "")
+        return replace(Regex("""\s*\(because\s+.+?\)+\s*$"""), "")
             .trim()
+    }
+
+    private fun String.normalizeSelenideCondition(): String {
+        val value = trim()
+        val conditionWithArguments = Regex("""^(should(?:\s+\w+)*)\((.+)\)?$""")
+
+        return conditionWithArguments.matchEntire(value)
+            ?.let { match -> "${match.groupValues[1]} ${match.groupValues[2].trimEnd(')')}" }
+            ?: value
     }
 
     private fun collectAliasLocators(): Map<String, String> {
