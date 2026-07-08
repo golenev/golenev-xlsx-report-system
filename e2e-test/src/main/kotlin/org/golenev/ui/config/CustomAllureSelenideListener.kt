@@ -12,6 +12,7 @@ import io.qameta.allure.model.Status
 import io.qameta.allure.model.StatusDetails
 import io.qameta.allure.model.StepResult
 import java.nio.file.Files
+import java.nio.file.Path
 import java.util.*
 import kotlin.concurrent.getOrSet
 
@@ -20,6 +21,10 @@ class CustomAllureSelenideListener : LogEventListener {
     private val lifecycle: AllureLifecycle = Allure.getLifecycle()
 
     private val stepIds = ThreadLocal<MutableList<String>>()
+
+    private val pendingElementConditions = ThreadLocal<MutableMap<String, ElementConditionDetails>>()
+
+    private val aliasLocators: Map<String, String> by lazy { collectAliasLocators() }
 
     private val elementInteractionSubjects = setOf(
         "click",
@@ -46,6 +51,11 @@ class CustomAllureSelenideListener : LogEventListener {
     }
 
     override fun afterEvent(event: LogEvent) {
+        if (event.isElementCondition()) {
+            rememberElementCondition(event)
+            return
+        }
+
         if (!event.isElementInteraction()) return
 
         attachReadableSelenideInfo(event)
@@ -90,12 +100,14 @@ class CustomAllureSelenideListener : LogEventListener {
             appendLine(event.element.extractLocator())
             appendLine()
 
+            val conditionDetails = event.conditionDetails()
+
             appendLine("Условия для успешного взаимодействия:")
-            appendLine(event.subject.extractCondition())
+            appendLine(conditionDetails.condition)
             appendLine()
 
             appendLine("Ожидаемая причина:")
-            appendLine(event.subject.extractBecause())
+            appendLine(conditionDetails.because)
         }
 
         Allure.addAttachment(
@@ -139,6 +151,31 @@ class CustomAllureSelenideListener : LogEventListener {
         return elementInteractionSubjects.any { interaction.startsWith(it) }
     }
 
+    private fun LogEvent.isElementCondition(): Boolean {
+        if (element.isBlank()) return false
+
+        val condition = subject.removeBecauseBlock()
+
+        return condition.startsWith("should be") ||
+            condition.startsWith("should have") ||
+            condition.startsWith("should")
+    }
+
+    private fun rememberElementCondition(event: LogEvent) {
+        pendingElementConditions.getOrSet { mutableMapOf() }[event.element] = ElementConditionDetails(
+            condition = event.subject.extractCondition(),
+            because = event.subject.extractBecause(),
+        )
+    }
+
+    private fun LogEvent.conditionDetails(): ElementConditionDetails {
+        return pendingElementConditions.getOrSet { mutableMapOf() }.remove(element)
+            ?: ElementConditionDetails(
+                condition = subject.extractCondition(),
+                because = subject.extractBecause(),
+            )
+    }
+
     private fun LogEvent.toAllureStatus(): Status {
         return when (status) {
             PASS -> Status.PASSED
@@ -163,6 +200,11 @@ class CustomAllureSelenideListener : LogEventListener {
     }
 
     private fun String.extractLocator(): String {
+        val alias = extractAlias()
+        if (alias != null) {
+            aliasLocators[alias]?.let { return it }
+        }
+
         return ifBlank { "Локатор не определён" }
     }
 
@@ -184,5 +226,35 @@ class CustomAllureSelenideListener : LogEventListener {
     private fun String.removeBecauseBlock(): String {
         return replace(Regex("""\s*\(because\s+.+?\)\s*$"""), "")
             .trim()
+    }
+
+    private fun collectAliasLocators(): Map<String, String> {
+        val sourceRoot = listOf(
+            Path.of("src/main/kotlin"),
+            Path.of("e2e-test/src/main/kotlin"),
+        ).firstOrNull { Files.isDirectory(it) } ?: return emptyMap()
+
+        return Files.walk(sourceRoot).use { paths ->
+            paths
+                .filter { Files.isRegularFile(it) && it.toString().endsWith(".kt") }
+                .map { Files.readString(it) }
+                .flatMap { source ->
+                    aliasLocatorRegex.findAll(source)
+                        .map { it.groupValues[2] to it.groupValues[1] }
+                        .toList()
+                        .stream()
+                }
+                .toList()
+                .toMap()
+        }
+    }
+
+    private data class ElementConditionDetails(
+        val condition: String,
+        val because: String,
+    )
+
+    private companion object {
+        private val aliasLocatorRegex = Regex("""`?${'$'}`?\("([^"]+)"\)\.`as`\("([^"]+)"\)""")
     }
 }
