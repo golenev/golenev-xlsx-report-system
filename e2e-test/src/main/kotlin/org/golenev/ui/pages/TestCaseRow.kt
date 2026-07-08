@@ -11,44 +11,41 @@ import org.golenev.utils.typeOf
  * Component Object одной строки таблицы тест-кейсов: draft-строки или сохранённой строки.
  */
 class TestCaseRow(
-    /** Корневой Selenide-элемент строки таблицы, внутри которого ищутся все ячейки и кнопки. */
-    private val root: SelenideElement,
+    root: SelenideElement,
 ) {
-    /** Поле ввода Test ID внутри строки. */
-    private val testIdInput: SelenideElement get() = cell("Test ID").find("input")
+    private val root: SelenideElement =
+        root.`as`("Корневой Selenide-элемент строки таблицы, внутри которого ищутся все ячейки и кнопки.")
 
-    /** Поле ввода Category / Feature внутри строки. */
-    private val categoryInput: SelenideElement get() = input("Category / Feature")
+    private val testIdInput: SelenideElement get() = cell("Test ID").find("input").`as`("Поле ввода Test ID внутри строки.")
 
-    /** Поле ввода Short Title внутри строки. */
-    private val shortTitleInput: SelenideElement get() = input("Short Title")
+    private val categoryInput: SelenideElement get() = input("Category / Feature").`as`("Поле ввода Category / Feature внутри строки.")
 
-    /** Поле ввода YouTrack Issue Link внутри строки. */
-    private val issueLinkInput: SelenideElement get() = cell("YouTrack Issue Link").find("input")
+    private val shortTitleInput: SelenideElement get() = input("Short Title").`as`("Поле ввода Short Title внутри строки.")
 
-    /** Ячейка Ready Date внутри строки. */
-    private val readyDateCell: SelenideElement get() = cell("Ready Date")
+    private val issueLinkInput: SelenideElement get() =
+        cell("YouTrack Issue Link").find("input").`as`("Поле ввода YouTrack Issue Link внутри строки.")
 
-    /** Dropdown General Test Status внутри строки. */
-    private val generalStatusDropdown: SelenideElement get() = cell("General Test Status").find("[data-testid='status-dropdown']")
+    private val readyDateCell: SelenideElement get() = cell("Ready Date").`as`("Ячейка Ready Date внутри строки.")
 
-    /** Select Priority внутри строки. */
-    private val prioritySelect: SelenideElement get() = cell("Priority").find("select[data-testid='priority-select']")
+    private val generalStatusDropdown: SelenideElement get() =
+        cell("General Test Status").find("[data-testid='status-dropdown']").`as`("Dropdown General Test Status внутри строки.")
 
-    /** Ячейка Detailed Scenario, содержащая textarea или structured scenario editor. */
-    private val detailedScenarioCell: SelenideElement get() = cell("Detailed Scenario")
+    private val prioritySelect: SelenideElement get() =
+        cell("Priority").find("select[data-testid='priority-select']").`as`("Select Priority внутри строки.")
 
-    /** Textarea простого detailed scenario внутри ячейки Detailed Scenario. */
-    private val scenarioTextarea: SelenideElement get() = detailedScenarioCell.find("textarea")
+    private val detailedScenarioCell: SelenideElement get() =
+        cell("Detailed Scenario").`as`("Ячейка Detailed Scenario, содержащая textarea или structured scenario editor.")
 
-    /** Textarea Notes внутри строки. */
-    private val notesTextarea: SelenideElement get() = cell("Notes").find("textarea")
+    private val scenarioTextarea: SelenideElement get() =
+        detailedScenarioCell.find("textarea").`as`("Textarea простого detailed scenario внутри ячейки Detailed Scenario.")
 
-    /** Ячейка Regress Run для выбора статуса регресса конкретного тест-кейса. */
-    private val regressRunCell: SelenideElement get() = cell("Regress Run")
+    private val notesTextarea: SelenideElement get() = cell("Notes").find("textarea").`as`("Textarea Notes внутри строки.")
 
-    /** Кнопка сохранения draft-строки. */
-    private val saveButton: SelenideElement get() = root.find("[data-testid='save-test-case-button']")
+    private val regressRunCell: SelenideElement get() =
+        cell("Regress Run").`as`("Ячейка Regress Run для выбора статуса регресса конкретного тест-кейса.")
+
+    private val saveButton: SelenideElement get() =
+        root.find("[data-testid='save-test-case-button']").`as`("Кнопка сохранения draft-строки.")
 
     /** Заполняет поле Test ID в строке. */
     fun fillTestId(testId: String) {

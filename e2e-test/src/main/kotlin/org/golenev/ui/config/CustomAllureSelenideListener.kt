@@ -21,7 +21,20 @@ class CustomAllureSelenideListener : LogEventListener {
 
     private val stepIds = ThreadLocal<MutableList<String>>()
 
+    private val elementInteractionSubjects = setOf(
+        "click",
+        "double click",
+        "context click",
+        "set value",
+        "append",
+        "send keys",
+        "type",
+        "hover",
+    )
+
     override fun beforeEvent(event: LogEvent) {
+        if (!event.isElementInteraction()) return
+
         val stepId = UUID.randomUUID().toString()
 
         stepIds.getOrSet { mutableListOf() }.add(stepId)
@@ -33,6 +46,8 @@ class CustomAllureSelenideListener : LogEventListener {
     }
 
     override fun afterEvent(event: LogEvent) {
+        if (!event.isElementInteraction()) return
+
         attachReadableSelenideInfo(event)
 
         if (event.status == FAIL) {
@@ -114,6 +129,14 @@ class CustomAllureSelenideListener : LogEventListener {
             pageSource,
             ".html",
         )
+    }
+
+    private fun LogEvent.isElementInteraction(): Boolean {
+        if (element.isBlank()) return false
+
+        val interaction = subject.removeBecauseBlock()
+
+        return elementInteractionSubjects.any { interaction.startsWith(it) }
     }
 
     private fun LogEvent.toAllureStatus(): Status {
