@@ -11,6 +11,7 @@ import io.qameta.allure.AllureLifecycle
 import io.qameta.allure.model.Status
 import io.qameta.allure.model.StatusDetails
 import io.qameta.allure.model.StepResult
+import org.golenev.ui.pages.REPORT_LOCATOR_SEPARATOR
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
@@ -185,7 +186,7 @@ class CustomAllureSelenideListener : LogEventListener {
     }
 
     private fun String.extractAlias(): String? {
-        val value = trim()
+        val value = trim().substringBefore(REPORT_LOCATOR_SEPARATOR)
 
         if (value.isBlank()) return null
 
@@ -200,6 +201,11 @@ class CustomAllureSelenideListener : LogEventListener {
     }
 
     private fun String.extractLocator(): String {
+        val value = trim()
+        if (REPORT_LOCATOR_SEPARATOR in value) {
+            return value.substringAfter(REPORT_LOCATOR_SEPARATOR).ifBlank { "Локатор не определён" }
+        }
+
         val alias = extractAlias()
         if (alias != null) {
             aliasLocators[alias]?.let { return it }

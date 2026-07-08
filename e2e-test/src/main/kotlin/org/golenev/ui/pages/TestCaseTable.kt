@@ -21,7 +21,10 @@ class TestCaseTable {
         `$`("[data-testid='test-report-table']").`as`("Корневой элемент таблицы, внутри которого ищутся строки и кнопки таблицы.")
 
     private val addRowButton: SelenideElement get() =
-        `$`("button[data-role='button'][data-action='add-row']").`as`("Кнопка Add Row, которая открывает draft-строку для создания нового тест-кейса.")
+        `$`(ADD_ROW_BUTTON_LOCATOR).asReportElement(
+            alias = "Кнопка Add Row, которая открывает draft-строку для создания нового тест-кейса.",
+            locator = ADD_ROW_BUTTON_LOCATOR,
+        )
 
     private val draftRowElement: SelenideElement get() =
         root.find("[data-testid='test-case-row'][data-state='draft']").`as`("Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row.")
@@ -106,4 +109,8 @@ class TestCaseTable {
     /** Находит Selenide-элемент существующей строки таблицы по Test ID внутри root таблицы. */
     fun rowElementByTestId(testId: String): SelenideElement =
         root.find("[data-testid='test-case-row'][data-test-case-id='$testId']")
+
+    private companion object {
+        private const val ADD_ROW_BUTTON_LOCATOR = "button[data-role='button'][data-action='add-row']"
+    }
 }
