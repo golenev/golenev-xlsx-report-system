@@ -6,6 +6,7 @@ import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.utils.CENTER
 import org.golenev.utils.shouldBeVisibleForInput
 import org.golenev.utils.typeOf
+import org.golenev.ui.config.reportAs
 
 /**
  * Component Object одной строки таблицы тест-кейсов: draft-строки или сохранённой строки.
@@ -14,38 +15,38 @@ class TestCaseRow(
     root: SelenideElement,
 ) {
     private val root: SelenideElement =
-        root.`as`("Корневой Selenide-элемент строки таблицы, внутри которого ищутся все ячейки и кнопки.")
+        root.reportAs("Корневой Selenide-элемент строки таблицы, внутри которого ищутся все ячейки и кнопки.")
 
-    private val testIdInput: SelenideElement get() = cell("Test ID").find("input").`as`("Поле ввода Test ID внутри строки.")
+    private val testIdInput: SelenideElement get() = cell("Test ID").find("input").reportAs("Поле ввода Test ID внутри строки.")
 
-    private val categoryInput: SelenideElement get() = input("Category / Feature").`as`("Поле ввода Category / Feature внутри строки.")
+    private val categoryInput: SelenideElement get() = input("Category / Feature").reportAs("Поле ввода Category / Feature внутри строки.")
 
-    private val shortTitleInput: SelenideElement get() = input("Short Title").`as`("Поле ввода Short Title внутри строки.")
+    private val shortTitleInput: SelenideElement get() = input("Short Title").reportAs("Поле ввода Short Title внутри строки.")
 
     private val issueLinkInput: SelenideElement get() =
-        cell("YouTrack Issue Link").find("input").`as`("Поле ввода YouTrack Issue Link внутри строки.")
+        cell("YouTrack Issue Link").find("input").reportAs("Поле ввода YouTrack Issue Link внутри строки.")
 
-    private val readyDateCell: SelenideElement get() = cell("Ready Date").`as`("Ячейка Ready Date внутри строки.")
+    private val readyDateCell: SelenideElement get() = cell("Ready Date").reportAs("Ячейка Ready Date внутри строки.")
 
     private val generalStatusDropdown: SelenideElement get() =
-        cell("General Test Status").find("[data-testid='status-dropdown']").`as`("Dropdown General Test Status внутри строки.")
+        cell("General Test Status").find("[data-testid='status-dropdown']").reportAs("Dropdown General Test Status внутри строки.")
 
     private val prioritySelect: SelenideElement get() =
-        cell("Priority").find("select[data-testid='priority-select']").`as`("Select Priority внутри строки.")
+        cell("Priority").find("select[data-testid='priority-select']").reportAs("Select Priority внутри строки.")
 
     private val detailedScenarioCell: SelenideElement get() =
-        cell("Detailed Scenario").`as`("Ячейка Detailed Scenario, содержащая textarea или structured scenario editor.")
+        cell("Detailed Scenario").reportAs("Ячейка Detailed Scenario, содержащая textarea или structured scenario editor.")
 
     private val scenarioTextarea: SelenideElement get() =
-        detailedScenarioCell.find("textarea").`as`("Textarea простого detailed scenario внутри ячейки Detailed Scenario.")
+        detailedScenarioCell.find("textarea").reportAs("Textarea простого detailed scenario внутри ячейки Detailed Scenario.")
 
-    private val notesTextarea: SelenideElement get() = cell("Notes").find("textarea").`as`("Textarea Notes внутри строки.")
+    private val notesTextarea: SelenideElement get() = cell("Notes").find("textarea").reportAs("Textarea Notes внутри строки.")
 
     private val regressRunCell: SelenideElement get() =
-        cell("Regress Run").`as`("Ячейка Regress Run для выбора статуса регресса конкретного тест-кейса.")
+        cell("Regress Run").reportAs("Ячейка Regress Run для выбора статуса регресса конкретного тест-кейса.")
 
     private val saveButton: SelenideElement get() =
-        root.find("[data-testid='save-test-case-button']").`as`("Кнопка сохранения draft-строки.")
+        root.find("[data-testid='save-test-case-button']").reportAs("Кнопка сохранения draft-строки.")
 
     /** Заполняет поле Test ID в строке. */
     fun fillTestId(testId: String) {

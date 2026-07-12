@@ -16,25 +16,50 @@ class DriverConfig {
         Configuration.pageLoadStrategy = "normal"
         Configuration.headless = false
         Configuration.screenshots = true
-        Configuration.baseUrl = System.getProperty("baseUrl", "http://localhost:18080")
+        Configuration.baseUrl = System.getProperty(
+            "baseUrl",
+            "http://localhost:18080"
+        )
         Configuration.proxyEnabled = true
 
-        SelenideLogger.removeListener<LogEventListener>("AllureSelenide")
-        SelenideLogger.removeListener<LogEventListener>("ReadableAllureSelenide")
+        configureSelenideListener()
 
-        SelenideLogger.addListener(
-            "ReadableAllureSelenide",
-            CustomAllureSelenideListener()
+        Configuration.browserCapabilities =
+            if (WebDriverRunner.isChrome()) {
+                getChromeOptions()
+            } else {
+                MutableCapabilities()
+            }
+    }
+
+    private fun configureSelenideListener() {
+        UiElementMetadataRegistry.clear()
+
+        SelenideLogger.removeListener<LogEventListener>(
+            DEFAULT_ALLURE_LISTENER
         )
 
-        val capabilities: MutableCapabilities =
-            if (WebDriverRunner.isChrome()) getChromeOptions() else MutableCapabilities()
+        SelenideLogger.removeListener<LogEventListener>(
+            CUSTOM_ALLURE_LISTENER
+        )
 
-        Configuration.browserCapabilities = capabilities
+        SelenideLogger.addListener(
+            CUSTOM_ALLURE_LISTENER,
+            CustomAllureSelenideListener(),
+        )
     }
 
     private fun getChromeOptions(): ChromeOptions {
-        val options = ChromeOptions()
-        return options.addArguments("--window-size=1920,1080", "--disable-notifications")
+        return ChromeOptions().addArguments(
+            "--window-size=1920,1080",
+            "--disable-notifications",
+        )
+    }
+
+    private companion object {
+
+        const val DEFAULT_ALLURE_LISTENER = "AllureSelenide"
+
+        const val CUSTOM_ALLURE_LISTENER = "ReadableAllureSelenide"
     }
 }

@@ -4,19 +4,20 @@ import com.codeborne.selenide.Condition.disappear
 import com.codeborne.selenide.Condition.exactText
 import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.SelenideElement
+import org.golenev.ui.config.reportAs
 
 /**
  * Component Object warning popup, который отображает пользователю блокирующие предупреждения.
  */
 class WarningPopup {
 
-    private val message: SelenideElement get() = `$`(".popup-message").`as`("Текст warning popup.")
+    private val message: SelenideElement get() = `$`(".popup-message").reportAs("Текст warning popup.")
 
-    private val title: SelenideElement get() = `$`(".popup-title").`as`("Заголовок warning popup.")
+    private val title: SelenideElement get() = `$`(".popup-title").reportAs("Заголовок warning popup.")
 
-    private val closeButton: SelenideElement get() = `$`(".popup-actions .secondary-btn").`as`("Кнопка закрытия warning popup.")
+    private val closeButton: SelenideElement get() = `$`(".popup-actions .secondary-btn").reportAs("Кнопка закрытия warning popup.")
 
-    private val card: SelenideElement get() = `$`(".popup-card").`as`("Карточка warning popup.")
+    private val card: SelenideElement get() = `$`(".popup-card").reportAs("Карточка warning popup.")
 
     /** Проверяет стандартный warning popup о незаполненных статусах перед остановкой регресса. */
     fun checkDefaultRegressionWarning() {
