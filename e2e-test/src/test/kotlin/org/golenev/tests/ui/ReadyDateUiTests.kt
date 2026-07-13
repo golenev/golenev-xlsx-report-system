@@ -55,7 +55,7 @@ class ReadyDateUiTests {
 
         step("Открываем главную страницу") { mainPage.open() }
         step("Начинаем создание новой строки") { mainPage.testCaseTable.startNewRow() }
-        step("Проверяем, что Ready Date сразу автоматически заполнена сегодняшней датой") { mainPage.testCaseTable.draftRow.checkReadyDate(today) }
+        step("Проверяем, что Ready Date сразу автоматически заполнена сегодняшней датой") { mainPage.testCaseTable.checkDraftReadyDate(today) }
         step("Заполняем поле Test ID значением $randomTestId") { mainPage.testCaseTable.fillTestId(randomTestId) }
         step("Заполняем поле Category / Feature значением $category") { mainPage.testCaseTable.fillCategory(category) }
         step("Заполняем поле Short Title значением $shortTitle") { mainPage.testCaseTable.fillShortTitle(shortTitle) }
@@ -65,7 +65,7 @@ class ReadyDateUiTests {
         step("Заполняем поле Detailed Scenario значением $detailedScenario") { mainPage.testCaseTable.fillDetailedScenario(detailedScenario) }
         step("Сохраняем новую строку без указания Ready Date") { mainPage.testCaseTable.saveNewRow() }
         step("Проверяем, что тест-кейс появился в таблице") { mainPage.testCaseTable.checkRowVisible(randomTestId) }
-        step("Проверяем, что Ready Date всё ещё заполнена сегодняшней датой") { mainPage.testCaseTable.row(randomTestId).checkReadyDate(today) }
+        step("Проверяем, что Ready Date всё ещё заполнена сегодняшней датой") { mainPage.testCaseTable.checkReadyDate(randomTestId, today) }
     }
 
 }

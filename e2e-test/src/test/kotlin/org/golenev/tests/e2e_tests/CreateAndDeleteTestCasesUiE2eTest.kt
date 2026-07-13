@@ -72,11 +72,11 @@ class CreateAndDeleteTestCasesUiE2eTest {
             step("Создаём тест-кейс ${index + 1} через UI и проверяем блокировки кнопок") {
                 mainPage.testCaseTable.startNewRow()
                 mainPage.testCaseTable.checkAddRowDisabled()
-                mainPage.testCaseTable.draftRow.checkSaveDisabled()
+                mainPage.testCaseTable.checkDraftSaveDisabled()
 
                 mainPage.testCaseTable.fillTestId(testCase.testId.orEmpty())
                 mainPage.testCaseTable.checkAddRowDisabled()
-                mainPage.testCaseTable.draftRow.checkSaveDisabled()
+                mainPage.testCaseTable.checkDraftSaveDisabled()
 
                 mainPage.testCaseTable.fillCategory(testCase.category.orEmpty())
                 mainPage.testCaseTable.fillShortTitle(testCase.shortTitle.orEmpty())
@@ -84,10 +84,10 @@ class CreateAndDeleteTestCasesUiE2eTest {
                 mainPage.testCaseTable.selectGeneralStatus(testCase.generalStatus.orEmpty())
                 mainPage.testCaseTable.selectPriority(testCase.priority.orEmpty())
                 mainPage.testCaseTable.checkAddRowDisabled()
-                mainPage.testCaseTable.draftRow.checkSaveDisabled()
+                mainPage.testCaseTable.checkDraftSaveDisabled()
 
                 mainPage.testCaseTable.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
-                mainPage.testCaseTable.draftRow.checkSaveEnabled()
+                mainPage.testCaseTable.checkDraftSaveEnabled()
                 mainPage.testCaseTable.checkAddRowEnabled()
 
                 val createRequestBody = interceptRequestBody(getSelenideProxy(), Paths.REPORTS.path) {
