@@ -21,10 +21,11 @@ class MainPage {
     /** Warning popup, который появляется при невозможности выполнить действие. */
     val warningPopup: WarningPopup by lazy { WarningPopup() }
 
-    private val headerTitle: SelenideElement =
+    private fun headerTitle(): SelenideElement =
         element("h1").name("Заголовок страницы, по которому проверяется успешное открытие или обновление Test Report.")
 
-    private val body: SelenideElement = `$`("body").name("Элемент body страницы, по которому можно снять фокус с активного поля.")
+    private fun body(): SelenideElement =
+        `$`("body").name("Элемент body страницы, по которому можно снять фокус с активного поля.")
 
     /** Открывает главную страницу Test Report и проверяет, что заголовок отображается. */
     fun open() {
@@ -40,12 +41,12 @@ class MainPage {
 
     /** Проверяет, что на странице отображается ожидаемый заголовок Test Report. */
     fun checkTitle() {
-        headerTitle.shouldHave(text("Test Report").because("после открытия страницы должен отображаться заголовок отчета"))
+        headerTitle().shouldHave(text("Test Report").because("после открытия страницы должен отображаться заголовок отчета"))
     }
 
     /** Снимает фокус с активного поля кликом по body страницы. */
     fun unFocus() {
-        body.click()
+        body().click()
     }
 
 }
