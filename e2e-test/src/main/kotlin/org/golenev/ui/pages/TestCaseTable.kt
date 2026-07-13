@@ -6,8 +6,10 @@ import com.codeborne.selenide.Condition.enabled
 import com.codeborne.selenide.ScrollIntoViewOptions.Block.start
 import com.codeborne.selenide.ScrollIntoViewOptions.instant
 import com.codeborne.selenide.Selenide.`$`
+import com.codeborne.selenide.Selenide.`$$`
 import com.codeborne.selenide.SelenideElement
 import org.golenev.restapi.endpoints.ScenarioStepRequest
+import org.golenev.ui.allure.name
 
 /**
  * Component Object таблицы тест-кейсов на главной странице Test Report.
@@ -17,14 +19,13 @@ class TestCaseTable {
     /** Объект draft-строки таблицы; создаётся лениво, чтобы не требовать наличие строки до Add Row. */
     val draftRow: TestCaseRow get() = TestCaseRow(draftRowElement)
 
-    private val root: SelenideElement get() =
-        `$`("[data-testid='test-report-table']").`as`("Корневой элемент таблицы, внутри которого ищутся строки и кнопки таблицы.")
+    private val addRowButton: SelenideElement =
+        `$`("button[data-role='button'][data-action='add-row']").name("Кнопка Add Row, которая открывает draft-строку для создания нового тест-кейса.")
 
-    private val addRowButton: SelenideElement get() =
-        `$`("button[data-role='button'][data-action='add-row']").`as`("Кнопка Add Row, которая открывает draft-строку для создания нового тест-кейса.")
-
-    private val draftRowElement: SelenideElement get() =
-        root.find("[data-testid='test-case-row'][data-state='draft']").`as`("Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row.")
+    private val draftRowElement: SelenideElement =
+        `$`("[data-testid='test-report-table']")
+            .`$`("[data-testid='test-case-row'][data-state='draft']")
+            .name("Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row.")
 
     /** Возвращает объект существующей строки по Test ID через операторный доступ table[testId]. */
     operator fun get(testId: String): TestCaseRow = row(testId)
@@ -93,7 +94,8 @@ class TestCaseTable {
 
     /** Проверяет количество сохранённых строк тест-кейсов без учёта draft-строки. */
     fun checkSavedRowsCount(expectedCount: Int) {
-        root.findAll("[data-testid='test-case-row']:not([data-state='draft'])")
+        `$$`("[data-testid='test-report-table'] [data-testid='test-case-row']:not([data-state='draft'])")
+            .name("Сохранённые строки тест-кейсов")
             .shouldHave(size(expectedCount).because("количество сохранённых строк тест-кейсов должно соответствовать ожидаемому"))
     }
 
@@ -105,5 +107,7 @@ class TestCaseTable {
 
     /** Находит Selenide-элемент существующей строки таблицы по Test ID внутри root таблицы. */
     fun rowElementByTestId(testId: String): SelenideElement =
-        root.find("[data-testid='test-case-row'][data-test-case-id='$testId']")
+        `$`("[data-testid='test-report-table']")
+            .`$`("[data-testid='test-case-row'][data-test-case-id='$testId']")
+            .name("Строка тест-кейса $testId")
 }

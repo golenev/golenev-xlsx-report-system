@@ -5,6 +5,7 @@ import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.Selenide.element
 import com.codeborne.selenide.SelenideElement
+import org.golenev.ui.allure.name
 
 /**
  * Page Object главной страницы Test Report, который хранит действия уровня страницы и входные точки к вложенным компонентам.
@@ -21,9 +22,9 @@ class MainPage {
     val warningPopup: WarningPopup by lazy { WarningPopup() }
 
     private val headerTitle: SelenideElement =
-        element("h1").`as`("Заголовок страницы, по которому проверяется успешное открытие или обновление Test Report.")
+        element("h1").name("Заголовок страницы, по которому проверяется успешное открытие или обновление Test Report.")
 
-    private val body: SelenideElement get() = `$`("body").`as`("Элемент body страницы, по которому можно снять фокус с активного поля.")
+    private val body: SelenideElement = `$`("body").name("Элемент body страницы, по которому можно снять фокус с активного поля.")
 
     /** Открывает главную страницу Test Report и проверяет, что заголовок отображается. */
     fun open() {
