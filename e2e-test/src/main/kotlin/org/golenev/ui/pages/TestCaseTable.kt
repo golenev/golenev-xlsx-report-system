@@ -12,6 +12,7 @@ import org.golenev.ui.allure.name
 import org.golenev.utils.CENTER
 import org.golenev.utils.shouldBeVisibleForInput
 import org.golenev.utils.typeOf
+import io.qameta.allure.Step
 
 /**
  * Component Object таблицы тест-кейсов на главной странице Test Report.
@@ -25,9 +26,11 @@ class TestCaseTable {
             .name("Кнопка Add Row, которая открывает draft-строку для создания нового тест-кейса.")
 
     /** Возвращает объект существующей строки по Test ID через операторный доступ table[testId]. */
+    @Step("Возвращаем объект существующей строки по Test ID {testId} через операторный доступ table[testId]")
     operator fun get(testId: String): TestCaseTable = apply { checkRowVisible(testId) }
 
     /** Заполняет поле Test ID в текущей draft-строке. */
+    @Step("Заполняем поле Test ID в текущей draft-строке: {testId}")
     fun fillTestId(testId: String) {
         `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Test ID'] input")
             .name("Поле ввода Test ID внутри строки.")
@@ -36,6 +39,7 @@ class TestCaseTable {
     }
 
     /** Заполняет поле Category / Feature в текущей draft-строке. */
+    @Step("Заполняем поле Category / Feature в текущей draft-строке: {category}")
     fun fillCategory(category: String) {
         `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Category / Feature'] textarea, $draftRowLocator [data-testid='test-case-cell'][data-name='Category / Feature'] input")
             .name("Поле ввода Category / Feature внутри строки.")
@@ -44,6 +48,7 @@ class TestCaseTable {
     }
 
     /** Заполняет поле Short Title в текущей draft-строке. */
+    @Step("Заполняем поле Short Title в текущей draft-строке: {shortTitle}")
     fun fillShortTitle(shortTitle: String) {
         `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Short Title'] textarea, $draftRowLocator [data-testid='test-case-cell'][data-name='Short Title'] input")
             .name("Поле ввода Short Title внутри строки.")
@@ -52,6 +57,7 @@ class TestCaseTable {
     }
 
     /** Заполняет поле YouTrack Issue Link в текущей draft-строке. */
+    @Step("Заполняем поле YouTrack Issue Link в текущей draft-строке: {issueLink}")
     fun fillIssueLink(issueLink: String) {
         `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='YouTrack Issue Link'] input")
             .name("Поле ввода YouTrack Issue Link внутри строки.")
@@ -60,6 +66,7 @@ class TestCaseTable {
     }
 
     /** Выбирает General Test Status в текущей draft-строке. */
+    @Step("Выбираем General Test Status в текущей draft-строке: {status}")
     fun selectGeneralStatus(status: String) {
         val dropdown = `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='General Test Status'] [data-testid='status-dropdown']")
             .name("Dropdown General Test Status внутри строки.")
@@ -69,6 +76,7 @@ class TestCaseTable {
     }
 
     /** Выбирает Priority в текущей draft-строке. */
+    @Step("Выбираем Priority в текущей draft-строке: {priority}")
     fun selectPriority(priority: String) {
         `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Priority'] select[data-testid='priority-select']")
             .name("Select Priority внутри строки.")
@@ -77,6 +85,7 @@ class TestCaseTable {
     }
 
     /** Заполняет текстовый detailed scenario в текущей draft-строке. */
+    @Step("Заполняем текстовый detailed scenario в текущей draft-строке")
     fun fillDetailedScenario(scenario: String) {
         `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] textarea")
             .name("Textarea простого detailed scenario внутри ячейки Detailed Scenario.")
@@ -85,6 +94,7 @@ class TestCaseTable {
     }
 
     /** Заполняет structured detailed scenario шагами и вложениями в текущей draft-строке. */
+    @Step("Заполняем structured detailed scenario шагами и вложениями в текущей draft-строке")
     fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) {
         steps.forEach { step ->
             `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='${step.number}']")
@@ -105,6 +115,7 @@ class TestCaseTable {
     }
 
     /** Заполняет поле Notes в текущей draft-строке. */
+    @Step("Заполняем поле Notes в текущей draft-строке")
     fun fillNotes(notes: String) {
         `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Notes'] textarea")
             .name("Textarea Notes внутри строки.")
@@ -113,6 +124,7 @@ class TestCaseTable {
     }
 
     /** Сохраняет текущую draft-строку. */
+    @Step("Сохраняем текущую draft-строку")
     fun saveNewRow() {
         `$`("$draftRowLocator [data-testid='save-test-case-button']")
             .name("Кнопка сохранения draft-строки.")
@@ -124,6 +136,7 @@ class TestCaseTable {
     }
 
     /** Выбирает regression status в колонке Regress Run для конкретного тест-кейса. */
+    @Step("Выбираем regression status {status} в колонке Regress Run для тест-кейса {testId}")
     fun selectRegressionStatus(testId: String, status: String) {
         val rowLocator = savedRowLocator(testId)
         `$`(rowLocator)
@@ -136,6 +149,7 @@ class TestCaseTable {
     }
 
     /** Обновляет значение Category / Feature у существующего тест-кейса. */
+    @Step("Обновляем значение Category / Feature у тест-кейса {testId}: {newValue}")
     fun updateCategory(testId: String, newValue: String) {
         val rowLocator = savedRowLocator(testId)
         `$`("$rowLocator [data-testid='test-case-cell'][data-name='Category / Feature'] textarea, $rowLocator [data-testid='test-case-cell'][data-name='Category / Feature'] input")
@@ -145,6 +159,7 @@ class TestCaseTable {
     }
 
     /** Проверяет, что кнопка Add Row недоступна, пока нельзя начать создание новой строки. */
+    @Step("Проверяем, что кнопка Add Row недоступна, пока нельзя начать создание новой строки")
     fun checkAddRowDisabled() {
         addRowButton
             .scrollIntoView(instant().block(start))
@@ -152,11 +167,13 @@ class TestCaseTable {
     }
 
     /** Проверяет, что кнопка Add Row доступна для начала создания тест-кейса. */
+    @Step("Проверяем, что кнопка Add Row доступна для начала создания тест-кейса")
     fun checkAddRowEnabled() {
         addRowButton.shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса"))
     }
 
     /** Проверяет, что сохранённая строка тест-кейса с указанным Test ID отображается. */
+    @Step("Проверяем, что сохранённая строка тест-кейса {testId} отображается")
     fun checkRowVisible(testId: String) {
         `$`(savedRowLocator(testId))
             .name("Строка тест-кейса $testId")
@@ -165,6 +182,7 @@ class TestCaseTable {
     }
 
     /** Проверяет, что строка тест-кейса с указанным Test ID исчезла со страницы. */
+    @Step("Проверяем, что строка тест-кейса {testId} исчезла со страницы")
     fun checkRowDisappeared(testId: String) {
         `$`(savedRowLocator(testId))
             .name("Строка тест-кейса $testId")
@@ -172,6 +190,7 @@ class TestCaseTable {
     }
 
     /** Проверяет количество сохранённых строк тест-кейсов без учёта draft-строки. */
+    @Step("Проверяем количество сохранённых строк тест-кейсов без учёта draft-строки: {expectedCount}")
     fun checkSavedRowsCount(expectedCount: Int) {
         `$$`("$tableLocator [data-testid='test-case-row']:not([data-state='draft'])")
             .name("Сохранённые строки тест-кейсов")
@@ -179,12 +198,14 @@ class TestCaseTable {
     }
 
     /** Нажимает Add Row и проверяет, что на странице появилась draft-строка. */
+    @Step("Нажимаем Add Row и проверяем, что на странице появилась draft-строка")
     fun startNewRow() {
         addRowButton.shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса")).click()
         checkDraftRowVisibleAfterCreation()
     }
 
     /** Проверяет, что кнопка сохранения draft-строки недоступна. */
+    @Step("Проверяем, что кнопка сохранения draft-строки недоступна")
     fun checkDraftSaveDisabled() {
         `$`("$draftRowLocator [data-testid='save-test-case-button']")
             .name("Кнопка сохранения draft-строки.")
@@ -192,6 +213,7 @@ class TestCaseTable {
     }
 
     /** Проверяет, что кнопка сохранения draft-строки доступна. */
+    @Step("Проверяем, что кнопка сохранения draft-строки доступна")
     fun checkDraftSaveEnabled() {
         `$`("$draftRowLocator [data-testid='save-test-case-button']")
             .name("Кнопка сохранения draft-строки.")
@@ -199,6 +221,7 @@ class TestCaseTable {
     }
 
     /** Проверяет, что Ready Date текущей draft-строки содержит ожидаемую дату. */
+    @Step("Проверяем, что Ready Date текущей draft-строки содержит ожидаемую дату {expectedDate}")
     fun checkDraftReadyDate(expectedDate: String) {
         `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Ready Date']")
             .name("Ячейка Ready Date внутри строки.")
@@ -206,6 +229,7 @@ class TestCaseTable {
     }
 
     /** Проверяет, что Ready Date сохранённой строки содержит ожидаемую дату. */
+    @Step("Проверяем, что Ready Date сохранённой строки {testId} содержит ожидаемую дату {expectedDate}")
     fun checkReadyDate(testId: String, expectedDate: String) {
         `$`("${savedRowLocator(testId)} [data-testid='test-case-cell'][data-name='Ready Date']")
             .name("Ячейка Ready Date внутри строки.")
@@ -213,6 +237,7 @@ class TestCaseTable {
     }
 
     /** Устанавливает фокус в поле Category / Feature у существующей строки. */
+    @Step("Устанавливаем фокус в поле Category / Feature у строки {testId}")
     fun focusOnCategory(testId: String) {
         val rowLocator = savedRowLocator(testId)
         `$`("$rowLocator [data-testid='test-case-cell'][data-name='Category / Feature'] textarea, $rowLocator [data-testid='test-case-cell'][data-name='Category / Feature'] input")
@@ -228,6 +253,7 @@ class TestCaseTable {
     }
 
     /** Заполняет вложение конкретного шага structured scenario и сворачивает редактор вложения. */
+    @Step("Заполняем вложение шага {stepNumber} structured scenario и сворачиваем редактор вложения")
     private fun fillScenarioStepAttachment(stepNumber: Int, attachment: String) {
         `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='$stepNumber'] [data-testid='scenario-attachment-add-button']")
             .name("Кнопка добавления вложения шага detailed scenario.")
