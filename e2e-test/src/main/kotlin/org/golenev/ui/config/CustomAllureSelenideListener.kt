@@ -203,9 +203,7 @@ class CustomAllureSelenideListener(
             .takeUnless { it.looksLikeLocator() }
             ?.trim()
 
-        return alias != null &&
-            alias == eventAlias &&
-            !UiElementMetadataRegistry.hasConflict(alias)
+        return alias != null && alias == eventAlias
     }
 
     private fun LogEvent.toInteractionDetails(
@@ -291,22 +289,28 @@ class CustomAllureSelenideListener(
             "context click",
             -> "clickable: interactable и enabled"
 
-            "set value",
-            "append",
             "clear",
+            "set value",
             "type",
-            "paste",
             -> "editable: interactable, enabled и не readonly"
 
             "hover" ->
                 "элемент должен существовать для выполнения hover"
 
-            "scroll to",
-            "scroll into view",
-            -> "элемент должен существовать для выполнения прокрутки"
+            "send keys" ->
+                "элемент должен существовать для отправки клавиш"
+
+            "set selected" ->
+                "элемент должен существовать для изменения selected-состояния"
+
+            "submit" ->
+                "элемент должен существовать для отправки формы"
+
+            "unfocus" ->
+                "элемент должен существовать для снятия фокуса"
 
             else ->
-                "элемент должен быть найден Selenide для выполнения операции \"$methodName\""
+                ""
         }
     }
 
@@ -561,33 +565,17 @@ class CustomAllureSelenideListener(
         )
 
         val ELEMENT_INTERACTION_METHODS = setOf(
-            "append",
             "clear",
             "click",
             "context click",
             "double click",
-            "download",
-            "drag and drop to",
             "hover",
-            "paste",
-            "press",
-            "press enter",
-            "press escape",
-            "press tab",
-            "scroll into view",
-            "scroll to",
-            "select option",
-            "select option containing text",
-            "select option by value",
-            "select radio",
             "send keys",
             "set selected",
             "set value",
             "submit",
             "type",
             "unfocus",
-            "upload file",
-            "upload from classpath",
         )
     }
 }

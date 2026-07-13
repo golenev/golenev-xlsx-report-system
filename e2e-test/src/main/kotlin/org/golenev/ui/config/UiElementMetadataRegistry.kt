@@ -2,8 +2,8 @@ package org.golenev.ui.config
 
 object UiElementMetadataRegistry {
 
-    private val locatorsByAlias = ThreadLocal.withInitial {
-        linkedMapOf<String, MutableSet<String>>()
+    private val locatorByAlias = ThreadLocal.withInitial {
+        linkedMapOf<String, String>()
     }
 
     fun register(
@@ -13,27 +13,21 @@ object UiElementMetadataRegistry {
         val normalizedAlias = alias.trim()
         val normalizedLocator = locator.trim()
 
-        if (normalizedAlias.isBlank() || normalizedLocator.isBlank()) {
+        if (
+            normalizedAlias.isBlank() ||
+            normalizedLocator.isBlank()
+        ) {
             return
         }
 
-        locatorsByAlias.get()
-            .getOrPut(normalizedAlias) { linkedSetOf() }
-            .add(normalizedLocator)
+        locatorByAlias.get()[normalizedAlias] = normalizedLocator
     }
 
     fun resolveLocator(alias: String): String? {
-        return locatorsByAlias.get()[alias.trim()]
-            ?.singleOrNull()
-    }
-
-    fun hasConflict(alias: String): Boolean {
-        return locatorsByAlias.get()[alias.trim()]
-            ?.let { it.size > 1 }
-            ?: false
+        return locatorByAlias.get()[alias.trim()]
     }
 
     fun clear() {
-        locatorsByAlias.remove()
+        locatorByAlias.remove()
     }
 }
