@@ -22,7 +22,7 @@ class TestCaseTable {
         rowName = "Ленивый Selenide-локатор draft-строки, которая появляется только после нажатия Add Row.",
     )
 
-    private fun addRowButton(): SelenideElement =
+    private val addRowButton: SelenideElement =
         `$`("button[data-role='button'][data-action='add-row']")
             .name("Кнопка Add Row, которая открывает draft-строку для создания нового тест-кейса.")
 
@@ -74,14 +74,14 @@ class TestCaseTable {
 
     /** Проверяет, что кнопка Add Row недоступна, пока нельзя начать создание новой строки. */
     fun checkAddRowDisabled() {
-        addRowButton()
+        addRowButton
             .scrollIntoView(instant().block(start))
             .shouldBe(disabled.because("кнопка Add Row должна быть недоступна, пока форма создания строки не готова к сохранению"))
     }
 
     /** Проверяет, что кнопка Add Row доступна для начала создания тест-кейса. */
     fun checkAddRowEnabled() {
-        addRowButton().shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса"))
+        addRowButton.shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса"))
     }
 
     /** Проверяет, что сохранённая строка тест-кейса с указанным Test ID отображается. */
@@ -103,7 +103,7 @@ class TestCaseTable {
 
     /** Нажимает Add Row и проверяет, что на странице появилась draft-строка. */
     fun startNewRow() {
-        addRowButton().shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса")).click()
+        addRowButton.shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса")).click()
         draftRow.checkVisibleAfterDraftCreation()
     }
 }
