@@ -28,27 +28,23 @@ class MainPage {
     private val body: SelenideElement =
         `$`("body").name("Элемент body страницы, по которому можно снять фокус с активного поля.")
 
-    /** Открывает главную страницу Test Report и проверяет, что заголовок отображается. */
     @Step("Открываем главную страницу Test Report и проверяем, что заголовок отображается")
     fun open() {
         Selenide.open("/")
         checkTitle()
     }
 
-    /** Обновляет текущую страницу браузера и повторно проверяет заголовок Test Report. */
     @Step("Обновляем текущую страницу браузера и повторно проверяем заголовок Test Report")
     fun refreshCurrentPage() {
         Selenide.refresh()
         checkTitle()
     }
 
-    /** Проверяет, что на странице отображается ожидаемый заголовок Test Report. */
     @Step("Проверяем, что на странице отображается ожидаемый заголовок Test Report")
     fun checkTitle() {
         headerTitle.shouldHave(text("Test Report").because("после открытия страницы должен отображаться заголовок отчета"))
     }
 
-    /** Снимает фокус с активного поля кликом по body страницы. */
     @Step("Снимаем фокус с активного поля кликом по body страницы")
     fun unFocus() {
         body.click()

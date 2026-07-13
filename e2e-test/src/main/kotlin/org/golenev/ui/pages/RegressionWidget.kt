@@ -30,27 +30,23 @@ class RegressionWidget {
     private val regressionStopButton: SelenideElement =
         `$`(".regression-actions .danger-btn").name("Кнопка остановки текущего regression run.")
 
-    /** Открывает форму запуска regression run и проверяет видимость поля release name. */
     @Step("Открываем форму запуска regression run и проверяем видимость поля release name")
     fun openStartForm() {
         regressionStartButton.shouldBe(enabled.because("кнопка открытия формы запуска regression run должна быть доступна перед кликом")).click()
         regressionReleaseInput.shouldBe(visible.because("поле ввода release name должно быть видимым после открытия формы запуска regression run"))
     }
 
-    /** Заполняет release name в форме запуска regression run. */
     @Step("Заполняем release name в форме запуска regression run: {releaseName}")
     fun fillReleaseName(releaseName: String) {
         regressionReleaseInput.shouldBe(visible.because("поле ввода release name должно быть видимым для ввода значения")).typeOf(releaseName)
     }
 
-    /** Сохраняет форму запуска regression run и проверяет, что появилась кнопка отмены. */
     @Step("Сохраняем форму запуска regression run и проверяем, что появилась кнопка отмены")
     fun saveRegressionStart() {
         regressionSaveButton.shouldBe(enabled.because("кнопка сохранения формы запуска regression run должна быть доступна перед кликом")).click()
         regressionCancelButton.shouldBe(visible.because("кнопка отмены regression run должна быть видимой после запуска regression run"))
     }
 
-    /** Полностью запускает regression run: открывает форму, вводит release name и сохраняет. */
     @Step("Полностью запускаем regression run: открываем форму, вводим release name {releaseName} и сохраняем")
     fun startRegression(releaseName: String) {
         openStartForm()
@@ -58,14 +54,12 @@ class RegressionWidget {
         saveRegressionStart()
     }
 
-    /** Отменяет активный regression run и проверяет исчезновение кнопки отмены. */
     @Step("Отменяем активный regression run и проверяем исчезновение кнопки отмены")
     fun cancelRegression() {
         regressionCancelButton.shouldBe(visible.because("кнопка отмены regression run должна быть видимой перед кликом")).click()
         regressionCancelButton.should(disappear.because("кнопка отмены regression run должна исчезнуть после отмены regression run"))
     }
 
-    /** Нажимает кнопку остановки активного regression run. */
     @Step("Нажимаем кнопку остановки активного regression run")
     fun stopRegress() {
         regressionStopButton.shouldBe(visible.because("кнопка остановки regression run должна быть видимой перед кликом")).click()
