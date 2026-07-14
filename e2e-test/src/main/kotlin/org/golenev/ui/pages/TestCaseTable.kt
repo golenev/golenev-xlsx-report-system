@@ -74,59 +74,59 @@ class TestCaseTable {
         `$$`("$tableLocator [data-testid='test-case-row']:not([data-state='draft'])")
             .name("Сохранённые строки тест-кейсов")
 
-    @Step("Возвращаем объект существующей строки по Test ID {testId} через операторный доступ table[testId]")
+    @Step("Прокручиваем таблицу к строке с Test ID {testId} и проверяем её отображение")
     operator fun get(testId: String): TestCaseTable = apply { checkRowVisible(testId) }
 
-    @Step("Заполняем поле Test ID в текущей draft-строке: {testId}")
+    @Step("Дожидаемся видимости поля Test ID и вводим значение {testId}")
     fun fillTestId(testId: String) {
         testIdInput
             .shouldBeVisibleForInput("Test ID")
             .typeOf(testId)
     }
 
-    @Step("Заполняем поле Category / Feature в текущей draft-строке: {category}")
+    @Step("Дожидаемся видимости поля Category / Feature и вводим значение {category}")
     fun fillCategory(category: String) {
         categoryInput
             .shouldBeVisibleForInput("Category")
             .typeOf(category)
     }
 
-    @Step("Заполняем поле Short Title в текущей draft-строке: {shortTitle}")
+    @Step("Дожидаемся видимости поля Short Title и вводим значение {shortTitle}")
     fun fillShortTitle(shortTitle: String) {
         shortTitleInput
             .shouldBeVisibleForInput("Short Title")
             .typeOf(shortTitle)
     }
 
-    @Step("Заполняем поле YouTrack Issue Link в текущей draft-строке: {issueLink}")
+    @Step("Дожидаемся видимости поля YouTrack Issue Link и вводим значение {issueLink}")
     fun fillIssueLink(issueLink: String) {
         issueLinkInput
             .shouldBeVisibleForInput("Issue Link")
             .typeOf(issueLink)
     }
 
-    @Step("Выбираем General Test Status в текущей draft-строке: {status}")
+    @Step("Дожидаемся видимости dropdown General Test Status, раскрываем его и нажимаем опцию {status}")
     fun selectGeneralStatus(status: String) {
         generalStatusDropdown.shouldBe(visible.because("выпадающий список статуса должен быть видимым для выбора значения"))
         generalStatusDropdown.`$`("summary").name("Summary dropdown General Test Status внутри строки.").click()
         generalStatusDropdown.`$$`("button[data-testid='status-option']").findBy(text(status)).name("Опция $status в dropdown General Test Status внутри строки.").click()
     }
 
-    @Step("Выбираем Priority в текущей draft-строке: {priority}")
+    @Step("Дожидаемся видимости select Priority и выбираем значение {priority}")
     fun selectPriority(priority: String) {
         prioritySelect
             .shouldBe(visible.because("выпадающий список приоритета должен быть видимым для выбора значения"))
             .selectOption(priority)
     }
 
-    @Step("Заполняем текстовый detailed scenario в текущей draft-строке")
+    @Step("Дожидаемся видимости textarea Detailed Scenario и вводим текст сценария")
     fun fillDetailedScenario(scenario: String) {
         detailedScenarioTextarea
             .shouldBe(visible.because("поле сценария должно быть видимым для ввода значения"))
             .typeOf(scenario)
     }
 
-    @Step("Заполняем structured detailed scenario шагами и вложениями в текущей draft-строке")
+    @Step("Для каждого шага structured scenario проверяем строку, вводим текст и при наличии заполняем вложение")
     fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) {
         steps.forEach { step ->
             `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='${step.number}']")
@@ -146,14 +146,14 @@ class TestCaseTable {
         }
     }
 
-    @Step("Заполняем поле Notes в текущей draft-строке")
+    @Step("Дожидаемся видимости поля Notes и вводим значение")
     fun fillNotes(notes: String) {
         notesTextarea
             .shouldBeVisibleForInput("Notes")
             .typeOf(notes)
     }
 
-    @Step("Сохраняем текущую draft-строку")
+    @Step("Дожидаемся доступности кнопки сохранения draft-строки, нажимаем её и проверяем скрытие draft-строки")
     fun saveNewRow() {
         draftSaveButton
             .shouldBe(enabled.because("кнопка сохранения должна быть доступна после заполнения обязательных полей"))
@@ -161,7 +161,7 @@ class TestCaseTable {
         draftRow.shouldBe(hidden.because("после сохранения черновая строка должна скрыться"))
     }
 
-    @Step("Выбираем regression status {status} в колонке Regress Run для тест-кейса {testId}")
+    @Step("Находим строку с Test ID {testId}, дожидаемся доступности select Regress Run и выбираем значение {status}")
     fun selectRegressionStatus(testId: String, status: String) {
         val rowLocator = savedRowLocator(testId)
         `$`(rowLocator)
@@ -173,7 +173,7 @@ class TestCaseTable {
             .selectOption(status)
     }
 
-    @Step("Обновляем значение Category / Feature у тест-кейса {testId}: {newValue}")
+    @Step("Находим поле Category / Feature в строке с Test ID {testId}, дожидаемся видимости и устанавливаем значение {newValue}")
     fun updateCategory(testId: String, newValue: String) {
         val rowLocator = savedRowLocator(testId)
         `$`("$rowLocator [data-testid='test-case-cell'][data-name='Category / Feature'] textarea, $rowLocator [data-testid='test-case-cell'][data-name='Category / Feature'] input")
@@ -182,19 +182,19 @@ class TestCaseTable {
             .setValue(newValue)
     }
 
-    @Step("Проверяем, что кнопка Add Row недоступна, пока нельзя начать создание новой строки")
+    @Step("Прокручиваем к кнопке Add Row и проверяем, что она disabled")
     fun checkAddRowDisabled() {
         addRowButton
             .scrollIntoView(instant().block(start))
             .shouldBe(disabled.because("кнопка Add Row должна быть недоступна, пока форма создания строки не готова к сохранению"))
     }
 
-    @Step("Проверяем, что кнопка Add Row доступна для начала создания тест-кейса")
+    @Step("Проверяем, что кнопка Add Row enabled")
     fun checkAddRowEnabled() {
         addRowButton.shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса"))
     }
 
-    @Step("Проверяем, что сохранённая строка тест-кейса {testId} отображается")
+    @Step("Прокручиваем к строке с Test ID {testId} и проверяем её видимость")
     fun checkRowVisible(testId: String) {
         `$`(savedRowLocator(testId))
             .name("Строка тест-кейса $testId")
@@ -202,47 +202,47 @@ class TestCaseTable {
             .shouldBe(visible.because("строка тест-кейса должна быть видимой на странице после прокрутки"))
     }
 
-    @Step("Проверяем, что строка тест-кейса {testId} исчезла со страницы")
+    @Step("Проверяем исчезновение строки с Test ID {testId}")
     fun checkRowDisappeared(testId: String) {
         `$`(savedRowLocator(testId))
             .name("Строка тест-кейса $testId")
             .shouldBe(disappear.because("строка тест-кейса должна исчезнуть после выполненного действия"))
     }
 
-    @Step("Проверяем количество сохранённых строк тест-кейсов без учёта draft-строки: {expectedCount}")
+    @Step("Проверяем количество сохранённых строк таблицы без учёта draft-строки: {expectedCount}")
     fun checkSavedRowsCount(expectedCount: Int) {
         savedRows.shouldHave(size(expectedCount).because("количество сохранённых строк тест-кейсов должно соответствовать ожидаемому"))
     }
 
-    @Step("Нажимаем Add Row и проверяем, что на странице появилась draft-строка")
+    @Step("Дожидаемся доступности кнопки Add Row, нажимаем её и проверяем появление draft-строки")
     fun startNewRow() {
         addRowButton.shouldBe(enabled.because("кнопка добавления строки должна быть доступна для начала создания тест-кейса")).click()
         checkDraftRowVisibleAfterCreation()
     }
 
-    @Step("Проверяем, что кнопка сохранения draft-строки недоступна")
+    @Step("Проверяем, что кнопка сохранения draft-строки disabled")
     fun checkDraftSaveDisabled() {
         draftSaveButton.shouldBe(disabled.because("кнопка сохранения draft-строки должна быть недоступна, пока форма создания строки не готова к сохранению"))
     }
 
-    @Step("Проверяем, что кнопка сохранения draft-строки доступна")
+    @Step("Проверяем, что кнопка сохранения draft-строки enabled")
     fun checkDraftSaveEnabled() {
         draftSaveButton.shouldBe(enabled.because("кнопка сохранения должна быть доступна после заполнения обязательных полей"))
     }
 
-    @Step("Проверяем, что Ready Date текущей draft-строки содержит ожидаемую дату {expectedDate}")
+    @Step("Проверяем текст ячейки Ready Date в draft-строке: {expectedDate}")
     fun checkDraftReadyDate(expectedDate: String) {
         draftReadyDateCell.shouldHave(text(expectedDate).because("ячейка Ready Date должна содержать ожидаемую дату"))
     }
 
-    @Step("Проверяем, что Ready Date сохранённой строки {testId} содержит ожидаемую дату {expectedDate}")
+    @Step("Находим ячейку Ready Date в строке с Test ID {testId} и проверяем текст {expectedDate}")
     fun checkReadyDate(testId: String, expectedDate: String) {
         `$`("${savedRowLocator(testId)} [data-testid='test-case-cell'][data-name='Ready Date']")
             .name("Ячейка Ready Date внутри строки.")
             .shouldHave(text(expectedDate).because("ячейка Ready Date должна содержать ожидаемую дату"))
     }
 
-    @Step("Устанавливаем фокус в поле Category / Feature у строки {testId}")
+    @Step("Находим поле Category / Feature в строке с Test ID {testId}, дожидаемся видимости и нажимаем его")
     fun focusOnCategory(testId: String) {
         val rowLocator = savedRowLocator(testId)
         `$`("$rowLocator [data-testid='test-case-cell'][data-name='Category / Feature'] textarea, $rowLocator [data-testid='test-case-cell'][data-name='Category / Feature'] input")
@@ -255,7 +255,7 @@ class TestCaseTable {
         draftRow.shouldBe(visible.because("после нажатия добавления должна появиться черновая строка"))
     }
 
-    @Step("Заполняем вложение шага {stepNumber} structured scenario и сворачиваем редактор вложения")
+    @Step("Открываем редактор вложения шага {stepNumber}, вводим содержимое, сохраняем и проверяем сворачивание поля")
     private fun fillScenarioStepAttachment(stepNumber: Int, attachment: String) {
         `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='$stepNumber'] [data-testid='scenario-attachment-add-button']")
             .name("Кнопка добавления вложения шага detailed scenario.")
