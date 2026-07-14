@@ -20,13 +20,13 @@ class WarningPopup {
 
     private val card: SelenideElement = `$`(".popup-card").name("Карточка warning popup.")
 
-    @Step("Проверяем стандартный warning popup о незаполненных статусах перед остановкой регресса")
+    @Step("Проверяем текст сообщения и заголовка warning popup о незаполненных статусах")
     fun checkDefaultRegressionWarning() {
         message.shouldHave(exactText("Перед остановкой регресса заполните результаты для всех тест-кейсов.").because("попап должен объяснять, почему нельзя остановить регресс без заполненных статусов"))
         title.shouldHave(exactText("Не все статусы заполнены").because("заголовок попапа должен указывать на незаполненные статусы"))
     }
 
-    @Step("Закрываем warning popup и проверяем, что карточка попапа исчезла")
+    @Step("Нажимаем кнопку закрытия warning popup и дожидаемся исчезновения карточки")
     fun close() {
         closeButton.click()
         card.shouldBe(disappear.because("попап должен закрыться после нажатия кнопки закрытия"))
