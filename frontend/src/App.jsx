@@ -240,8 +240,54 @@ function hasScenarioStepContent(step) {
   );
 }
 
+function appendScenarioAttachment(step, content) {
+  if (!step || !content?.trim()) return;
+  const separator = step.attachment?.trim() ? '\n' : '';
+  step.attachment = `${step.attachment ?? ''}${separator}${content.trim()}`;
+  step.attachmentOpen = true;
+}
+
+function repairFlatScenarioAttachmentSteps(steps) {
+  const repaired = [];
+  let attachmentTarget = null;
+  let attachmentMode = false;
+
+  steps.forEach((step) => {
+    const normalizedStep = normalizeScenarioStep(step);
+    const trimmedText = normalizedStep.text.trim();
+
+    if (trimmedText.startsWith('```')) {
+      attachmentMode = !attachmentMode;
+      attachmentTarget = attachmentMode ? repaired.at(-1) ?? attachmentTarget : null;
+      return;
+    }
+
+    if (attachmentMode) {
+      appendScenarioAttachment(attachmentTarget, trimmedText);
+      if (normalizedStep.attachment.trim()) {
+        appendScenarioAttachment(attachmentTarget, normalizedStep.attachment);
+      }
+      return;
+    }
+
+    if (/^Attachment:/i.test(trimmedText) && repaired.length) {
+      attachmentTarget = repaired.at(-1);
+      appendScenarioAttachment(attachmentTarget, trimmedText);
+      if (normalizedStep.attachment.trim()) {
+        appendScenarioAttachment(attachmentTarget, normalizedStep.attachment);
+      }
+      return;
+    }
+
+    normalizedStep.subSteps = repairFlatScenarioAttachmentSteps(normalizedStep.subSteps ?? []);
+    repaired.push(normalizedStep);
+  });
+
+  return repaired;
+}
+
 function ensureEditableScenarioRows(steps) {
-  const normalized = steps.map(normalizeScenarioStep);
+  const normalized = repairFlatScenarioAttachmentSteps(steps);
 
   while (normalized.length < MIN_SCENARIO_STEPS) {
     normalized.push(createScenarioStep());

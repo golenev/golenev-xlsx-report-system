@@ -406,12 +406,65 @@ class TestReportService(
         val trimmed = stored.trim()
         if (trimmed.startsWith("{")) {
             try {
-                return objectMapper.readValue(trimmed, ScenarioRequest::class.java)
+                return repairFlatScenarioAttachmentSteps(objectMapper.readValue(trimmed, ScenarioRequest::class.java))
             } catch (ex: Exception) {
                 // Existing text storage can contain non-JSON scenarios. Fall through and expose them as structured steps.
             }
         }
         return buildScenarioFromText(stored)
+    }
+
+    /**
+     * Склеивает legacy JSON, где строки markdown-вложений могли сохраниться как отдельные шаги.
+     */
+    private fun repairFlatScenarioAttachmentSteps(scenario: ScenarioRequest): ScenarioRequest = ScenarioRequest(
+        steps = repairFlatScenarioAttachmentSteps(scenario.steps)
+    )
+
+    private fun repairFlatScenarioAttachmentSteps(steps: List<ScenarioStepRequest>): List<ScenarioStepRequest> {
+        val repaired = mutableListOf<ScenarioStepRequest>()
+        val pendingAttachments = mutableMapOf<Int, MutableList<String>>()
+        var attachmentTargetIndex: Int? = null
+        var attachmentMode = false
+
+        steps.forEach { step ->
+            val text = step.text.orEmpty().trim()
+            val attachmentContent = step.attachments.orEmpty()
+                .mapNotNull { it.content?.trim()?.takeIf(String::isNotBlank) }
+
+            if (text.startsWith("```")) {
+                attachmentMode = !attachmentMode
+                attachmentTargetIndex = if (attachmentMode) repaired.lastIndex.takeIf { it >= 0 } else null
+                return@forEach
+            }
+
+            if (attachmentMode) {
+                attachmentTargetIndex?.let { targetIndex ->
+                    pendingAttachments.getOrPut(targetIndex) { mutableListOf() }.add(text)
+                    pendingAttachments.getValue(targetIndex).addAll(attachmentContent)
+                }
+                return@forEach
+            }
+
+            if (text.startsWith("Attachment:", ignoreCase = true) && repaired.isNotEmpty()) {
+                val targetIndex = repaired.lastIndex
+                pendingAttachments.getOrPut(targetIndex) { mutableListOf() }.add(text)
+                pendingAttachments.getValue(targetIndex).addAll(attachmentContent)
+                return@forEach
+            }
+
+            repaired.add(step.copy(subSteps = repairFlatScenarioAttachmentSteps(step.subSteps)))
+        }
+
+        return repaired.mapIndexed { index, step ->
+            val extraAttachment = pendingAttachments[index]
+                ?.filter { it.isNotBlank() }
+                ?.joinToString("\n")
+                ?.takeIf { it.isNotBlank() }
+                ?.let { ScenarioAttachmentRequest(type = "text", content = it) }
+
+            if (extraAttachment == null) step else step.copy(attachments = step.attachments.orEmpty() + extraAttachment)
+        }
     }
 
     /**
