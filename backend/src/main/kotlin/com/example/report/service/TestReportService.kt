@@ -365,28 +365,38 @@ class TestReportService(
      * Валидирует структурированный сценарий и сериализует непустые шаги в JSON для хранения.
      */
     private fun normalizeStructuredScenario(scenario: ScenarioRequest): String {
-        val normalizedSteps = scenario.steps.mapNotNull { step ->
-            val number = step.number
-                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps.number is required")
-            val text = step.text?.trim()
-                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps.text is required")
-            val attachments = step.attachments
-                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field scenario.steps.attachments must be an array")
-
-            if (text.isEmpty() && attachments.isEmpty()) return@mapNotNull null
-
-            ScenarioStepRequest(
-                number = number,
-                text = text,
-                attachments = attachments,
-            )
-        }
+        val normalizedSteps = normalizeScenarioSteps(scenario.steps, "scenario.steps")
 
         if (normalizedSteps.isEmpty()) {
             requiredFieldMissing("scenario")
         }
 
         return objectMapper.writeValueAsString(ScenarioRequest(steps = normalizedSteps))
+    }
+
+    /**
+     * Рекурсивно валидирует структурированные шаги и сохраняет вложенность подшагов.
+     */
+    private fun normalizeScenarioSteps(
+        steps: List<ScenarioStepRequest>,
+        fieldPath: String,
+    ): List<ScenarioStepRequest> = steps.mapNotNull { step ->
+        val number = step.number
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field $fieldPath.number is required")
+        val text = step.text?.trim()
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field $fieldPath.text is required")
+        val attachments = step.attachments
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field $fieldPath.attachments must be an array")
+        val subSteps = normalizeScenarioSteps(step.subSteps, "$fieldPath.subSteps")
+
+        if (text.isEmpty() && attachments.isEmpty() && subSteps.isEmpty()) return@mapNotNull null
+
+        ScenarioStepRequest(
+            number = number,
+            text = text,
+            attachments = attachments,
+            subSteps = subSteps,
+        )
     }
 
     /**
@@ -405,24 +415,89 @@ class TestReportService(
     }
 
     /**
-     * Строит структурированный сценарий из многострочного текста, превращая непустые строки в шаги.
+     * Строит структурированный сценарий из многострочного текста, сохраняя вложенность шагов и блоки вложений.
      */
     fun buildScenarioFromText(rawScenario: String): ScenarioRequest {
-        val steps = rawScenario
-            .lineSequence()
-            .map { line -> line.trim() }
-            .filter { line -> line.isNotEmpty() && !line.matches(Regex("""^\*\*[^*]+\*\*:\s*$""")) }
-            .mapIndexed { index, line ->
-                ScenarioStepRequest(
-                    number = index + 1,
-                    text = line.replace(Regex("""^(?:[-*+]|•)?\s*\d+(?:\.\d+)*\.?\s+"""), ""),
-                    attachments = emptyList(),
-                )
-            }
-            .toList()
+        val rootSteps = mutableListOf<MutableScenarioStep>()
+        val stack = mutableListOf<MutableScenarioStep>()
+        var current: MutableScenarioStep? = null
+        var attachmentMode = false
 
-        return ScenarioRequest(steps = steps)
+        fun addStep(step: MutableScenarioStep, level: Int) {
+            val safeLevel = level.coerceAtLeast(0)
+            while (stack.size > safeLevel) stack.removeAt(stack.lastIndex)
+
+            if (safeLevel == 0 || stack.getOrNull(safeLevel - 1) == null) {
+                rootSteps.add(step)
+                stack.clear()
+                stack.add(step)
+            } else {
+                val parent = stack[safeLevel - 1]
+                parent.subSteps.add(step)
+                if (stack.size > safeLevel) {
+                    stack[safeLevel] = step
+                } else {
+                    stack.add(step)
+                }
+            }
+            while (stack.size > safeLevel + 1) stack.removeAt(stack.lastIndex)
+            current = step
+        }
+
+        rawScenario.replace("\r\n", "\n").lines().forEach { line ->
+            val trimmed = line.trim()
+            if (trimmed.isEmpty() || trimmed == "Шаги не найдены" || trimmed.matches(Regex("""^\*\*[^*]+\*\*:\s*$"""))) {
+                return@forEach
+            }
+
+            if (trimmed.startsWith("```")) {
+                attachmentMode = !attachmentMode
+                return@forEach
+            }
+
+            val numberedMatch = Regex("""^\s*(?:[-*+]|•)?\s*(\d+(?:\.\d+)*\.?)\s+(.*)$""").find(line)
+            if (numberedMatch != null && !attachmentMode) {
+                val numberToken = numberedMatch.groupValues[1]
+                val level = scenarioLineLevel(line, numberToken)
+                addStep(MutableScenarioStep(text = numberedMatch.groupValues[2].trim()), level)
+                return@forEach
+            }
+
+            val attachmentHeader = trimmed.startsWith("Attachment:", ignoreCase = true)
+            if (attachmentHeader || attachmentMode) {
+                current?.attachmentLines?.add(if (attachmentHeader) trimmed else line.trimStart())
+                return@forEach
+            }
+
+            current?.let { step ->
+                step.text = listOf(step.text, trimmed).filter { it.isNotBlank() }.joinToString("\n")
+            } ?: addStep(MutableScenarioStep(text = trimmed), 0)
+        }
+
+        return ScenarioRequest(steps = rootSteps.mapIndexed { index, step -> step.toRequest(index + 1) })
     }
+
+    private fun scenarioLineLevel(line: String, numberToken: String): Int {
+        val indentLevel = line.takeWhile { it.isWhitespace() }.replace("\t", "  ").length / 2
+        val numberLevel = numberToken.trimEnd('.').split('.').filter { it.isNotBlank() }.size - 1
+        return maxOf(indentLevel, numberLevel, 0)
+    }
+
+    private data class MutableScenarioStep(
+        var text: String,
+        val attachmentLines: MutableList<String> = mutableListOf(),
+        val subSteps: MutableList<MutableScenarioStep> = mutableListOf(),
+    ) {
+        fun toRequest(number: Int): ScenarioStepRequest = ScenarioStepRequest(
+            number = number,
+            text = text,
+            attachments = attachmentLines.takeIf { it.isNotEmpty() }?.let { lines ->
+                listOf(ScenarioAttachmentRequest(type = "text", content = lines.joinToString("\n").trim()))
+            } ?: emptyList(),
+            subSteps = subSteps.mapIndexed { index, step -> step.toRequest(index + 1) },
+        )
+    }
+
 
     /**
      * Нормализует обязательное строковое поле или использует существующее значение при разрешённом fallback.

@@ -216,16 +216,32 @@ function renderMarkdown(text) {
 
 const MIN_SCENARIO_STEPS = 2;
 
-function createScenarioStep(text = '', attachment = '') {
-  return { text, attachment, attachmentOpen: Boolean(attachment?.trim()) };
+function createScenarioStep(text = '', attachment = '', subSteps = []) {
+  return { text, attachment, attachmentOpen: Boolean(attachment?.trim()), subSteps };
+}
+
+function normalizeScenarioStep(step = {}) {
+  const attachments = Array.isArray(step.attachments)
+    ? step.attachments.map((attachment) => attachment.content ?? '').filter(Boolean).join('\n')
+    : step.attachment ?? '';
+
+  return createScenarioStep(
+    step.text ?? '',
+    attachments,
+    Array.isArray(step.subSteps) ? step.subSteps.map(normalizeScenarioStep) : []
+  );
+}
+
+function hasScenarioStepContent(step) {
+  return Boolean(
+    step?.text?.trim()
+    || step?.attachment?.trim()
+    || step?.subSteps?.some(hasScenarioStepContent)
+  );
 }
 
 function ensureEditableScenarioRows(steps) {
-  const normalized = steps.map((step) => ({
-    text: step.text ?? '',
-    attachment: step.attachment ?? '',
-    attachmentOpen: Boolean(step.attachmentOpen || step.attachment?.trim())
-  }));
+  const normalized = steps.map(normalizeScenarioStep);
 
   while (normalized.length < MIN_SCENARIO_STEPS) {
     normalized.push(createScenarioStep());
@@ -239,17 +255,15 @@ function ensureEditableScenarioRows(steps) {
   return normalized;
 }
 
+function getScenarioLineLevel(line, numberToken) {
+  const indentLevel = Math.floor((/^\s*/.exec(line)?.[0].replace(/\t/g, '  ').length ?? 0) / 2);
+  const numberLevel = numberToken ? numberToken.replace(/\.$/, '').split('.').filter(Boolean).length - 1 : 0;
+  return Math.max(indentLevel, numberLevel, 0);
+}
+
 function parseScenarioSteps(rawText) {
   if (rawText && typeof rawText === 'object' && Array.isArray(rawText.steps)) {
-    return ensureEditableScenarioRows(
-      rawText.steps.map((step) => ({
-        text: step.text ?? '',
-        attachment: Array.isArray(step.attachments)
-          ? step.attachments.map((attachment) => attachment.content ?? '').filter(Boolean).join('\n')
-          : '',
-        attachmentOpen: Array.isArray(step.attachments) && step.attachments.length > 0
-      }))
-    );
+    return ensureEditableScenarioRows(rawText.steps);
   }
 
   const normalized = (rawText || '').replace(/\r\n/g, '\n');
@@ -258,87 +272,125 @@ function parseScenarioSteps(rawText) {
   }
 
   const lines = normalized.split('\n');
-  const steps = [];
+  const rootSteps = [];
+  const stack = [];
   let current = null;
   let attachmentMode = false;
 
-  const pushCurrent = () => {
-    if (current) {
-      current.text = current.text.replace(/\n+$/g, '');
-      current.attachment = current.attachment.replace(/\n+$/g, '');
-      steps.push(current);
+  const addStep = (step, level) => {
+    const safeLevel = Math.max(level, 0);
+    while (stack.length > safeLevel) stack.pop();
+
+    if (safeLevel === 0 || !stack[safeLevel - 1]) {
+      rootSteps.push(step);
+      stack.length = 0;
+      stack[0] = step;
+    } else {
+      const parent = stack[safeLevel - 1];
+      parent.subSteps = parent.subSteps ?? [];
+      parent.subSteps.push(step);
+      stack[safeLevel] = step;
     }
+
+    stack.length = safeLevel + 1;
+    current = step;
   };
 
   lines.forEach((line) => {
-    const titleMatch = /^\*\*[^*]+\*\*:\s*$/.exec(line.trim());
+    const trimmed = line.trim();
+    const titleMatch = /^\*\*[^*]+\*\*:\s*$/.exec(trimmed);
     if (titleMatch) return;
+
+    if (trimmed.startsWith('```')) {
+      attachmentMode = !attachmentMode;
+      if (current) current.attachmentOpen = true;
+      return;
+    }
 
     const numberedMatch = /^\s*(?:[-*+]|•)?\s*(\d+(?:\.\d+)*\.?)\s+(.*)$/.exec(line);
     if (numberedMatch && !attachmentMode) {
-      pushCurrent();
-      current = createScenarioStep(numberedMatch[2]);
+      const level = getScenarioLineLevel(line, numberedMatch[1]);
+      addStep(createScenarioStep(numberedMatch[2].trim()), level);
+      return;
+    }
+
+    const bulletMatch = /^(\s*)(?:[-*+]|•)\s+(.*)$/.exec(line);
+    if (bulletMatch && !attachmentMode && !/^Attachment:/i.test(bulletMatch[2].trim())) {
+      const level = getScenarioLineLevel(line, null);
+      addStep(createScenarioStep(bulletMatch[2].trim()), level);
       return;
     }
 
     if (!current) {
-      if (!line.trim() || line.trim() === 'Шаги не найдены') return;
-      current = createScenarioStep(line.trim());
+      if (!trimmed || trimmed === 'Шаги не найдены') return;
+      addStep(createScenarioStep(trimmed), 0);
       return;
     }
 
-    if (line.trim().startsWith('```')) {
-      attachmentMode = !attachmentMode;
+    if (/^Attachment:/i.test(trimmed)) {
       current.attachmentOpen = true;
-      return;
-    }
-
-    if (/^\s*Attachment:/i.test(line)) {
-      current.attachmentOpen = true;
-      current.attachment += `${current.attachment ? '\n' : ''}${line.trim()}`;
+      current.attachment += `${current.attachment ? '\n' : ''}${trimmed}`;
       return;
     }
 
     if (attachmentMode || current.attachmentOpen) {
       current.attachment += `${current.attachment ? '\n' : ''}${line.replace(/^\s{2,}/, '')}`;
-    } else if (line.trim()) {
-      current.text += `${current.text ? '\n' : ''}${line.trim()}`;
+    } else if (trimmed) {
+      current.text += `${current.text ? '\n' : ''}${trimmed}`;
     }
   });
 
-  pushCurrent();
-  return ensureEditableScenarioRows(steps);
+  return ensureEditableScenarioRows(rootSteps);
+}
+
+function serializeScenarioForRequest(step, index) {
+  const payload = {
+    number: index + 1,
+    text: step.text.trim(),
+    attachments: step.attachment.trim()
+      ? [{ type: 'text', content: step.attachment.trim() }]
+      : []
+  };
+
+  const subSteps = (step.subSteps ?? [])
+    .filter(hasScenarioStepContent)
+    .map(serializeScenarioForRequest);
+  if (subSteps.length) payload.subSteps = subSteps;
+
+  return payload;
 }
 
 function buildStructuredScenario(steps) {
   const scenarioSteps = parseScenarioSteps(steps)
-    .filter((step) => step.text.trim() || step.attachment.trim())
-    .map((step, index) => ({
-      number: index + 1,
-      text: step.text.trim(),
-      attachments: step.attachment.trim()
-        ? [{ type: 'text', content: step.attachment.trim() }]
-        : []
-    }));
+    .filter(hasScenarioStepContent)
+    .map(serializeScenarioForRequest);
 
   return scenarioSteps.length ? { steps: scenarioSteps } : null;
 }
 
 function serializeScenarioSteps(steps) {
-  const meaningfulSteps = steps.filter((step) => step.text.trim() || step.attachment.trim());
+  const meaningfulSteps = steps.filter(hasScenarioStepContent);
   if (!meaningfulSteps.length) return '';
 
-  return meaningfulSteps
-    .map((step, index) => {
-      const lines = [`${index + 1}. ${step.text.trim()}`];
-      if (step.attachment.trim()) {
-        lines.push('   ```');
-        step.attachment.trim().split('\n').forEach((line) => lines.push(`   ${line}`));
-        lines.push('   ```');
-      }
-      return lines.join('\n');
-    })
-    .join('\n');
+  const renderStep = (step, index, level = 0) => {
+    const indent = '   '.repeat(level);
+    const lines = [`${indent}${index + 1}. ${step.text.trim()}`];
+    if (step.attachment.trim()) {
+      lines.push(`${indent}   ${'`'.repeat(3)}`);
+      step.attachment.trim().split('\n').forEach((line) => lines.push(`${indent}   ${line}`));
+      lines.push(`${indent}   ${'`'.repeat(3)}`);
+    }
+    (step.subSteps ?? []).filter(hasScenarioStepContent).forEach((subStep, subIndex) => {
+      lines.push(renderStep(subStep, subIndex, level + 1));
+    });
+    return lines.join('\n');
+  };
+
+  return meaningfulSteps.map((step, index) => renderStep(step, index)).join('\n');
+}
+
+function flattenScenarioSteps(steps) {
+  return steps.flatMap((step) => [step, ...flattenScenarioSteps(step.subSteps ?? [])]);
 }
 
 
@@ -354,7 +406,7 @@ function appendExportField(lines, label, value, { optional = false } = {}) {
 }
 
 function buildScenarioExportText(item) {
-  const meaningfulSteps = parseScenarioSteps(item.scenario)
+  const meaningfulSteps = flattenScenarioSteps(parseScenarioSteps(item.scenario))
     .filter((step) => step.text.trim() || step.attachment.trim());
   const lines = ['TEST CASE', ''];
 
@@ -474,7 +526,7 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
   const [openAttachmentIndexes, setOpenAttachmentIndexes] = useState(() => new Set());
   const previewRef = useRef(null);
   const steps = useMemo(
-    () => parseScenarioSteps(value).filter((step) => step.text.trim() || step.attachment.trim()),
+    () => parseScenarioSteps(value).filter(hasScenarioStepContent),
     [value]
   );
 
@@ -495,17 +547,83 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, [openAttachmentIndexes]);
 
-  const toggleAttachment = (index) => {
+  const toggleAttachment = (path) => {
     onActivatePreview?.(previewId);
     setOpenAttachmentIndexes((currentIndexes) => {
       const nextIndexes = new Set(activePreviewId === previewId ? currentIndexes : []);
-      if (nextIndexes.has(index)) {
-        nextIndexes.delete(index);
+      if (nextIndexes.has(path)) {
+        nextIndexes.delete(path);
       } else {
-        nextIndexes.add(index);
+        nextIndexes.add(path);
       }
       return nextIndexes;
     });
+  };
+
+  const renderStep = (step, index, path, level = 0) => {
+    const hasAttachment = step.attachment.trim().length > 0;
+    const isAttachmentOpen = openAttachmentIndexes.has(path);
+    const displayNumber = path.split('.').map((segment) => Number(segment) + 1).join('.');
+    const subSteps = (step.subSteps ?? []).filter(hasScenarioStepContent);
+
+    return (
+      <div
+        className={`scenario-preview-step ${level > 0 ? 'scenario-preview-substep' : ''}`}
+        key={`${path}-${step.text}`}
+        data-testid="scenario-step"
+        data-step-number={displayNumber}
+        style={{ '--scenario-step-level': level }}
+      >
+        <div
+          className={`scenario-preview-step-header scenario-preview-${displayNumber}-step-header`}
+          data-testid="scenario-step-header"
+          data-step-number={displayNumber}
+        >
+          <span className="scenario-preview-number" data-testid="scenario-step-number">{displayNumber}</span>
+          <span className="scenario-preview-status" aria-hidden="true" />
+          <span className="scenario-preview-text" data-testid="scenario-step-text">{step.text.trim()}</span>
+          {hasAttachment && (
+            <span className="scenario-preview-attachment">
+              <button
+                type="button"
+                className={`scenario-preview-attachment-button ${isAttachmentOpen ? 'open' : ''}`}
+                data-testid="scenario-attachment-button"
+                data-step-number={displayNumber}
+                title="Показать вложение"
+                aria-label={`Показать вложение шага ${displayNumber}`}
+                aria-expanded={isAttachmentOpen}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleAttachment(path);
+                }}
+              >
+                <PaperclipIcon />
+              </button>
+            </span>
+          )}
+        </div>
+        {hasAttachment && isAttachmentOpen && (
+          <div
+            className="scenario-preview-attachment-panel"
+            data-testid="scenario-attachment-popover"
+            data-step-number={displayNumber}
+            role="region"
+            aria-label={`Вложение шага ${displayNumber}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="scenario-preview-attachment-title">Вложение шага {displayNumber}</div>
+            <div data-testid="scenario-attachment-item" data-attachment-index="0">
+              <pre className="scenario-preview-attachment-content" data-testid="scenario-attachment-content">{step.attachment.trim()}</pre>
+            </div>
+          </div>
+        )}
+        {subSteps.length > 0 && (
+          <div className="scenario-preview-substeps">
+            {subSteps.map((subStep, subIndex) => renderStep(subStep, subIndex, `${path}.${subIndex}`, level + 1))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (!steps.length) {
@@ -514,57 +632,7 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
 
   return (
     <div className="scenario-preview-list" data-testid="scenario-preview" ref={previewRef}>
-      {steps.map((step, index) => {
-        const hasAttachment = step.attachment.trim().length > 0;
-        const isAttachmentOpen = openAttachmentIndexes.has(index);
-
-        return (
-          <div className="scenario-preview-step" key={`${index}-${step.text}`} data-testid="scenario-step" data-step-number={index + 1}>
-            <div
-              className={`scenario-preview-step-header scenario-preview-${index + 1}-step-header`}
-              data-testid="scenario-step-header"
-              data-step-number={index + 1}
-            >
-              <span className="scenario-preview-number" data-testid="scenario-step-number">{index + 1}</span>
-              <span className="scenario-preview-text" data-testid="scenario-step-text">{step.text.trim()}</span>
-              {hasAttachment && (
-                <span className="scenario-preview-attachment">
-                  <button
-                    type="button"
-                    className={`scenario-preview-attachment-button ${isAttachmentOpen ? 'open' : ''}`}
-                    data-testid="scenario-attachment-button"
-                    data-step-number={index + 1}
-                    title="Показать вложение"
-                    aria-label={`Показать вложение шага ${index + 1}`}
-                    aria-expanded={isAttachmentOpen}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      toggleAttachment(index);
-                    }}
-                  >
-                    <PaperclipIcon />
-                  </button>
-                </span>
-              )}
-            </div>
-            {hasAttachment && isAttachmentOpen && (
-              <div
-                className="scenario-preview-attachment-panel"
-                data-testid="scenario-attachment-popover"
-                data-step-number={index + 1}
-                role="region"
-                aria-label={`Вложение шага ${index + 1}`}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <div className="scenario-preview-attachment-title">Вложение шага {index + 1}</div>
-                <div data-testid="scenario-attachment-item" data-attachment-index="0">
-                  <pre className="scenario-preview-attachment-content" data-testid="scenario-attachment-content">{step.attachment.trim()}</pre>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {steps.map((step, index) => renderStep(step, index, String(index)))}
     </div>
   );
 }

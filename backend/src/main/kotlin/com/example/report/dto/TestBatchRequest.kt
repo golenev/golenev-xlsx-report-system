@@ -62,11 +62,13 @@ data class ScenarioRequest(
  * @property number номер шага, который сохраняет порядок действий в сценарии.
  * @property text текст действия или проверки на шаге.
  * @property attachments вложения шага, например request/response, извлечённые из Allure-отчёта.
+ * @property subSteps вложенные шаги сценария, если они есть в Allure-отчёте.
  */
 data class ScenarioStepRequest(
     val number: Int? = null,
     val text: String? = null,
     val attachments: List<ScenarioAttachmentRequest>? = null,
+    val subSteps: List<ScenarioStepRequest> = emptyList(),
 )
 
 /**
