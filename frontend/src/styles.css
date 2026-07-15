@@ -1126,7 +1126,7 @@ tbody tr:nth-child(odd) .row-index-cell {
 
 .scenario-preview-step-header {
   display: grid;
-  grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
+  grid-template-columns: max-content max-content minmax(0, auto) max-content;
   align-items: start;
   gap: 6px;
   max-width: 100%;
@@ -1149,13 +1149,25 @@ tbody tr:nth-child(odd) .row-index-cell {
   margin-top: 2px;
 }
 
-.scenario-preview-status {
-  width: 9px;
-  height: 9px;
-  margin-top: 5px;
-  border-right: 2px solid #8bc75f;
-  border-bottom: 2px solid #8bc75f;
+.scenario-preview-toggle {
+  width: 13px;
+  height: 13px;
+  margin-top: 3px;
+  padding: 0;
+  border: 0;
+  border-right: 3px solid #8bc75f;
+  border-bottom: 3px solid #8bc75f;
+  background: transparent;
+  cursor: pointer;
   transform: rotate(45deg);
+}
+
+.scenario-preview-toggle.collapsed {
+  transform: rotate(-45deg);
+}
+
+.scenario-preview-toggle.empty {
+  cursor: default;
 }
 
 .scenario-preview-number {
@@ -1171,6 +1183,47 @@ tbody tr:nth-child(odd) .row-index-cell {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.scenario-preview-meta {
+  color: #8a8f98;
+  white-space: nowrap;
+}
+
+.scenario-preview-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: 22px;
+}
+
+.scenario-preview-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: 22px;
+}
+
+.scenario-preview-attachment-item {
+  max-width: 100%;
+}
+
+.scenario-preview-attachment-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #111827;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.scenario-preview-attachment-summary::marker {
+  color: #111827;
+}
+
+.scenario-preview-attachment-summary .attachment-paperclip-icon {
+  width: 13px;
+  height: 13px;
 }
 
 .scenario-preview-attachment {

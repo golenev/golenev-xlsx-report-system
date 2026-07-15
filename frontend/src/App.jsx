@@ -216,21 +216,41 @@ function renderMarkdown(text) {
 
 const MIN_SCENARIO_STEPS = 2;
 
-function createScenarioStep(text = '', attachment = '', subSteps = []) {
-  return { text, attachment, attachmentOpen: Boolean(attachment?.trim()), subSteps };
+function createScenarioStep(text = '', attachment = '', subSteps = [], attachments = null) {
+  const normalizedAttachments = Array.isArray(attachments)
+    ? attachments.filter((item) => item?.content?.trim())
+    : (attachment?.trim() ? [{ type: 'text', content: attachment.trim() }] : []);
+
+  return {
+    text,
+    attachment,
+    attachments: normalizedAttachments,
+    attachmentOpen: normalizedAttachments.length > 0 || Boolean(attachment?.trim()),
+    subSteps
+  };
 }
 
 function normalizeScenarioStep(step = {}) {
   const attachments = Array.isArray(step.attachments)
-    ? step.attachments.map((attachment) => attachment.content ?? '').filter(Boolean).join('\n')
+    ? step.attachments
+        .map((attachment) => ({
+          type: attachment.type ?? 'text',
+          content: attachment.content ?? ''
+        }))
+        .filter((attachment) => attachment.content.trim())
+    : [];
+  const attachmentText = attachments.length
+    ? attachments.map((attachment) => attachment.content).join('\n')
     : step.attachment ?? '';
 
   return createScenarioStep(
     step.text ?? '',
-    attachments,
-    Array.isArray(step.subSteps) ? step.subSteps.map(normalizeScenarioStep) : []
+    attachmentText,
+    Array.isArray(step.subSteps) ? step.subSteps.map(normalizeScenarioStep) : [],
+    attachments
   );
 }
+
 
 function hasScenarioStepContent(step) {
   return Boolean(
@@ -240,12 +260,15 @@ function hasScenarioStepContent(step) {
   );
 }
 
-function appendScenarioAttachment(step, content) {
+function appendScenarioAttachment(step, content, type = 'text') {
   if (!step || !content?.trim()) return;
+  const normalizedContent = content.trim();
   const separator = step.attachment?.trim() ? '\n' : '';
-  step.attachment = `${step.attachment ?? ''}${separator}${content.trim()}`;
+  step.attachment = `${step.attachment ?? ''}${separator}${normalizedContent}`;
+  step.attachments = [...(step.attachments ?? []), { type, content: normalizedContent }];
   step.attachmentOpen = true;
 }
+
 
 function repairFlatScenarioAttachmentSteps(steps) {
   const repaired = [];
@@ -389,13 +412,31 @@ function parseScenarioSteps(rawText) {
   return ensureEditableScenarioRows(rootSteps);
 }
 
+function getScenarioStepAttachments(step) {
+  if (Array.isArray(step.attachments) && step.attachments.length) {
+    return step.attachments
+      .map((attachment) => ({
+        type: attachment.type ?? 'text',
+        content: attachment.content ?? ''
+      }))
+      .filter((attachment) => attachment.content.trim());
+  }
+
+  return step.attachment?.trim()
+    ? [{ type: 'text', content: step.attachment.trim() }]
+    : [];
+}
+
+function formatScenarioMeta(count, singular, plural = `${singular}s`) {
+  if (!count) return null;
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
 function serializeScenarioForRequest(step, index) {
   const payload = {
     number: index + 1,
     text: step.text.trim(),
-    attachments: step.attachment.trim()
-      ? [{ type: 'text', content: step.attachment.trim() }]
-      : []
+    attachments: getScenarioStepAttachments(step)
   };
 
   const subSteps = (step.subSteps ?? [])
@@ -569,7 +610,7 @@ function PaperclipIcon() {
 }
 
 function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview }) {
-  const [openAttachmentIndexes, setOpenAttachmentIndexes] = useState(() => new Set());
+  const [collapsedStepPaths, setCollapsedStepPaths] = useState(() => new Set());
   const previewRef = useRef(null);
   const steps = useMemo(
     () => parseScenarioSteps(value).filter(hasScenarioStepContent),
@@ -578,39 +619,57 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
 
   useEffect(() => {
     if (activePreviewId === previewId) return;
-    setOpenAttachmentIndexes(new Set());
+    setCollapsedStepPaths(new Set());
   }, [activePreviewId, previewId]);
 
-  useEffect(() => {
-    if (!openAttachmentIndexes.size) return undefined;
-
-    const handlePointerDown = (event) => {
-      if (previewRef.current?.contains(event.target)) return;
-      setOpenAttachmentIndexes(new Set());
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [openAttachmentIndexes]);
-
-  const toggleAttachment = (path) => {
+  const toggleStepDetails = (path) => {
     onActivatePreview?.(previewId);
-    setOpenAttachmentIndexes((currentIndexes) => {
-      const nextIndexes = new Set(activePreviewId === previewId ? currentIndexes : []);
-      if (nextIndexes.has(path)) {
-        nextIndexes.delete(path);
+    setCollapsedStepPaths((currentPaths) => {
+      const nextPaths = new Set(activePreviewId === previewId ? currentPaths : []);
+      if (nextPaths.has(path)) {
+        nextPaths.delete(path);
       } else {
-        nextIndexes.add(path);
+        nextPaths.add(path);
       }
-      return nextIndexes;
+      return nextPaths;
     });
   };
 
+  const renderAttachment = (attachment, attachmentIndex, stepNumber) => {
+    const title = attachment.type?.trim() && attachment.type !== 'text'
+      ? attachment.type.trim()
+      : attachment.content.trim().split('\n')[0] || `Вложение ${attachmentIndex + 1}`;
+
+    return (
+      <details
+        className="scenario-preview-attachment-item"
+        key={`${stepNumber}-attachment-${attachmentIndex}`}
+        data-testid="scenario-attachment-item"
+        data-attachment-index={attachmentIndex}
+      >
+        <summary
+          className="scenario-preview-attachment-summary"
+          data-testid="scenario-attachment-button"
+          data-step-number={stepNumber}
+        >
+          <PaperclipIcon />
+          <span>{title}</span>
+        </summary>
+        <pre className="scenario-preview-attachment-content" data-testid="scenario-attachment-content">{attachment.content.trim()}</pre>
+      </details>
+    );
+  };
+
   const renderStep = (step, index, path, level = 0) => {
-    const hasAttachment = step.attachment.trim().length > 0;
-    const isAttachmentOpen = openAttachmentIndexes.has(path);
     const displayNumber = path.split('.').map((segment) => Number(segment) + 1).join('.');
     const subSteps = (step.subSteps ?? []).filter(hasScenarioStepContent);
+    const attachments = getScenarioStepAttachments(step);
+    const hasDetails = subSteps.length > 0 || attachments.length > 0;
+    const isCollapsed = collapsedStepPaths.has(path);
+    const metaParts = [
+      formatScenarioMeta(subSteps.length, 'sub-step'),
+      formatScenarioMeta(attachments.length, 'attachment')
+    ].filter(Boolean);
 
     return (
       <div
@@ -626,46 +685,40 @@ function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview 
           data-step-number={displayNumber}
         >
           <span className="scenario-preview-number" data-testid="scenario-step-number">{displayNumber}</span>
-          <span className="scenario-preview-status" aria-hidden="true" />
+          <button
+            type="button"
+            className={`scenario-preview-toggle ${isCollapsed ? 'collapsed' : 'expanded'} ${hasDetails ? '' : 'empty'}`}
+            aria-label={hasDetails ? `${isCollapsed ? 'Развернуть' : 'Свернуть'} детали шага ${displayNumber}` : `Шаг ${displayNumber} без вложенных деталей`}
+            aria-expanded={hasDetails ? !isCollapsed : undefined}
+            disabled={!hasDetails}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (hasDetails) toggleStepDetails(path);
+            }}
+          />
           <span className="scenario-preview-text" data-testid="scenario-step-text">{step.text.trim()}</span>
-          {hasAttachment && (
-            <span className="scenario-preview-attachment">
-              <button
-                type="button"
-                className={`scenario-preview-attachment-button ${isAttachmentOpen ? 'open' : ''}`}
-                data-testid="scenario-attachment-button"
-                data-step-number={displayNumber}
-                title="Показать вложение"
-                aria-label={`Показать вложение шага ${displayNumber}`}
-                aria-expanded={isAttachmentOpen}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  toggleAttachment(path);
-                }}
-              >
-                <PaperclipIcon />
-              </button>
-            </span>
+          {metaParts.length > 0 && (
+            <span className="scenario-preview-meta">{metaParts.join(', ')}</span>
           )}
         </div>
-        {hasAttachment && isAttachmentOpen && (
-          <div
-            className="scenario-preview-attachment-panel"
-            data-testid="scenario-attachment-popover"
-            data-step-number={displayNumber}
-            role="region"
-            aria-label={`Вложение шага ${displayNumber}`}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="scenario-preview-attachment-title">Вложение шага {displayNumber}</div>
-            <div data-testid="scenario-attachment-item" data-attachment-index="0">
-              <pre className="scenario-preview-attachment-content" data-testid="scenario-attachment-content">{step.attachment.trim()}</pre>
-            </div>
-          </div>
-        )}
-        {subSteps.length > 0 && (
-          <div className="scenario-preview-substeps">
-            {subSteps.map((subStep, subIndex) => renderStep(subStep, subIndex, `${path}.${subIndex}`, level + 1))}
+        {hasDetails && !isCollapsed && (
+          <div className="scenario-preview-details">
+            {subSteps.length > 0 && (
+              <div className="scenario-preview-substeps">
+                {subSteps.map((subStep, subIndex) => renderStep(subStep, subIndex, `${path}.${subIndex}`, level + 1))}
+              </div>
+            )}
+            {attachments.length > 0 && (
+              <div
+                className="scenario-preview-attachments"
+                data-testid="scenario-attachment-popover"
+                data-step-number={displayNumber}
+                role="region"
+                aria-label={`Вложения шага ${displayNumber}`}
+              >
+                {attachments.map((attachment, attachmentIndex) => renderAttachment(attachment, attachmentIndex, displayNumber))}
+              </div>
+            )}
           </div>
         )}
       </div>
