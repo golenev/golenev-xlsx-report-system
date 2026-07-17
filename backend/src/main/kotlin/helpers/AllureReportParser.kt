@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.example.report.dto.ScenarioAttachmentRequest
+import com.example.report.dto.ScenarioRequest
+import com.example.report.dto.ScenarioStepRequest
+import com.example.report.dto.ScenarioParameterRequest
 import org.slf4j.LoggerFactory
 import org.springframework.web.util.HtmlUtils
 
@@ -36,6 +40,8 @@ data class Step(
     val parameters: List<Parameter>?,
     val steps: List<Step>?,
     val attachments: List<Attachment>?,
+    val start: Long?,
+    val stop: Long?,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -63,7 +69,7 @@ data class Label(
 data class TestCaseModel(
     val id: String, // 455 или 455-1, 455-2...
     val name: String, // название теста
-    val scenario: String, // сценарий в том же виде, как раньше печатался
+    val scenario: ScenarioRequest, // структурированный сценарий с шагами, подшагами и вложениями
     val category: String, // значение @DisplayName на классе (Allure label "suite")
     val runStatus: String?,
 )
@@ -77,7 +83,7 @@ data class AllureUpload(
 private data class RawTestCase(
     val baseId: String?, // 455 из AS_ID, ещё без -1/-2
     val name: String, // чистое название теста
-    val scenario: String, // блок "**Сценарий**: ..." со всеми шагами
+    val scenario: ScenarioRequest, // структурированный сценарий со всеми шагами
     val category: String, // suite = имя категории/класса
     val runStatus: String?,
 )
@@ -166,7 +172,7 @@ private fun formatAttachmentContent(attachment: Attachment, upload: AllureUpload
     if (!isText) {
         val safeType = type ?: "unknown"
         val size = attachment.size ?: upload.content.size.toLong()
-        return "[binary attachment: $safeType; file=$sourceName; size=$size]"
+        return "[binary attachment: $safeType; size=$size]"
     }
 
     val rawText = upload.content.toString(Charsets.UTF_8)
@@ -195,73 +201,50 @@ private fun extractRawTestCase(
     }
 
     /**
-     * Достаёт вложения шага и превращает их в блок текста с понятными заголовками.
+     * Достаёт вложения шага и превращает их в структурированные attachment DTO.
      */
-    fun processAttachments(step: Step, level: Int): List<String> {
-        if (!attachmentsEnabled) return emptyList()
-
-        val files = step.attachments ?: return emptyList()
-        val indentPrefix = " ".repeat((level + 1) * 2)
-        val contentIndent = " ".repeat((level + 2) * 2)
-
+    fun processAttachments(step: Step): List<ScenarioAttachmentRequest> {
+        val files = step.attachments.orEmpty()
         if (files.isEmpty()) return emptyList()
 
-        val attachmentLines = files.flatMap { attachment ->
+        return files.map { attachment ->
             val sourceName = attachment.source ?: "unknown"
             val title = attachment.name ?: "Attachment"
-            val header = "${indentPrefix}Attachment: $title ($sourceName)"
             val upload = filesByName[baseName(sourceName)]
             val content = upload?.let { formatAttachmentContent(attachment, it) }
-                ?: "[Attachment missing] $title -> $sourceName"
-
-            val contentLines = content.lines().map { line -> "$contentIndent$line" }
-            listOf(header) + contentLines
+                ?: "[Attachment file is missing]"
+            ScenarioAttachmentRequest(
+                name = title,
+                mediaType = attachment.type,
+                content = content,
+                source = sourceName,
+                sizeBytes = upload?.content?.size?.toLong() ?: attachment.size,
+            )
         }
-
-        return listOf("${indentPrefix}```") + attachmentLines + listOf("${indentPrefix}```")
     }
 
     /**
-     * Обходит шаги сценария, формирует нумерацию и прикрепляет вложения в читаемом виде.
+     * Обходит сырые Allure steps без промежуточного текста, чтобы не терять parent -> sub-step связь.
      */
-    fun processSteps(steps: List<Step>?, indent: Int = 0): List<String> {
-        val seenSteps = mutableSetOf<String>()
-        val lines = mutableListOf<String>()
+    fun processSteps(steps: List<Step>?): List<ScenarioStepRequest> {
+        fun traverse(steps: List<Step>?): List<ScenarioStepRequest> {
+            if (steps == null) return emptyList()
 
-        fun traverse(steps: List<Step>?, level: Int, numberingPrefix: List<Int>) {
-            if (steps == null) return
-
-            steps.forEachIndexed { index, step ->
-                val parameters = step.parameters?.joinToString { it.value } ?: ""
-                val key = "${step.name}:$parameters"
-                if (key in seenSteps) return@forEachIndexed
-                seenSteps.add(key)
-
-                val numbering = (numberingPrefix + (index + 1)).joinToString(".")
-                val prefix = " ".repeat(level * 2) + "• $numbering. ${step.name}"
-
-                lines.add(prefix)
-                lines.addAll(processAttachments(step, level))
-                traverse(step.steps, level + 1, numberingPrefix + (index + 1))
+            return steps.mapIndexed { index, step ->
+                ScenarioStepRequest(
+                    number = index + 1,
+                    text = step.name,
+                    attachments = processAttachments(step),
+                    subSteps = traverse(step.steps),
+                    durationMs = if (step.start != null && step.stop != null && step.stop >= step.start) step.stop - step.start else null,
+                    parameters = step.parameters.orEmpty().map { parameter ->
+                        ScenarioParameterRequest(name = parameter.name, value = parameter.value)
+                    },
+                )
             }
         }
 
-        traverse(steps, indent, emptyList())
-        return lines
-    }
-
-    /**
-     * Собирает человекочитаемый блок с заголовком, если в нём есть шаги.
-     */
-    fun renderBlock(title: String, steps: List<Step>?): String {
-        val lines = processSteps(steps)
-        return if (lines.isNotEmpty()) {
-            buildString {
-                appendLine("$title:")
-                lines.forEach { appendLine(it) }
-                appendLine()
-            }
-        } else ""
+        return traverse(steps)
     }
 
     // Название теста — как раньше, только без префикса "**Название теста:**"
@@ -271,8 +254,7 @@ private fun extractRawTestCase(
 
     // Сценарий
     val scenarioSteps = report.testStage?.steps ?: report.steps // testStage?.steps -> fallback в steps
-    val scenarioBlock = renderBlock("**Сценарий**", scenarioSteps)
-        .ifBlank { "Шаги не найдены" } // renderBlock -> processSteps -> traverse -> processAttachments
+    val scenario = ScenarioRequest(steps = processSteps(scenarioSteps))
 
     // ID из лейбла AS_ID
     val baseId = report.labels
@@ -293,7 +275,7 @@ private fun extractRawTestCase(
     return RawTestCase(
         baseId = baseId,
         name = testName,
-        scenario = scenarioBlock,
+        scenario = scenario,
         category = category,
         runStatus = normalizedStatus,
     )

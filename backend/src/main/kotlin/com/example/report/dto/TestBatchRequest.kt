@@ -62,20 +62,33 @@ data class ScenarioRequest(
  * @property number номер шага, который сохраняет порядок действий в сценарии.
  * @property text текст действия или проверки на шаге.
  * @property attachments вложения шага, например request/response, извлечённые из Allure-отчёта.
+ * @property subSteps вложенные шаги сценария, если они есть в Allure-отчёте.
  */
 data class ScenarioStepRequest(
     val number: Int? = null,
     val text: String? = null,
     val attachments: List<ScenarioAttachmentRequest>? = null,
+    val subSteps: List<ScenarioStepRequest> = emptyList(),
+    val durationMs: Long? = null,
+    val parameters: List<ScenarioParameterRequest> = emptyList(),
+)
+
+data class ScenarioParameterRequest(
+    val name: String? = null,
+    val value: String? = null,
 )
 
 /**
  * Вложение шага сценария.
  *
- * @property type тип вложения, например `request`, `response` или другое человекочитаемое имя.
+ * @property name человекочитаемое имя вложения, например `request`, `response` или другое имя.
  * @property content содержимое вложения, которое показывается пользователю и экспортируется в отчёт.
  */
 data class ScenarioAttachmentRequest(
-    val type: String? = null,
+    @JsonAlias("type")
+    val name: String? = null,
+    val mediaType: String? = null,
     val content: String? = null,
+    val source: String? = null,
+    val sizeBytes: Long? = null,
 )

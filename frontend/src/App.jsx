@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReleaseAnalyticsWidget from './ReleaseAnalyticsWidget.tsx';
+import { ScenarioTree } from './ScenarioTree.jsx';
+import { ScenarioEditor } from './ScenarioEditor.jsx';
+import { buildScenarioExportText, normalizeScenario, serializeScenario } from './scenarioModel.js';
 const GENERAL_STATUS_OPTIONS = [
   { value: 'Очередь', color: '#e0e8ff', textColor: '#294a9a' },
   { value: 'В работе', color: '#fff4e0', textColor: '#9a5b29' },
@@ -214,593 +217,19 @@ function renderMarkdown(text) {
 }
 
 
-const MIN_SCENARIO_STEPS = 2;
-
-function createScenarioStep(text = '', attachment = '') {
-  return { text, attachment, attachmentOpen: Boolean(attachment?.trim()) };
+function parseScenarioSteps(value) {
+  return normalizeScenario(value).steps;
 }
 
-function ensureEditableScenarioRows(steps) {
-  const normalized = steps.map((step) => ({
-    text: step.text ?? '',
-    attachment: step.attachment ?? '',
-    attachmentOpen: Boolean(step.attachmentOpen || step.attachment?.trim())
-  }));
-
-  while (normalized.length < MIN_SCENARIO_STEPS) {
-    normalized.push(createScenarioStep());
-  }
-
-  const lastStep = normalized[normalized.length - 1];
-  if (lastStep && (lastStep.text.trim() || lastStep.attachment.trim())) {
-    normalized.push(createScenarioStep());
-  }
-
-  return normalized;
-}
-
-function parseScenarioSteps(rawText) {
-  if (rawText && typeof rawText === 'object' && Array.isArray(rawText.steps)) {
-    return ensureEditableScenarioRows(
-      rawText.steps.map((step) => ({
-        text: step.text ?? '',
-        attachment: Array.isArray(step.attachments)
-          ? step.attachments.map((attachment) => attachment.content ?? '').filter(Boolean).join('\n')
-          : '',
-        attachmentOpen: Array.isArray(step.attachments) && step.attachments.length > 0
-      }))
-    );
-  }
-
-  const normalized = (rawText || '').replace(/\r\n/g, '\n');
-  if (!normalized.trim()) {
-    return ensureEditableScenarioRows([]);
-  }
-
-  const lines = normalized.split('\n');
-  const steps = [];
-  let current = null;
-  let attachmentMode = false;
-
-  const pushCurrent = () => {
-    if (current) {
-      current.text = current.text.replace(/\n+$/g, '');
-      current.attachment = current.attachment.replace(/\n+$/g, '');
-      steps.push(current);
-    }
-  };
-
-  lines.forEach((line) => {
-    const titleMatch = /^\*\*[^*]+\*\*:\s*$/.exec(line.trim());
-    if (titleMatch) return;
-
-    const numberedMatch = /^\s*(?:[-*+]|•)?\s*(\d+(?:\.\d+)*\.?)\s+(.*)$/.exec(line);
-    if (numberedMatch && !attachmentMode) {
-      pushCurrent();
-      current = createScenarioStep(numberedMatch[2]);
-      return;
-    }
-
-    if (!current) {
-      if (!line.trim() || line.trim() === 'Шаги не найдены') return;
-      current = createScenarioStep(line.trim());
-      return;
-    }
-
-    if (line.trim().startsWith('```')) {
-      attachmentMode = !attachmentMode;
-      current.attachmentOpen = true;
-      return;
-    }
-
-    if (/^\s*Attachment:/i.test(line)) {
-      current.attachmentOpen = true;
-      current.attachment += `${current.attachment ? '\n' : ''}${line.trim()}`;
-      return;
-    }
-
-    if (attachmentMode || current.attachmentOpen) {
-      current.attachment += `${current.attachment ? '\n' : ''}${line.replace(/^\s{2,}/, '')}`;
-    } else if (line.trim()) {
-      current.text += `${current.text ? '\n' : ''}${line.trim()}`;
-    }
-  });
-
-  pushCurrent();
-  return ensureEditableScenarioRows(steps);
-}
-
-function buildStructuredScenario(steps) {
-  const scenarioSteps = parseScenarioSteps(steps)
-    .filter((step) => step.text.trim() || step.attachment.trim())
-    .map((step, index) => ({
-      number: index + 1,
-      text: step.text.trim(),
-      attachments: step.attachment.trim()
-        ? [{ type: 'text', content: step.attachment.trim() }]
-        : []
-    }));
-
-  return scenarioSteps.length ? { steps: scenarioSteps } : null;
-}
-
-function serializeScenarioSteps(steps) {
-  const meaningfulSteps = steps.filter((step) => step.text.trim() || step.attachment.trim());
-  if (!meaningfulSteps.length) return '';
-
-  return meaningfulSteps
-    .map((step, index) => {
-      const lines = [`${index + 1}. ${step.text.trim()}`];
-      if (step.attachment.trim()) {
-        lines.push('   ```');
-        step.attachment.trim().split('\n').forEach((line) => lines.push(`   ${line}`));
-        lines.push('   ```');
-      }
-      return lines.join('\n');
-    })
-    .join('\n');
-}
-
-
-function formatScenarioExportValue(value) {
-  const text = value == null ? '' : String(value).trim();
-  return text || '—';
-}
-
-function appendExportField(lines, label, value, { optional = false } = {}) {
-  const text = value == null ? '' : String(value).trim();
-  if (optional && !text) return;
-  lines.push(`${label}: ${text || '—'}`);
-}
-
-function buildScenarioExportText(item) {
-  const meaningfulSteps = parseScenarioSteps(item.scenario)
-    .filter((step) => step.text.trim() || step.attachment.trim());
-  const lines = ['TEST CASE', ''];
-
-  appendExportField(lines, 'ID', item.testId);
-  appendExportField(lines, 'Category / Feature', item.category);
-  appendExportField(lines, 'Short Title', item.shortTitle);
-  appendExportField(lines, 'Priority', item.priority, { optional: true });
-  appendExportField(lines, 'Ready Date', item.readyDate, { optional: true });
-  appendExportField(lines, 'YouTrack Link', item.issueLink, { optional: true });
-  appendExportField(lines, 'General Test Status', item.generalStatus, { optional: true });
-  appendExportField(lines, 'Notes', item.notes, { optional: true });
-
-  lines.push('', 'DETAILED SCENARIO', '');
-
-  const attachments = [];
-
-  meaningfulSteps.forEach((step, index) => {
-    const stepNumber = index + 1;
-    const stepTextLines = formatScenarioExportValue(step.text).split('\n');
-    lines.push(`${stepNumber}. ${stepTextLines[0]}`);
-    stepTextLines.slice(1).forEach((line) => lines.push(`   ${line}`));
-
-    if (step.attachment.trim()) {
-      const attachmentId = `A${attachments.length + 1}`;
-      attachments.push({
-        id: attachmentId,
-        stepNumber,
-        type: 'text',
-        content: step.attachment.trim()
-      });
-      lines.push(`   [Вложение: ${attachmentId}]`);
-    }
-
-    lines.push('');
-  });
-
-  if (!meaningfulSteps.length) {
-    lines.push('—', '');
-  }
-
-  if (attachments.length) {
-    lines.push('ATTACHMENTS', '');
-    attachments.forEach((attachment) => {
-      lines.push(`[${attachment.id}]`);
-      lines.push(`Step: ${attachment.stepNumber}`);
-      lines.push(`Type: ${attachment.type}`);
-      lines.push('');
-      lines.push(attachment.content);
-      lines.push('');
-    });
-  }
-
-  return lines.join('\n').replace(/\n+$/u, '\n');
-}
-
-function makeSafeFileName(value) {
-  return String(value || 'test-case')
-    .trim()
-    .replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'test-case';
-}
-
-function downloadTextFile(fileName, content) {
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
+function buildStructuredScenario(value) {
+  return serializeScenario(value);
 }
 
 function ExportIcon() {
   return (
-    <svg
-      className="scenario-export-icon"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path
-        d="M12 3v11m0 0 4-4m-4 4-4-4M5 15v3.2A2.8 2.8 0 0 0 7.8 21h8.4a2.8 2.8 0 0 0 2.8-2.8V15"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg className="scenario-export-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 15v3.2A2.8 2.8 0 0 0 7.8 21h8.4a2.8 2.8 0 0 0 2.8-2.8V15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  );
-}
-
-
-function PaperclipIcon() {
-  return (
-    <svg
-      className="attachment-paperclip-icon"
-      viewBox="0 0 16 16"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path
-        d="M5.2 8.4l3.9-3.9a2.1 2.1 0 0 1 3 3l-5 5a3.3 3.3 0 0 1-4.7-4.7l5.1-5.1a4.5 4.5 0 1 1 6.4 6.4l-5.1 5.1"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview }) {
-  const [openAttachmentIndexes, setOpenAttachmentIndexes] = useState(() => new Set());
-  const previewRef = useRef(null);
-  const steps = useMemo(
-    () => parseScenarioSteps(value).filter((step) => step.text.trim() || step.attachment.trim()),
-    [value]
-  );
-
-  useEffect(() => {
-    if (activePreviewId === previewId) return;
-    setOpenAttachmentIndexes(new Set());
-  }, [activePreviewId, previewId]);
-
-  useEffect(() => {
-    if (!openAttachmentIndexes.size) return undefined;
-
-    const handlePointerDown = (event) => {
-      if (previewRef.current?.contains(event.target)) return;
-      setOpenAttachmentIndexes(new Set());
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [openAttachmentIndexes]);
-
-  const toggleAttachment = (index) => {
-    onActivatePreview?.(previewId);
-    setOpenAttachmentIndexes((currentIndexes) => {
-      const nextIndexes = new Set(activePreviewId === previewId ? currentIndexes : []);
-      if (nextIndexes.has(index)) {
-        nextIndexes.delete(index);
-      } else {
-        nextIndexes.add(index);
-      }
-      return nextIndexes;
-    });
-  };
-
-  if (!steps.length) {
-    return <span className="readonly-value">—</span>;
-  }
-
-  return (
-    <div className="scenario-preview-list" data-testid="scenario-preview" ref={previewRef}>
-      {steps.map((step, index) => {
-        const hasAttachment = step.attachment.trim().length > 0;
-        const isAttachmentOpen = openAttachmentIndexes.has(index);
-
-        return (
-          <div className="scenario-preview-step" key={`${index}-${step.text}`} data-testid="scenario-step" data-step-number={index + 1}>
-            <div
-              className={`scenario-preview-step-header scenario-preview-${index + 1}-step-header`}
-              data-testid="scenario-step-header"
-              data-step-number={index + 1}
-            >
-              <span className="scenario-preview-number" data-testid="scenario-step-number">{index + 1}</span>
-              <span className="scenario-preview-text" data-testid="scenario-step-text">{step.text.trim()}</span>
-              {hasAttachment && (
-                <span className="scenario-preview-attachment">
-                  <button
-                    type="button"
-                    className={`scenario-preview-attachment-button ${isAttachmentOpen ? 'open' : ''}`}
-                    data-testid="scenario-attachment-button"
-                    data-step-number={index + 1}
-                    title="Показать вложение"
-                    aria-label={`Показать вложение шага ${index + 1}`}
-                    aria-expanded={isAttachmentOpen}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      toggleAttachment(index);
-                    }}
-                  >
-                    <PaperclipIcon />
-                  </button>
-                </span>
-              )}
-            </div>
-            {hasAttachment && isAttachmentOpen && (
-              <div
-                className="scenario-preview-attachment-panel"
-                data-testid="scenario-attachment-popover"
-                data-step-number={index + 1}
-                role="region"
-                aria-label={`Вложение шага ${index + 1}`}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <div className="scenario-preview-attachment-title">Вложение шага {index + 1}</div>
-                <div data-testid="scenario-attachment-item" data-attachment-index="0">
-                  <pre className="scenario-preview-attachment-content" data-testid="scenario-attachment-content">{step.attachment.trim()}</pre>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-
-function getTextareaLineCount(value) {
-  const normalized = String(value ?? '').replace(/\r\n/g, '\n');
-  if (!normalized.length) return 1;
-  return normalized.split('\n').length;
-}
-
-function getScenarioStepInputRows(value) {
-  return getTextareaLineCount(value) + 1;
-}
-
-function ScenarioStepEditor({ value, onChange, onCommit, onFocus, autoFocus = false }) {
-  const [steps, setSteps] = useState(() => parseScenarioSteps(value));
-  const [openAttachmentRows, setOpenAttachmentRows] = useState(() => new Set());
-  const [attachmentDrafts, setAttachmentDrafts] = useState({});
-  const firstInputRef = useRef(null);
-  const attachmentInputRefs = useRef({});
-  const latestValueRef = useRef(value);
-  const focusedInsideRef = useRef(false);
-
-  useEffect(() => {
-    if (value === latestValueRef.current) return;
-    latestValueRef.current = value;
-    setSteps(parseScenarioSteps(value));
-    setOpenAttachmentRows(new Set());
-    setAttachmentDrafts({});
-  }, [value]);
-
-  useEffect(() => {
-    if (autoFocus) {
-      firstInputRef.current?.focus();
-    }
-  }, [autoFocus]);
-
-  const updateSteps = (producer) => {
-    setSteps((prev) => {
-      const next = ensureEditableScenarioRows(producer(prev));
-      const serialized = serializeScenarioSteps(next);
-      latestValueRef.current = serialized;
-      onChange(serialized);
-      return next;
-    });
-  };
-
-  const toggleAttachmentRow = (index, attachmentText) => {
-    if (openAttachmentRows.has(index)) {
-      closeAttachmentRow(index);
-      return;
-    }
-    openAttachmentRow(index, attachmentText);
-  };
-
-  const openAttachmentRow = (index, attachmentText = '') => {
-    setAttachmentDrafts((drafts) => ({ ...drafts, [index]: attachmentText }));
-    setOpenAttachmentRows((prev) => {
-      const next = new Set(prev);
-      next.add(index);
-      return next;
-    });
-  };
-
-  const closeAttachmentRow = (index) => {
-    setOpenAttachmentRows((prev) => {
-      const next = new Set(prev);
-      next.delete(index);
-      return next;
-    });
-  };
-
-  const saveAttachmentDraft = (index) => {
-    const draft = attachmentDrafts[index] ?? '';
-    updateSteps((prev) =>
-      prev.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, attachment: draft, attachmentOpen: false } : item
-      )
-    );
-    closeAttachmentRow(index);
-  };
-
-  const handleFocusCapture = () => {
-    if (focusedInsideRef.current) return;
-    focusedInsideRef.current = true;
-    onFocus?.();
-  };
-
-  const handleBlurCapture = (event) => {
-    if (event.currentTarget.contains(event.relatedTarget)) return;
-    focusedInsideRef.current = false;
-
-    const nextSteps = ensureEditableScenarioRows(
-      steps.map((step, index) =>
-        openAttachmentRows.has(index)
-          ? { ...step, attachment: attachmentDrafts[index] ?? step.attachment, attachmentOpen: false }
-          : step
-      )
-    );
-    const serialized = serializeScenarioSteps(nextSteps);
-    latestValueRef.current = serialized;
-    setSteps(nextSteps);
-    setOpenAttachmentRows(new Set());
-    setAttachmentDrafts({});
-    onChange(serialized);
-    onCommit(serialized);
-  };
-
-  return (
-    <div
-      className="scenario-step-editor"
-      data-testid="scenario-editor"
-      onFocusCapture={handleFocusCapture}
-      onBlurCapture={handleBlurCapture}
-    >
-      {steps.map((step, index) => {
-        const hasAttachment = step.attachment.trim().length > 0;
-        const isAttachmentOpen = openAttachmentRows.has(index);
-
-        return (
-          <div className="scenario-step-row" key={index} data-testid="scenario-editor-step" data-step-number={index + 1}>
-            <div className="scenario-step-line">
-              <div className="scenario-step-number">{index + 1}</div>
-              <textarea
-                ref={index === 0 ? firstInputRef : undefined}
-                value={step.text}
-                onChange={(event) =>
-                  updateSteps((prev) =>
-                    prev.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, text: event.target.value } : item
-                    )
-                  )
-                }
-                className="cell-textarea scenario-step-input"
-                data-testid="scenario-step-input"
-                placeholder={index === steps.length - 1 ? 'Добавьте следующий шаг…' : `Шаг ${index + 1}`}
-                rows={getScenarioStepInputRows(step.text)}
-                wrap="soft"
-              />
-              {hasAttachment ? (
-                <button
-                  type="button"
-                  className={`attachment-chip ${isAttachmentOpen ? 'open' : ''}`}
-                  data-testid="scenario-attachment-toggle"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => toggleAttachmentRow(index, step.attachment)}
-                  aria-expanded={isAttachmentOpen}
-                >
-                  <PaperclipIcon />
-                  <span>Вложение</span>
-                  <span className="attachment-chip-caret">{isAttachmentOpen ? '▾' : '▸'}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="attachment-inline-action"
-                  data-testid="scenario-attachment-add-button"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => openAttachmentRow(index)}
-                >
-                  + Вложение
-                </button>
-              )}
-            </div>
-
-            <div className={`scenario-attachment-panel ${isAttachmentOpen ? 'open' : ''}`}>
-              <div className="scenario-attachment-content">
-                <div className="scenario-attachment-header">
-                  <span className="scenario-attachment-title">Вложение</span>
-                  <div className="scenario-attachment-actions">
-                    <button
-                      type="button"
-                      className="attachment-text-action primary"
-                      data-testid="scenario-attachment-edit-button"
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => saveAttachmentDraft(index)}
-                    >
-                      Сохранить
-                    </button>
-                    {hasAttachment && (
-                      <button
-                        type="button"
-                        className="attachment-text-action"
-                        data-testid="scenario-attachment-edit-button"
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => attachmentInputRefs.current[index]?.focus()}
-                      >
-                        Изменить
-                      </button>
-                    )}
-                    {hasAttachment && (
-                      <button
-                        type="button"
-                        className="attachment-text-action danger"
-                        data-testid="scenario-attachment-delete-button"
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => {
-                          updateSteps((prev) =>
-                            prev.map((item, itemIndex) =>
-                              itemIndex === index ? { ...item, attachment: '', attachmentOpen: false } : item
-                            )
-                          );
-                          setAttachmentDrafts((drafts) => ({ ...drafts, [index]: '' }));
-                          closeAttachmentRow(index);
-                        }}
-                      >
-                        Удалить
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <textarea
-                  ref={(element) => {
-                    if (element) {
-                      attachmentInputRefs.current[index] = element;
-                    } else {
-                      delete attachmentInputRefs.current[index];
-                    }
-                  }}
-                  value={attachmentDrafts[index] ?? step.attachment}
-                  onChange={(event) =>
-                    setAttachmentDrafts((drafts) => ({ ...drafts, [index]: event.target.value }))
-                  }
-                  className="cell-textarea scenario-attachment-input"
-                  data-testid="scenario-attachment-content"
-                  placeholder="request / response / json / curl"
-                  rows={3}
-                  wrap="soft"
-                />
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
   );
 }
 
@@ -1012,7 +441,6 @@ export default function App() {
   const [showReleaseNameInput, setShowReleaseNameInput] = useState(false);
   const [editingExistingCount, setEditingExistingCount] = useState(0);
   const [editingScenarioIds, setEditingScenarioIds] = useState(new Set());
-  const [activeScenarioPreviewId, setActiveScenarioPreviewId] = useState(null);
   const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
   const [uploadSelectionLabel, setUploadSelectionLabel] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -1219,10 +647,10 @@ export default function App() {
     sendUpdate(item, payload);
   };
 
-  const handleScenarioCommit = (item, value) => {
-    decrementEditingExisting();
-    const sanitizedValue = value === '' ? null : buildStructuredScenario(value);
-    sendUpdate({ ...item, scenario: value }, { scenario: sanitizedValue });
+  const handleScenarioSave = (item, value) => {
+    const scenario = buildStructuredScenario(value);
+    handleFieldChange(item.testId, 'scenario', scenario);
+    sendUpdate({ ...item, scenario }, { scenario });
     setEditingScenarioIds((prev) => {
       const next = new Set(prev);
       next.delete(item.testId);
@@ -1246,6 +674,7 @@ export default function App() {
 
   const isRequiredDraftFieldFilled = (draft, key) => {
     const value = draft?.[key];
+    if (key === 'scenario') return Boolean(buildStructuredScenario(value));
     return typeof value === 'string' ? value.trim() !== '' : value != null && value !== '';
   };
 
@@ -1748,11 +1177,11 @@ export default function App() {
 	                          </span>
                         ) : column.type === 'textarea' ? (
                           isScenarioColumn ? (
-                            <ScenarioStepEditor
+                            <ScenarioEditor
                               value={value}
-                              onChange={(nextValue) => handleNewFieldChange(index, column.key, nextValue)}
-                              onCommit={() => {}}
-	                            />
+                              onSave={(nextValue) => handleNewFieldChange(index, column.key, nextValue)}
+                              onCancel={() => handleNewFieldChange(index, column.key, value)}
+                            />
                           ) : (
                             <div className="textarea-with-preview">
                               <textarea
@@ -1868,24 +1297,17 @@ export default function App() {
                         ) : column.editable ? (
                           isScenarioColumn ? (
                             isEditingScenario ? (
-                              <ScenarioStepEditor
+                              <ScenarioEditor
                                 value={value}
-                                onChange={(nextValue) => handleFieldChange(item.testId, column.key, nextValue)}
-                                onCommit={(nextValue) => handleScenarioCommit(item, nextValue)}
-                                onFocus={incrementEditingExisting}
-	                                autoFocus
+                                onSave={(nextValue) => handleScenarioSave(item, nextValue)}
+                                onCancel={() => setEditingScenarioIds((prev) => {
+                                  const next = new Set(prev);
+                                  next.delete(item.testId);
+                                  return next;
+                                })}
                               />
                             ) : (
-                              <div
-                                className="markdown-preview-wrapper scenario-preview"
-	                                onClick={() =>
-                                  setEditingScenarioIds((prev) => {
-                                    const next = new Set(prev);
-                                    next.add(item.testId);
-                                    return next;
-                                  })
-                                }
-                              >
+                              <div className="markdown-preview-wrapper scenario-preview">
                                 <button
                                   type="button"
                                   className="scenario-export-button"
@@ -1898,11 +1320,9 @@ export default function App() {
                                 >
                                   <ExportIcon />
                                 </button>
-                                <ScenarioPreview
+                                <ScenarioTree
                                   value={value}
-                                  previewId={item.testId}
-                                  activePreviewId={activeScenarioPreviewId}
-                                  onActivatePreview={setActiveScenarioPreviewId}
+                                  onEdit={() => setEditingScenarioIds((prev) => new Set(prev).add(item.testId))}
                                 />
                               </div>
                             )

@@ -83,7 +83,7 @@ class StructuredScenarioApiTest {
                     text = "Шаг с вложением",
                     attachments = listOf(
                         ScenarioAttachmentRequest(
-                            type = "text",
+                            name = "text",
                             content = "request / response / json / curl",
                         ),
                     ),
@@ -105,7 +105,7 @@ class StructuredScenarioApiTest {
             steps?.size.shouldBe(2, "steps?.size не совпало с ожидаемым")
             val firstAttachments = steps?.get(0)?.attachments
             firstAttachments?.size.shouldBe(1, "firstAttachments?.size не совпало с ожидаемым")
-            firstAttachments?.get(0)?.type.shouldBe("text", "firstAttachments?.get(0)?.type не совпало с ожидаемым")
+            firstAttachments?.get(0)?.name.shouldBe("text", "firstAttachments?.get(0)?.type не совпало с ожидаемым")
             firstAttachments?.get(0)?.content.shouldBe("request / response / json / curl", "firstAttachments?.get(0)?.content не совпало с ожидаемым")
             steps?.get(1)?.attachments.shouldBe(emptyList(), "steps?.get(1)?.attachments не совпало с ожидаемым")
         }

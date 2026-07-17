@@ -40,7 +40,7 @@ class TestReportServicePostUnitTest {
                         ScenarioStepRequest(
                             number = 1,
                             text = "  Отправляем POST /api/tests  ",
-                            attachments = listOf(ScenarioAttachmentRequest(type = "text", content = "request payload")),
+                            attachments = listOf(ScenarioAttachmentRequest(name = "text", content = "request payload")),
                         ),
                     ),
                 ),

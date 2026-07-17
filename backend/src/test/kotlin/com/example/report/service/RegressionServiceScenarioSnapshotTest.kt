@@ -21,7 +21,7 @@ class RegressionServiceScenarioSnapshotTest {
 
     /**
      * Юнит-тест фиксирует текущий контракт snapshot: при остановке регресса persisted JSON scenario
-     * сохраняется строкой, которую downstream-код может десериализовать без потери steps и attachments.
+     * сохраняется объектом, который downstream-код может десериализовать без потери steps и attachments.
      */
     @Test
     fun `stop regression stores scenario in payload as nested object`() {
@@ -51,8 +51,8 @@ class RegressionServiceScenarioSnapshotTest {
         val tests = payload["tests"] as List<*>
         val firstTest = tests.single() as Map<*, *>
         val scenario = firstTest["scenario"]
-        assertTrue(scenario is String, "Текущая реализация сохраняет persisted scenario в snapshot строкой JSON")
-        val scenarioMap = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper().readValue(scenario as String, Map::class.java)
+        assertTrue(scenario is Map<*, *>, "Snapshot должен сохранять scenario структурированным объектом")
+        val scenarioMap = scenario as Map<*, *>
         val steps = scenarioMap["steps"] as List<*>
         val firstStep = steps.single() as Map<*, *>
         assertEquals("Открываем отчёт", firstStep["text"])

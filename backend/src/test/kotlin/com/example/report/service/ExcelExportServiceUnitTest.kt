@@ -39,7 +39,12 @@ class ExcelExportServiceUnitTest {
                         priority = "High",
                         scenario = ScenarioRequest(
                             listOf(
-                                ScenarioStepRequest(1, " открыть отчёт ", listOf(ScenarioAttachmentRequest("text", "payload"))),
+                                ScenarioStepRequest(
+                                    1,
+                                    " открыть отчёт ",
+                                    listOf(ScenarioAttachmentRequest(name = "text", content = "payload")),
+                                    subSteps = listOf(ScenarioStepRequest(1, "вложенный шаг", emptyList()))
+                                ),
                                 ScenarioStepRequest(2, "   ", emptyList()),
                             ),
                         ),
@@ -57,10 +62,11 @@ class ExcelExportServiceUnitTest {
             val sheet = it.getSheet("Test Report")
             assertCellEquals("Test ID", sheet.getRow(0).getCell(0).stringCellValue, "A1")
             assertCellEquals("Detailed Scenario", sheet.getRow(0).getCell(7).stringCellValue, "H1")
+            org.junit.jupiter.api.Assertions.assertTrue(sheet.getRow(1).getCell(7).stringCellValue.contains("   вложенный шаг"))
             assertEquals(100 * 40, sheet.getColumnWidth(0), "Ширина testId должна применяться из columnConfig")
             assertEquals(200 * 40, sheet.getColumnWidth(7), "Ширина scenario должна применяться из columnConfig")
             assertCellEquals("T-1", sheet.getRow(1).getCell(0).stringCellValue, "A2")
-            assertCellEquals("1. открыть отчёт\n   [text] payload", sheet.getRow(1).getCell(7).stringCellValue, "H2")
+            assertCellEquals("открыть отчёт\n   [text] payload\n   вложенный шаг", sheet.getRow(1).getCell(7).stringCellValue, "H2")
         }
     }
 
@@ -92,7 +98,7 @@ class ExcelExportServiceUnitTest {
             val sheet = it.getSheet("Test Report")
             assertEquals(2, sheet.lastRowNum, "В workbook должны попасть только две валидные строки snapshot")
             assertCellEquals("S-1", sheet.getRow(1).getCell(0).stringCellValue, "A2")
-            assertCellEquals("1. step\n   [log] trace", sheet.getRow(1).getCell(7).stringCellValue, "H2")
+            assertCellEquals("step\n   [log] trace", sheet.getRow(1).getCell(7).stringCellValue, "H2")
             assertCellEquals("S-2", sheet.getRow(2).getCell(0).stringCellValue, "A3")
             assertCellEquals("plain scenario", sheet.getRow(2).getCell(7).stringCellValue, "H3")
         }

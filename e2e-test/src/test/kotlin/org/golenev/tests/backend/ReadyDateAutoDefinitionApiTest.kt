@@ -51,7 +51,7 @@ class ReadyDateAutoDefinitionApiTest {
                                     text = "Подготовить batch-запрос для создания нового тест-кейса без readyDate",
                                     attachments = listOf(
                                         ScenarioAttachmentRequest(
-                                            type = "text",
+                                            name = "text",
                                             content = "POST /api/tests/batch; readyDate intentionally omitted",
                                         ),
                                     ),

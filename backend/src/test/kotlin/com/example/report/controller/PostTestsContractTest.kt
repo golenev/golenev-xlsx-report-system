@@ -53,7 +53,17 @@ class PostTestsContractTest {
                         "text": "Формируем batch из десяти тест-кейсов",
                         "attachments": [
                           {"type": "text", "content": "Batch содержит 10 элементов.\nКаждый testId уникален."}
-                        ]
+                        ],
+                        "durationMs": 62001,
+                        "parameters": [],
+                        "subSteps": [{
+                          "number": 1,
+                          "text": "child",
+                          "durationMs": 24,
+                          "parameters": [{"name": "expectedDate", "value": "2026-07-16"}],
+                          "attachments": [],
+                          "subSteps": [{"number": 1, "text": "leaf", "attachments": [], "subSteps": []}]
+                        }]
                       },
                       {"number": 2, "text": "Проверяем отчёт", "attachments": []}
                     ]
@@ -69,6 +79,9 @@ class PostTestsContractTest {
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk)
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[0].scenario.steps[0].number", equalTo(1)))
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[0].scenario.steps[0].attachments[0].content", containsString("Каждый testId уникален")))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[0].scenario.steps[0].durationMs", equalTo(62001)))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[0].scenario.steps[0].subSteps[0].parameters[0].value", equalTo("2026-07-16")))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[0].scenario.steps[0].subSteps[0].subSteps[0].text", equalTo("leaf")))
     }
 
     /**

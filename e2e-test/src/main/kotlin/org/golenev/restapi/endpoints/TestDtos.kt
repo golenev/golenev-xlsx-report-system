@@ -55,15 +55,23 @@ data class ScenarioRequest(
 )
 
 data class ScenarioStepRequest(
-    val number: Int,
+    val number: Int? = null,
     val text: String,
     val attachments: List<ScenarioAttachmentRequest>,
+    val subSteps: List<ScenarioStepRequest> = emptyList(),
+    val durationMs: Long? = null,
+    val parameters: List<ScenarioParameterRequest> = emptyList(),
 )
 
 data class ScenarioAttachmentRequest(
-    val type: String,
+    val name: String,
+    val mediaType: String? = null,
     val content: String,
+    val source: String? = null,
+    val sizeBytes: Long? = null,
 )
+
+data class ScenarioParameterRequest(val name: String, val value: String)
 
 class ScenarioRequestDeserializer : JsonDeserializer<ScenarioRequest>() {
     override fun deserialize(parser: JsonParser, context: DeserializationContext): ScenarioRequest {
@@ -75,24 +83,35 @@ class ScenarioRequestDeserializer : JsonDeserializer<ScenarioRequest>() {
             node
         }
 
-        val steps = scenarioNode.path("steps")
+        fun parseSteps(stepsNode: JsonNode): List<ScenarioStepRequest> = stepsNode
             .takeIf { it.isArray }
             ?.map { stepNode ->
                 ScenarioStepRequest(
-                    number = stepNode.path("number").asInt(),
+                    number = stepNode.path("number").takeIf { it.isNumber }?.asInt(),
                     text = stepNode.path("text").asText(),
                     attachments = stepNode.path("attachments")
                         .takeIf { it.isArray }
                         ?.map { attachmentNode ->
                             ScenarioAttachmentRequest(
-                                type = attachmentNode.path("type").asText(),
+                                name = attachmentNode.path("name").takeIf { !it.isMissingNode }?.asText()
+                                    ?: attachmentNode.path("type").asText("Attachment"),
+                                mediaType = attachmentNode.path("mediaType").takeIf { !it.isMissingNode && !it.isNull }?.asText(),
                                 content = attachmentNode.path("content").asText(),
+                                source = attachmentNode.path("source").takeIf { !it.isMissingNode && !it.isNull }?.asText(),
+                                sizeBytes = attachmentNode.path("sizeBytes").takeIf { it.isNumber }?.asLong(),
                             )
                         }
                         .orEmpty(),
+                    subSteps = parseSteps(stepNode.path("subSteps")),
+                    durationMs = stepNode.path("durationMs").takeIf { it.isNumber }?.asLong(),
+                    parameters = stepNode.path("parameters").takeIf { it.isArray }?.map { parameterNode ->
+                        ScenarioParameterRequest(parameterNode.path("name").asText(), parameterNode.path("value").asText())
+                    }.orEmpty(),
                 )
             }
             .orEmpty()
+
+        val steps = parseSteps(scenarioNode.path("steps"))
 
         return ScenarioRequest(steps = steps)
     }
