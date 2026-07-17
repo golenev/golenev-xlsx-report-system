@@ -5,10 +5,10 @@ function countLabel(count, singular, plural = `${singular}s`) {
   return count ? `${count} ${count === 1 ? singular : plural}` : null;
 }
 
-function Chevron({ expanded, disabled = false, onClick, label, testId }) {
+function Chevron({ expanded, disabled = false, onClick, label, testId, variant = 'step' }) {
   return disabled
     ? <span className="scenario-chevron-spacer" aria-hidden="true" />
-    : <button type="button" className={`scenario-chevron ${expanded ? 'expanded' : ''}`} aria-label={label} aria-expanded={expanded} onClick={onClick} data-testid={testId} />;
+    : <button type="button" className={`scenario-chevron scenario-chevron-${variant} ${expanded ? 'expanded' : ''}`} aria-label={label} aria-expanded={expanded} onClick={onClick} data-testid={testId} />;
 }
 
 function ScenarioAttachment({ attachment, path }) {
@@ -16,7 +16,7 @@ function ScenarioAttachment({ attachment, path }) {
   return (
     <div className="scenario-tree-attachment" data-testid="scenario-attachment-item" data-scenario-path={path}>
       <div className="scenario-attachment-line">
-        <Chevron expanded={expanded} onClick={() => setExpanded((value) => !value)} label={`${expanded ? 'Свернуть' : 'Развернуть'} вложение`} testId="scenario-attachment-button" />
+        <Chevron expanded={expanded} onClick={() => setExpanded((value) => !value)} label={`${expanded ? 'Свернуть' : 'Развернуть'} вложение`} testId="scenario-attachment-button" variant="attachment" />
         <span className="scenario-attachment-name">{attachment.name || 'Attachment'}</span>
         {attachment.sizeBytes != null && <span className="scenario-tree-meta">{formatSize(attachment.sizeBytes)}</span>}
       </div>

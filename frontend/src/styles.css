@@ -1162,11 +1162,19 @@ tbody tr:nth-child(odd) .row-index-cell {
 .scenario-chevron::after {
   content: '';
   position: absolute;
-  inset: 3px 4px;
-  border-right: 2px solid #78b84e;
-  border-bottom: 2px solid #78b84e;
+  inset: 2.5px 3.5px;
+  border-right: 2.25px solid currentColor;
+  border-bottom: 2.25px solid currentColor;
   transform: rotate(-45deg);
   transition: transform 120ms ease;
+}
+
+.scenario-chevron-step {
+  color: #78b84e;
+}
+
+.scenario-chevron-attachment {
+  color: #111827;
 }
 
 .scenario-chevron.expanded::after {
