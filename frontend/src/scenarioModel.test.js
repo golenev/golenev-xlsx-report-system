@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildScenarioStepNumbers, countAttachments, countDescendants, normalizeScenario, serializeScenario, updateStepAtPath } from './scenarioModel.js';
+import { buildScenarioStepNumbers, collectScenarioExpansionPaths, countAttachments, countDescendants, normalizeScenario, serializeScenario, updateStepAtPath } from './scenarioModel.js';
 
 function boundaryScenario() {
   let leaf = { text: 'leaf', durationMs: 24, parameters: [{ name: 'expectedDate', value: '2026-07-16' }], attachments: Array.from({ length: 10 }, (_, index) => ({ name: `Attachment ${index + 1}`, content: `content-${index + 1}` })), subSteps: [] };
@@ -46,4 +46,22 @@ test('nested steps use one continuous preorder numbering without subsection numb
     ['1', 4],
     ['1.0', 5]
   ]);
+});
+
+test('collects every expandable step and attachment path for the parent toggle', () => {
+  const scenario = normalizeScenario({
+    steps: [{
+      text: 'root',
+      attachments: [{ name: 'root attachment', content: 'root' }],
+      subSteps: [{
+        text: 'child',
+        parameters: [{ name: 'date', value: '2026-07-17' }],
+        attachments: [{ name: 'first', content: '1' }, { name: 'second', content: '2' }]
+      }]
+    }]
+  });
+  assert.deepEqual(collectScenarioExpansionPaths(scenario.steps), {
+    stepPaths: ['0', '0.0'],
+    attachmentPaths: ['0.a0', '0.0.a0', '0.0.a1']
+  });
 });

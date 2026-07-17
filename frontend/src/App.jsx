@@ -1320,15 +1320,10 @@ export default function App() {
                                 >
                                   <ExportIcon />
                                 </button>
-                                <button
-                                  type="button"
-                                  className="scenario-edit-button"
-                                  data-testid="scenario-edit"
-                                  onClick={() => setEditingScenarioIds((prev) => new Set(prev).add(item.testId))}
-                                >
-                                  Изменить
-                                </button>
-                                <ScenarioTree value={value} />
+                                <ScenarioTree
+                                  value={value}
+                                  onEdit={() => setEditingScenarioIds((prev) => new Set(prev).add(item.testId))}
+                                />
                               </div>
                             )
                           ) : column.type === 'textarea' ? (

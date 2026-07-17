@@ -109,6 +109,21 @@ export function buildScenarioStepNumbers(steps) {
   return numbers;
 }
 
+export function collectScenarioExpansionPaths(steps) {
+  const stepPaths = [];
+  const attachmentPaths = [];
+  const visit = (items, parentPath = '') => {
+    items.filter(hasStepContent).forEach((step, index) => {
+      const path = parentPath ? `${parentPath}.${index}` : String(index);
+      if (step.subSteps.some(hasStepContent) || step.parameters.length || step.attachments.length) stepPaths.push(path);
+      step.attachments.forEach((_, attachmentIndex) => attachmentPaths.push(`${path}.a${attachmentIndex}`));
+      visit(step.subSteps, path);
+    });
+  };
+  visit(steps);
+  return { stepPaths, attachmentPaths };
+}
+
 export function formatDuration(durationMs) {
   if (!Number.isFinite(durationMs) || durationMs < 0) return '';
   const minutes = Math.floor(durationMs / 60000);

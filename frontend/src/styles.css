@@ -1132,6 +1132,14 @@ tbody tr:nth-child(odd) .row-index-cell {
   display: none !important;
 }
 
+.scenario-tree-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+  padding-right: 34px;
+}
+
 .scenario-tree-line,
 .scenario-attachment-line {
   display: flex;
@@ -1257,8 +1265,8 @@ tbody tr:nth-child(odd) .row-index-cell {
 }
 
 .scenario-edit-button {
-  float: right;
-  margin: 0 0 5px 8px;
+  flex: 1 1 auto;
+  margin: 0 0 5px;
   padding: 2px 7px;
   border: 1px solid #d1d5db;
   border-radius: 5px;
