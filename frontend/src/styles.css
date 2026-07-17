@@ -1128,6 +1128,10 @@ tbody tr:nth-child(odd) .row-index-cell {
   gap: 5px;
 }
 
+.scenario-tree [hidden] {
+  display: none !important;
+}
+
 .scenario-tree-line,
 .scenario-attachment-line {
   display: flex;
@@ -1181,6 +1185,14 @@ tbody tr:nth-child(odd) .row-index-cell {
   overflow-wrap: anywhere;
   word-break: break-word;
   white-space: pre-wrap;
+}
+
+.scenario-tree-number {
+  flex: 0 0 auto;
+  min-width: 18px;
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .scenario-tree-text {

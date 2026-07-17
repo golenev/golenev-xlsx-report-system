@@ -94,6 +94,21 @@ export function countAttachments(step) {
   return step.attachments.length + step.subSteps.reduce((total, child) => total + countAttachments(child), 0);
 }
 
+export function buildScenarioStepNumbers(steps) {
+  const numbers = new Map();
+  let nextNumber = 1;
+  const visit = (items, parentPath = '') => {
+    items.filter(hasStepContent).forEach((step, index) => {
+      const path = parentPath ? `${parentPath}.${index}` : String(index);
+      numbers.set(path, nextNumber);
+      nextNumber += 1;
+      visit(step.subSteps, path);
+    });
+  };
+  visit(steps);
+  return numbers;
+}
+
 export function formatDuration(durationMs) {
   if (!Number.isFinite(durationMs) || durationMs < 0) return '';
   const minutes = Math.floor(durationMs / 60000);

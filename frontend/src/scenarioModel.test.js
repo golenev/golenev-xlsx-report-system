@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { countAttachments, countDescendants, normalizeScenario, serializeScenario, updateStepAtPath } from './scenarioModel.js';
+import { buildScenarioStepNumbers, countAttachments, countDescendants, normalizeScenario, serializeScenario, updateStepAtPath } from './scenarioModel.js';
 
 function boundaryScenario() {
   let leaf = { text: 'leaf', durationMs: 24, parameters: [{ name: 'expectedDate', value: '2026-07-16' }], attachments: Array.from({ length: 10 }, (_, index) => ({ name: `Attachment ${index + 1}`, content: `content-${index + 1}` })), subSteps: [] };
@@ -30,4 +30,20 @@ test('editing a parent and one attachment does not mutate nested metadata or sib
   assert.equal(leaf.attachments[5].content, 'content-6');
   assert.equal(leaf.durationMs, 24);
   assert.equal(leaf.parameters[0].value, '2026-07-16');
+});
+
+test('nested steps use one continuous preorder numbering without subsection numbers', () => {
+  const scenario = normalizeScenario({
+    steps: [
+      { text: 'root-1', subSteps: [{ text: 'child-1', subSteps: [{ text: 'leaf-1' }] }] },
+      { text: 'root-2', subSteps: [{ text: 'child-2' }] }
+    ]
+  });
+  assert.deepEqual(Array.from(buildScenarioStepNumbers(scenario.steps).entries()), [
+    ['0', 1],
+    ['0.0', 2],
+    ['0.0.0', 3],
+    ['1', 4],
+    ['1.0', 5]
+  ]);
 });
