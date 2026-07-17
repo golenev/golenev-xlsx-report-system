@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.time.Clock
 import java.time.LocalDate
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
 @Service
 class RegressionService(
@@ -109,7 +110,7 @@ class RegressionService(
                     "readyDate" to it.readyDate?.toString(),
                     "generalStatus" to it.generalStatus,
                     "priority" to it.priority,
-                    "scenario" to it.scenario,
+                    "scenario" to formatSnapshotScenario(it.scenario),
                     "notes" to it.notes,
                     "regressionStatus" to results[it.testId]
                 )
@@ -121,6 +122,13 @@ class RegressionService(
         regressionRepository.save(running)
 
         return running.toResponse(emptyMap())
+    }
+
+    private fun formatSnapshotScenario(scenario: String?): Any? {
+        if (scenario == null) return null
+        val trimmed = scenario.trim()
+        if (!trimmed.startsWith("{")) return scenario
+        return runCatching { jacksonObjectMapper().readValue(trimmed, Map::class.java) }.getOrElse { scenario }
     }
 
     /**

@@ -1115,6 +1115,181 @@ tbody tr:nth-child(odd) .row-index-cell {
   overflow-x: hidden;
 }
 
+.scenario-tree,
+.scenario-tree-node,
+.scenario-tree-children,
+.scenario-editor,
+.scenario-editor-node,
+.scenario-editor-children {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  gap: 5px;
+}
+
+.scenario-tree-line,
+.scenario-attachment-line {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+  max-width: 100%;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.scenario-chevron,
+.scenario-chevron-spacer {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.scenario-chevron {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+
+.scenario-chevron::after {
+  content: '';
+  position: absolute;
+  inset: 3px 4px;
+  border-right: 2px solid #78b84e;
+  border-bottom: 2px solid #78b84e;
+  transform: rotate(-45deg);
+  transition: transform 120ms ease;
+}
+
+.scenario-chevron.expanded::after {
+  transform: rotate(45deg);
+}
+
+.scenario-chevron:focus-visible {
+  outline: 2px solid rgba(10, 132, 255, 0.35);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.scenario-tree-text,
+.scenario-attachment-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.scenario-tree-text {
+  flex: 1 1 auto;
+  color: #111827;
+}
+
+.scenario-tree-meta,
+.scenario-tree-duration {
+  flex: 0 0 auto;
+  color: #8a8f98;
+  font-size: 12px;
+}
+
+.scenario-tree-duration {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.scenario-tree-children,
+.scenario-editor-children {
+  margin-left: 20px;
+}
+
+.scenario-parameters {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.scenario-parameter {
+  display: grid;
+  grid-template-columns: minmax(80px, 0.4fr) minmax(0, 1fr);
+  gap: 12px;
+  padding-left: 20px;
+  color: #374151;
+  font-size: 12px;
+}
+
+.scenario-parameter span {
+  overflow-wrap: anywhere;
+}
+
+.scenario-tree-attachment-content {
+  max-width: 100%;
+  margin: 4px 0 4px 20px;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f8fafc;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.scenario-edit-button {
+  float: right;
+  margin: 0 0 5px 8px;
+  padding: 2px 7px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.scenario-editor {
+  padding: 7px;
+  border: 1px solid rgba(60, 60, 67, 0.12);
+  border-radius: 8px;
+  background: #f6f7f9;
+}
+
+.scenario-editor-line,
+.scenario-editor-attachment,
+.scenario-editor-actions {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 5px;
+}
+
+.scenario-editor-line .scenario-step-input {
+  flex: 1 1 auto;
+}
+
+.scenario-editor-attachment {
+  flex-direction: column;
+  margin: 4px 0 4px 20px;
+}
+
+.scenario-editor-attachment input,
+.scenario-editor-attachment textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.scenario-editor-readonly {
+  margin-left: 20px;
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.scenario-editor-actions {
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+
 .scenario-preview-step {
   display: flex;
   flex-direction: column;

@@ -39,7 +39,7 @@ object TestDataGenerator {
                         text = "Создаём новую запись тест-кейса через API без передачи readyDate",
                         attachments = listOf(
                             ScenarioAttachmentRequest(
-                                type = "text",
+                                name = "text",
                                 content = """
                                 POST /api/tests?forceUpdate=true
                                 Проверяется, что readyDate не передаётся в теле запроса и должен быть установлен автоматически.
@@ -62,7 +62,7 @@ object TestDataGenerator {
                         text = "Сравниваем readyDate в ответе API и в строке отчёта",
                         attachments = listOf(
                             ScenarioAttachmentRequest(
-                                type = "text",
+                                name = "text",
                                 content = """
                                 Ожидаемый результат:
                                 readyDate в отчёте совпадает с датой, рассчитанной backend при создании тест-кейса.
@@ -83,7 +83,7 @@ object TestDataGenerator {
                         text = "Формируем batch из десяти тест-кейсов с уникальными testId",
                         attachments = listOf(
                             ScenarioAttachmentRequest(
-                                type = "text",
+                                name = "text",
                                 content = """
                                 Batch содержит 10 элементов.
                                 Каждый элемент должен иметь уникальный testId, одинаковую category и общий readyDate.
@@ -111,7 +111,7 @@ object TestDataGenerator {
                         text = "Проверяем, что все десять созданных тест-кейсов отображаются в отчёте",
                         attachments = listOf(
                             ScenarioAttachmentRequest(
-                                type = "text",
+                                name = "text",
                                 content = """
                                 Проверка выполняется по списку testId из исходного batch-запроса.
                                 Каждый testId должен присутствовать в отчёте ровно один раз.
@@ -142,7 +142,7 @@ object TestDataGenerator {
                         text = "Получаем сохранённую запись и фиксируем первоначальное значение readyDate",
                         attachments = listOf(
                             ScenarioAttachmentRequest(
-                                type = "text",
+                                name = "text",
                                 content = """
                                 readyDate используется как контрольное значение.
                                 При последующем обновлении оно не должно быть перезаписано.
@@ -165,7 +165,7 @@ object TestDataGenerator {
                         text = "Проверяем, что readyDate остался равен первоначальному значению",
                         attachments = listOf(
                             ScenarioAttachmentRequest(
-                                type = "text",
+                                name = "text",
                                 content = """
                                 Ожидаемый результат:
                                 readyDate после update совпадает с readyDate после create.

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.example.report.dto.ScenarioAttachmentRequest
 import com.example.report.dto.ScenarioRequest
 import com.example.report.dto.ScenarioStepRequest
+import com.example.report.dto.ScenarioParameterRequest
 import org.slf4j.LoggerFactory
 import org.springframework.web.util.HtmlUtils
 
@@ -39,6 +40,8 @@ data class Step(
     val parameters: List<Parameter>?,
     val steps: List<Step>?,
     val attachments: List<Attachment>?,
+    val start: Long?,
+    val stop: Long?,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -169,7 +172,7 @@ private fun formatAttachmentContent(attachment: Attachment, upload: AllureUpload
     if (!isText) {
         val safeType = type ?: "unknown"
         val size = attachment.size ?: upload.content.size.toLong()
-        return "[binary attachment: $safeType; file=$sourceName; size=$size]"
+        return "[binary attachment: $safeType; size=$size]"
     }
 
     val rawText = upload.content.toString(Charsets.UTF_8)
@@ -201,8 +204,6 @@ private fun extractRawTestCase(
      * Достаёт вложения шага и превращает их в структурированные attachment DTO.
      */
     fun processAttachments(step: Step): List<ScenarioAttachmentRequest> {
-        if (!attachmentsEnabled) return emptyList()
-
         val files = step.attachments.orEmpty()
         if (files.isEmpty()) return emptyList()
 
@@ -211,12 +212,13 @@ private fun extractRawTestCase(
             val title = attachment.name ?: "Attachment"
             val upload = filesByName[baseName(sourceName)]
             val content = upload?.let { formatAttachmentContent(attachment, it) }
-                ?: "[Attachment missing] $title -> $sourceName"
-            val header = "$title ($sourceName)"
-
+                ?: "[Attachment file is missing]"
             ScenarioAttachmentRequest(
-                type = title,
-                content = "$header\n$content".trim(),
+                name = title,
+                mediaType = attachment.type,
+                content = content,
+                source = sourceName,
+                sizeBytes = upload?.content?.size?.toLong() ?: attachment.size,
             )
         }
     }
@@ -234,6 +236,10 @@ private fun extractRawTestCase(
                     text = step.name,
                     attachments = processAttachments(step),
                     subSteps = traverse(step.steps),
+                    durationMs = if (step.start != null && step.stop != null && step.stop >= step.start) step.stop - step.start else null,
+                    parameters = step.parameters.orEmpty().map { parameter ->
+                        ScenarioParameterRequest(name = parameter.name, value = parameter.value)
+                    },
                 )
             }
         }

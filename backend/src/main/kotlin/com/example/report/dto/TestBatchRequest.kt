@@ -69,15 +69,26 @@ data class ScenarioStepRequest(
     val text: String? = null,
     val attachments: List<ScenarioAttachmentRequest>? = null,
     val subSteps: List<ScenarioStepRequest> = emptyList(),
+    val durationMs: Long? = null,
+    val parameters: List<ScenarioParameterRequest> = emptyList(),
+)
+
+data class ScenarioParameterRequest(
+    val name: String? = null,
+    val value: String? = null,
 )
 
 /**
  * Вложение шага сценария.
  *
- * @property type тип вложения, например `request`, `response` или другое человекочитаемое имя.
+ * @property name человекочитаемое имя вложения, например `request`, `response` или другое имя.
  * @property content содержимое вложения, которое показывается пользователю и экспортируется в отчёт.
  */
 data class ScenarioAttachmentRequest(
-    val type: String? = null,
+    @JsonAlias("type")
+    val name: String? = null,
+    val mediaType: String? = null,
     val content: String? = null,
+    val source: String? = null,
+    val sizeBytes: Long? = null,
 )

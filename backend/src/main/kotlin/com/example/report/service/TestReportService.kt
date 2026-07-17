@@ -5,6 +5,7 @@ import com.example.report.dto.TestReportItemDto
 import com.example.report.dto.ScenarioAttachmentRequest
 import com.example.report.dto.ScenarioRequest
 import com.example.report.dto.ScenarioStepRequest
+import com.example.report.dto.ScenarioParameterRequest
 import com.example.report.dto.TestReportResponse
 import com.example.report.dto.TestUpsertItem
 import com.example.report.entity.TestReportEntity
@@ -388,14 +389,28 @@ class TestReportService(
         val attachments = step.attachments
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Field $fieldPath.attachments must be an array")
         val subSteps = normalizeScenarioSteps(step.subSteps, "$fieldPath.subSteps")
+        val normalizedAttachments = attachments.map { attachment ->
+            ScenarioAttachmentRequest(
+                name = attachment.name?.trim(),
+                mediaType = attachment.mediaType?.trim(),
+                content = attachment.content,
+                source = attachment.source,
+                sizeBytes = attachment.sizeBytes?.takeIf { it >= 0 },
+            )
+        }
+        val parameters = step.parameters.map { parameter ->
+            ScenarioParameterRequest(name = parameter.name?.trim(), value = parameter.value)
+        }
 
-        if (text.isEmpty() && attachments.isEmpty() && subSteps.isEmpty()) return@mapNotNull null
+        if (text.isEmpty() && normalizedAttachments.isEmpty() && subSteps.isEmpty() && parameters.isEmpty()) return@mapNotNull null
 
         ScenarioStepRequest(
             number = number,
             text = text,
-            attachments = attachments,
+            attachments = normalizedAttachments,
             subSteps = subSteps,
+            durationMs = step.durationMs?.takeIf { it >= 0 },
+            parameters = parameters,
         )
     }
 
@@ -461,7 +476,7 @@ class TestReportService(
                 ?.filter { it.isNotBlank() }
                 ?.joinToString("\n")
                 ?.takeIf { it.isNotBlank() }
-                ?.let { ScenarioAttachmentRequest(type = "text", content = it) }
+                ?.let { ScenarioAttachmentRequest(name = "Attachment", mediaType = "text/plain", content = it) }
 
             if (extraAttachment == null) step else step.copy(attachments = step.attachments.orEmpty() + extraAttachment)
         }
@@ -545,7 +560,7 @@ class TestReportService(
             number = number,
             text = text,
             attachments = attachmentLines.takeIf { it.isNotEmpty() }?.let { lines ->
-                listOf(ScenarioAttachmentRequest(type = "text", content = lines.joinToString("\n").trim()))
+                listOf(ScenarioAttachmentRequest(name = "Attachment", mediaType = "text/plain", content = lines.joinToString("\n").trim()))
             } ?: emptyList(),
             subSteps = subSteps.mapIndexed { index, step -> step.toRequest(index + 1) },
         )

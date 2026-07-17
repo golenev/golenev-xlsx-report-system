@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReleaseAnalyticsWidget from './ReleaseAnalyticsWidget.tsx';
+import { ScenarioTree } from './ScenarioTree.jsx';
+import { ScenarioEditor } from './ScenarioEditor.jsx';
+import { buildScenarioExportText, normalizeScenario, serializeScenario } from './scenarioModel.js';
 const GENERAL_STATUS_OPTIONS = [
   { value: 'Очередь', color: '#e0e8ff', textColor: '#294a9a' },
   { value: 'В работе', color: '#fff4e0', textColor: '#9a5b29' },
@@ -214,760 +217,19 @@ function renderMarkdown(text) {
 }
 
 
-const MIN_SCENARIO_STEPS = 2;
-
-function createScenarioStep(text = '', attachment = '', subSteps = [], attachments = null) {
-  const normalizedAttachments = Array.isArray(attachments)
-    ? attachments.filter((item) => item?.content?.trim())
-    : (attachment?.trim() ? [{ type: 'text', content: attachment.trim() }] : []);
-
-  return {
-    text,
-    attachment,
-    attachments: normalizedAttachments,
-    attachmentOpen: normalizedAttachments.length > 0 || Boolean(attachment?.trim()),
-    subSteps
-  };
+function parseScenarioSteps(value) {
+  return normalizeScenario(value).steps;
 }
 
-function normalizeScenarioStep(step = {}) {
-  const attachments = Array.isArray(step.attachments)
-    ? step.attachments
-        .map((attachment) => ({
-          type: attachment.type ?? 'text',
-          content: attachment.content ?? ''
-        }))
-        .filter((attachment) => attachment.content.trim())
-    : [];
-  const attachmentText = attachments.length
-    ? attachments.map((attachment) => attachment.content).join('\n')
-    : step.attachment ?? '';
-
-  return createScenarioStep(
-    step.text ?? '',
-    attachmentText,
-    Array.isArray(step.subSteps) ? step.subSteps.map(normalizeScenarioStep) : [],
-    attachments
-  );
-}
-
-
-function hasScenarioStepContent(step) {
-  return Boolean(
-    step?.text?.trim()
-    || step?.attachment?.trim()
-    || step?.subSteps?.some(hasScenarioStepContent)
-  );
-}
-
-function appendScenarioAttachment(step, content, type = 'text') {
-  if (!step || !content?.trim()) return;
-  const normalizedContent = content.trim();
-  const separator = step.attachment?.trim() ? '\n' : '';
-  step.attachment = `${step.attachment ?? ''}${separator}${normalizedContent}`;
-  step.attachments = [...(step.attachments ?? []), { type, content: normalizedContent }];
-  step.attachmentOpen = true;
-}
-
-
-function repairFlatScenarioAttachmentSteps(steps) {
-  const repaired = [];
-  let attachmentTarget = null;
-  let attachmentMode = false;
-
-  steps.forEach((step) => {
-    const normalizedStep = normalizeScenarioStep(step);
-    const trimmedText = normalizedStep.text.trim();
-
-    if (trimmedText.startsWith('```')) {
-      attachmentMode = !attachmentMode;
-      attachmentTarget = attachmentMode ? repaired.at(-1) ?? attachmentTarget : null;
-      return;
-    }
-
-    if (attachmentMode) {
-      appendScenarioAttachment(attachmentTarget, trimmedText);
-      if (normalizedStep.attachment.trim()) {
-        appendScenarioAttachment(attachmentTarget, normalizedStep.attachment);
-      }
-      return;
-    }
-
-    if (/^Attachment:/i.test(trimmedText) && repaired.length) {
-      attachmentTarget = repaired.at(-1);
-      appendScenarioAttachment(attachmentTarget, trimmedText);
-      if (normalizedStep.attachment.trim()) {
-        appendScenarioAttachment(attachmentTarget, normalizedStep.attachment);
-      }
-      return;
-    }
-
-    normalizedStep.subSteps = repairFlatScenarioAttachmentSteps(normalizedStep.subSteps ?? []);
-    repaired.push(normalizedStep);
-  });
-
-  return repaired;
-}
-
-function ensureEditableScenarioRows(steps) {
-  const normalized = repairFlatScenarioAttachmentSteps(steps);
-
-  while (normalized.length < MIN_SCENARIO_STEPS) {
-    normalized.push(createScenarioStep());
-  }
-
-  const lastStep = normalized[normalized.length - 1];
-  if (lastStep && (lastStep.text.trim() || lastStep.attachment.trim())) {
-    normalized.push(createScenarioStep());
-  }
-
-  return normalized;
-}
-
-function getScenarioLineLevel(line, numberToken) {
-  const indentLevel = Math.floor((/^\s*/.exec(line)?.[0].replace(/\t/g, '  ').length ?? 0) / 2);
-  const numberLevel = numberToken ? numberToken.replace(/\.$/, '').split('.').filter(Boolean).length - 1 : 0;
-  return Math.max(indentLevel, numberLevel, 0);
-}
-
-function parseScenarioSteps(rawText) {
-  if (rawText && typeof rawText === 'object' && Array.isArray(rawText.steps)) {
-    return ensureEditableScenarioRows(rawText.steps);
-  }
-
-  const normalized = (rawText || '').replace(/\r\n/g, '\n');
-  if (!normalized.trim()) {
-    return ensureEditableScenarioRows([]);
-  }
-
-  const lines = normalized.split('\n');
-  const rootSteps = [];
-  const stack = [];
-  let current = null;
-  let attachmentMode = false;
-
-  const addStep = (step, level) => {
-    const safeLevel = Math.max(level, 0);
-    while (stack.length > safeLevel) stack.pop();
-
-    if (safeLevel === 0 || !stack[safeLevel - 1]) {
-      rootSteps.push(step);
-      stack.length = 0;
-      stack[0] = step;
-    } else {
-      const parent = stack[safeLevel - 1];
-      parent.subSteps = parent.subSteps ?? [];
-      parent.subSteps.push(step);
-      stack[safeLevel] = step;
-    }
-
-    stack.length = safeLevel + 1;
-    current = step;
-  };
-
-  lines.forEach((line) => {
-    const trimmed = line.trim();
-    const titleMatch = /^\*\*[^*]+\*\*:\s*$/.exec(trimmed);
-    if (titleMatch) return;
-
-    if (trimmed.startsWith('```')) {
-      attachmentMode = !attachmentMode;
-      if (current) current.attachmentOpen = true;
-      return;
-    }
-
-    const numberedMatch = /^\s*(?:[-*+]|•)?\s*(\d+(?:\.\d+)*\.?)\s+(.*)$/.exec(line);
-    if (numberedMatch && !attachmentMode) {
-      const level = getScenarioLineLevel(line, numberedMatch[1]);
-      addStep(createScenarioStep(numberedMatch[2].trim()), level);
-      return;
-    }
-
-    const bulletMatch = /^(\s*)(?:[-*+]|•)\s+(.*)$/.exec(line);
-    if (bulletMatch && !attachmentMode && !/^Attachment:/i.test(bulletMatch[2].trim())) {
-      const level = getScenarioLineLevel(line, null);
-      addStep(createScenarioStep(bulletMatch[2].trim()), level);
-      return;
-    }
-
-    if (!current) {
-      if (!trimmed || trimmed === 'Шаги не найдены') return;
-      addStep(createScenarioStep(trimmed), 0);
-      return;
-    }
-
-    if (/^Attachment:/i.test(trimmed)) {
-      current.attachmentOpen = true;
-      current.attachment += `${current.attachment ? '\n' : ''}${trimmed}`;
-      return;
-    }
-
-    if (attachmentMode || current.attachmentOpen) {
-      current.attachment += `${current.attachment ? '\n' : ''}${line.replace(/^\s{2,}/, '')}`;
-    } else if (trimmed) {
-      current.text += `${current.text ? '\n' : ''}${trimmed}`;
-    }
-  });
-
-  return ensureEditableScenarioRows(rootSteps);
-}
-
-function getScenarioStepAttachments(step) {
-  if (Array.isArray(step.attachments) && step.attachments.length) {
-    return step.attachments
-      .map((attachment) => ({
-        type: attachment.type ?? 'text',
-        content: attachment.content ?? ''
-      }))
-      .filter((attachment) => attachment.content.trim());
-  }
-
-  return step.attachment?.trim()
-    ? [{ type: 'text', content: step.attachment.trim() }]
-    : [];
-}
-
-function formatScenarioMeta(count, singular, plural = `${singular}s`) {
-  if (!count) return null;
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
-function serializeScenarioForRequest(step, index) {
-  const payload = {
-    number: index + 1,
-    text: step.text.trim(),
-    attachments: getScenarioStepAttachments(step)
-  };
-
-  const subSteps = (step.subSteps ?? [])
-    .filter(hasScenarioStepContent)
-    .map(serializeScenarioForRequest);
-  if (subSteps.length) payload.subSteps = subSteps;
-
-  return payload;
-}
-
-function buildStructuredScenario(steps) {
-  const scenarioSteps = parseScenarioSteps(steps)
-    .filter(hasScenarioStepContent)
-    .map(serializeScenarioForRequest);
-
-  return scenarioSteps.length ? { steps: scenarioSteps } : null;
-}
-
-function serializeScenarioSteps(steps) {
-  const meaningfulSteps = steps.filter(hasScenarioStepContent);
-  if (!meaningfulSteps.length) return '';
-
-  const renderStep = (step, index, level = 0) => {
-    const indent = '   '.repeat(level);
-    const lines = [`${indent}${index + 1}. ${step.text.trim()}`];
-    if (step.attachment.trim()) {
-      lines.push(`${indent}   ${'`'.repeat(3)}`);
-      step.attachment.trim().split('\n').forEach((line) => lines.push(`${indent}   ${line}`));
-      lines.push(`${indent}   ${'`'.repeat(3)}`);
-    }
-    (step.subSteps ?? []).filter(hasScenarioStepContent).forEach((subStep, subIndex) => {
-      lines.push(renderStep(subStep, subIndex, level + 1));
-    });
-    return lines.join('\n');
-  };
-
-  return meaningfulSteps.map((step, index) => renderStep(step, index)).join('\n');
-}
-
-function flattenScenarioSteps(steps) {
-  return steps.flatMap((step) => [step, ...flattenScenarioSteps(step.subSteps ?? [])]);
-}
-
-
-function formatScenarioExportValue(value) {
-  const text = value == null ? '' : String(value).trim();
-  return text || '—';
-}
-
-function appendExportField(lines, label, value, { optional = false } = {}) {
-  const text = value == null ? '' : String(value).trim();
-  if (optional && !text) return;
-  lines.push(`${label}: ${text || '—'}`);
-}
-
-function buildScenarioExportText(item) {
-  const meaningfulSteps = flattenScenarioSteps(parseScenarioSteps(item.scenario))
-    .filter((step) => step.text.trim() || step.attachment.trim());
-  const lines = ['TEST CASE', ''];
-
-  appendExportField(lines, 'ID', item.testId);
-  appendExportField(lines, 'Category / Feature', item.category);
-  appendExportField(lines, 'Short Title', item.shortTitle);
-  appendExportField(lines, 'Priority', item.priority, { optional: true });
-  appendExportField(lines, 'Ready Date', item.readyDate, { optional: true });
-  appendExportField(lines, 'YouTrack Link', item.issueLink, { optional: true });
-  appendExportField(lines, 'General Test Status', item.generalStatus, { optional: true });
-  appendExportField(lines, 'Notes', item.notes, { optional: true });
-
-  lines.push('', 'DETAILED SCENARIO', '');
-
-  const attachments = [];
-
-  meaningfulSteps.forEach((step, index) => {
-    const stepNumber = index + 1;
-    const stepTextLines = formatScenarioExportValue(step.text).split('\n');
-    lines.push(`${stepNumber}. ${stepTextLines[0]}`);
-    stepTextLines.slice(1).forEach((line) => lines.push(`   ${line}`));
-
-    if (step.attachment.trim()) {
-      const attachmentId = `A${attachments.length + 1}`;
-      attachments.push({
-        id: attachmentId,
-        stepNumber,
-        type: 'text',
-        content: step.attachment.trim()
-      });
-      lines.push(`   [Вложение: ${attachmentId}]`);
-    }
-
-    lines.push('');
-  });
-
-  if (!meaningfulSteps.length) {
-    lines.push('—', '');
-  }
-
-  if (attachments.length) {
-    lines.push('ATTACHMENTS', '');
-    attachments.forEach((attachment) => {
-      lines.push(`[${attachment.id}]`);
-      lines.push(`Step: ${attachment.stepNumber}`);
-      lines.push(`Type: ${attachment.type}`);
-      lines.push('');
-      lines.push(attachment.content);
-      lines.push('');
-    });
-  }
-
-  return lines.join('\n').replace(/\n+$/u, '\n');
-}
-
-function makeSafeFileName(value) {
-  return String(value || 'test-case')
-    .trim()
-    .replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'test-case';
-}
-
-function downloadTextFile(fileName, content) {
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
+function buildStructuredScenario(value) {
+  return serializeScenario(value);
 }
 
 function ExportIcon() {
   return (
-    <svg
-      className="scenario-export-icon"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path
-        d="M12 3v11m0 0 4-4m-4 4-4-4M5 15v3.2A2.8 2.8 0 0 0 7.8 21h8.4a2.8 2.8 0 0 0 2.8-2.8V15"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg className="scenario-export-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 15v3.2A2.8 2.8 0 0 0 7.8 21h8.4a2.8 2.8 0 0 0 2.8-2.8V15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  );
-}
-
-
-function PaperclipIcon() {
-  return (
-    <svg
-      className="attachment-paperclip-icon"
-      viewBox="0 0 16 16"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path
-        d="M5.2 8.4l3.9-3.9a2.1 2.1 0 0 1 3 3l-5 5a3.3 3.3 0 0 1-4.7-4.7l5.1-5.1a4.5 4.5 0 1 1 6.4 6.4l-5.1 5.1"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ScenarioPreview({ value, previewId, activePreviewId, onActivatePreview }) {
-  const [collapsedStepPaths, setCollapsedStepPaths] = useState(() => new Set());
-  const previewRef = useRef(null);
-  const steps = useMemo(
-    () => parseScenarioSteps(value).filter(hasScenarioStepContent),
-    [value]
-  );
-
-  useEffect(() => {
-    if (activePreviewId === previewId) return;
-    setCollapsedStepPaths(new Set());
-  }, [activePreviewId, previewId]);
-
-  const toggleStepDetails = (path) => {
-    onActivatePreview?.(previewId);
-    setCollapsedStepPaths((currentPaths) => {
-      const nextPaths = new Set(activePreviewId === previewId ? currentPaths : []);
-      if (nextPaths.has(path)) {
-        nextPaths.delete(path);
-      } else {
-        nextPaths.add(path);
-      }
-      return nextPaths;
-    });
-  };
-
-  const renderAttachment = (attachment, attachmentIndex, stepNumber) => {
-    const title = attachment.type?.trim() && attachment.type !== 'text'
-      ? attachment.type.trim()
-      : attachment.content.trim().split('\n')[0] || `Вложение ${attachmentIndex + 1}`;
-
-    return (
-      <details
-        className="scenario-preview-attachment-item"
-        key={`${stepNumber}-attachment-${attachmentIndex}`}
-        data-testid="scenario-attachment-item"
-        data-attachment-index={attachmentIndex}
-      >
-        <summary
-          className="scenario-preview-attachment-summary"
-          data-testid="scenario-attachment-button"
-          data-step-number={stepNumber}
-        >
-          <PaperclipIcon />
-          <span>{title}</span>
-        </summary>
-        <pre className="scenario-preview-attachment-content" data-testid="scenario-attachment-content">{attachment.content.trim()}</pre>
-      </details>
-    );
-  };
-
-  const renderStep = (step, index, path, level = 0) => {
-    const displayNumber = path.split('.').map((segment) => Number(segment) + 1).join('.');
-    const subSteps = (step.subSteps ?? []).filter(hasScenarioStepContent);
-    const attachments = getScenarioStepAttachments(step);
-    const hasDetails = subSteps.length > 0 || attachments.length > 0;
-    const isCollapsed = collapsedStepPaths.has(path);
-    const metaParts = [
-      formatScenarioMeta(subSteps.length, 'sub-step'),
-      formatScenarioMeta(attachments.length, 'attachment')
-    ].filter(Boolean);
-
-    return (
-      <div
-        className={`scenario-preview-step ${level > 0 ? 'scenario-preview-substep' : ''}`}
-        key={`${path}-${step.text}`}
-        data-testid="scenario-step"
-        data-step-number={displayNumber}
-        style={{ '--scenario-step-level': level }}
-      >
-        <div
-          className={`scenario-preview-step-header scenario-preview-${displayNumber}-step-header`}
-          data-testid="scenario-step-header"
-          data-step-number={displayNumber}
-        >
-          <span className="scenario-preview-number" data-testid="scenario-step-number">{displayNumber}</span>
-          <button
-            type="button"
-            className={`scenario-preview-toggle ${isCollapsed ? 'collapsed' : 'expanded'} ${hasDetails ? '' : 'empty'}`}
-            aria-label={hasDetails ? `${isCollapsed ? 'Развернуть' : 'Свернуть'} детали шага ${displayNumber}` : `Шаг ${displayNumber} без вложенных деталей`}
-            aria-expanded={hasDetails ? !isCollapsed : undefined}
-            disabled={!hasDetails}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (hasDetails) toggleStepDetails(path);
-            }}
-          />
-          <span className="scenario-preview-text" data-testid="scenario-step-text">{step.text.trim()}</span>
-          {metaParts.length > 0 && (
-            <span className="scenario-preview-meta">{metaParts.join(', ')}</span>
-          )}
-        </div>
-        {hasDetails && !isCollapsed && (
-          <div className="scenario-preview-details">
-            {subSteps.length > 0 && (
-              <div className="scenario-preview-substeps">
-                {subSteps.map((subStep, subIndex) => renderStep(subStep, subIndex, `${path}.${subIndex}`, level + 1))}
-              </div>
-            )}
-            {attachments.length > 0 && (
-              <div
-                className="scenario-preview-attachments"
-                data-testid="scenario-attachment-popover"
-                data-step-number={displayNumber}
-                role="region"
-                aria-label={`Вложения шага ${displayNumber}`}
-              >
-                {attachments.map((attachment, attachmentIndex) => renderAttachment(attachment, attachmentIndex, displayNumber))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  if (!steps.length) {
-    return <span className="readonly-value">—</span>;
-  }
-
-  return (
-    <div className="scenario-preview-list" data-testid="scenario-preview" ref={previewRef}>
-      {steps.map((step, index) => renderStep(step, index, String(index)))}
-    </div>
-  );
-}
-
-
-function getTextareaLineCount(value) {
-  const normalized = String(value ?? '').replace(/\r\n/g, '\n');
-  if (!normalized.length) return 1;
-  return normalized.split('\n').length;
-}
-
-function getScenarioStepInputRows(value) {
-  return getTextareaLineCount(value) + 1;
-}
-
-function ScenarioStepEditor({ value, onChange, onCommit, onFocus, autoFocus = false }) {
-  const [steps, setSteps] = useState(() => parseScenarioSteps(value));
-  const [openAttachmentRows, setOpenAttachmentRows] = useState(() => new Set());
-  const [attachmentDrafts, setAttachmentDrafts] = useState({});
-  const firstInputRef = useRef(null);
-  const attachmentInputRefs = useRef({});
-  const latestValueRef = useRef(value);
-  const focusedInsideRef = useRef(false);
-
-  useEffect(() => {
-    if (value === latestValueRef.current) return;
-    latestValueRef.current = value;
-    setSteps(parseScenarioSteps(value));
-    setOpenAttachmentRows(new Set());
-    setAttachmentDrafts({});
-  }, [value]);
-
-  useEffect(() => {
-    if (autoFocus) {
-      firstInputRef.current?.focus();
-    }
-  }, [autoFocus]);
-
-  const updateSteps = (producer) => {
-    setSteps((prev) => {
-      const next = ensureEditableScenarioRows(producer(prev));
-      const serialized = serializeScenarioSteps(next);
-      latestValueRef.current = serialized;
-      onChange(serialized);
-      return next;
-    });
-  };
-
-  const toggleAttachmentRow = (index, attachmentText) => {
-    if (openAttachmentRows.has(index)) {
-      closeAttachmentRow(index);
-      return;
-    }
-    openAttachmentRow(index, attachmentText);
-  };
-
-  const openAttachmentRow = (index, attachmentText = '') => {
-    setAttachmentDrafts((drafts) => ({ ...drafts, [index]: attachmentText }));
-    setOpenAttachmentRows((prev) => {
-      const next = new Set(prev);
-      next.add(index);
-      return next;
-    });
-  };
-
-  const closeAttachmentRow = (index) => {
-    setOpenAttachmentRows((prev) => {
-      const next = new Set(prev);
-      next.delete(index);
-      return next;
-    });
-  };
-
-  const saveAttachmentDraft = (index) => {
-    const draft = attachmentDrafts[index] ?? '';
-    updateSteps((prev) =>
-      prev.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, attachment: draft, attachmentOpen: false } : item
-      )
-    );
-    closeAttachmentRow(index);
-  };
-
-  const handleFocusCapture = () => {
-    if (focusedInsideRef.current) return;
-    focusedInsideRef.current = true;
-    onFocus?.();
-  };
-
-  const handleBlurCapture = (event) => {
-    if (event.currentTarget.contains(event.relatedTarget)) return;
-    focusedInsideRef.current = false;
-
-    const nextSteps = ensureEditableScenarioRows(
-      steps.map((step, index) =>
-        openAttachmentRows.has(index)
-          ? { ...step, attachment: attachmentDrafts[index] ?? step.attachment, attachmentOpen: false }
-          : step
-      )
-    );
-    const serialized = serializeScenarioSteps(nextSteps);
-    latestValueRef.current = serialized;
-    setSteps(nextSteps);
-    setOpenAttachmentRows(new Set());
-    setAttachmentDrafts({});
-    onChange(serialized);
-    onCommit(serialized);
-  };
-
-  return (
-    <div
-      className="scenario-step-editor"
-      data-testid="scenario-editor"
-      onFocusCapture={handleFocusCapture}
-      onBlurCapture={handleBlurCapture}
-    >
-      {steps.map((step, index) => {
-        const hasAttachment = step.attachment.trim().length > 0;
-        const isAttachmentOpen = openAttachmentRows.has(index);
-
-        return (
-          <div className="scenario-step-row" key={index} data-testid="scenario-editor-step" data-step-number={index + 1}>
-            <div className="scenario-step-line">
-              <div className="scenario-step-number">{index + 1}</div>
-              <textarea
-                ref={index === 0 ? firstInputRef : undefined}
-                value={step.text}
-                onChange={(event) =>
-                  updateSteps((prev) =>
-                    prev.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, text: event.target.value } : item
-                    )
-                  )
-                }
-                className="cell-textarea scenario-step-input"
-                data-testid="scenario-step-input"
-                placeholder={index === steps.length - 1 ? 'Добавьте следующий шаг…' : `Шаг ${index + 1}`}
-                rows={getScenarioStepInputRows(step.text)}
-                wrap="soft"
-              />
-              {hasAttachment ? (
-                <button
-                  type="button"
-                  className={`attachment-chip ${isAttachmentOpen ? 'open' : ''}`}
-                  data-testid="scenario-attachment-toggle"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => toggleAttachmentRow(index, step.attachment)}
-                  aria-expanded={isAttachmentOpen}
-                >
-                  <PaperclipIcon />
-                  <span>Вложение</span>
-                  <span className="attachment-chip-caret">{isAttachmentOpen ? '▾' : '▸'}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="attachment-inline-action"
-                  data-testid="scenario-attachment-add-button"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => openAttachmentRow(index)}
-                >
-                  + Вложение
-                </button>
-              )}
-            </div>
-
-            <div className={`scenario-attachment-panel ${isAttachmentOpen ? 'open' : ''}`}>
-              <div className="scenario-attachment-content">
-                <div className="scenario-attachment-header">
-                  <span className="scenario-attachment-title">Вложение</span>
-                  <div className="scenario-attachment-actions">
-                    <button
-                      type="button"
-                      className="attachment-text-action primary"
-                      data-testid="scenario-attachment-edit-button"
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => saveAttachmentDraft(index)}
-                    >
-                      Сохранить
-                    </button>
-                    {hasAttachment && (
-                      <button
-                        type="button"
-                        className="attachment-text-action"
-                        data-testid="scenario-attachment-edit-button"
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => attachmentInputRefs.current[index]?.focus()}
-                      >
-                        Изменить
-                      </button>
-                    )}
-                    {hasAttachment && (
-                      <button
-                        type="button"
-                        className="attachment-text-action danger"
-                        data-testid="scenario-attachment-delete-button"
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => {
-                          updateSteps((prev) =>
-                            prev.map((item, itemIndex) =>
-                              itemIndex === index ? { ...item, attachment: '', attachmentOpen: false } : item
-                            )
-                          );
-                          setAttachmentDrafts((drafts) => ({ ...drafts, [index]: '' }));
-                          closeAttachmentRow(index);
-                        }}
-                      >
-                        Удалить
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <textarea
-                  ref={(element) => {
-                    if (element) {
-                      attachmentInputRefs.current[index] = element;
-                    } else {
-                      delete attachmentInputRefs.current[index];
-                    }
-                  }}
-                  value={attachmentDrafts[index] ?? step.attachment}
-                  onChange={(event) =>
-                    setAttachmentDrafts((drafts) => ({ ...drafts, [index]: event.target.value }))
-                  }
-                  className="cell-textarea scenario-attachment-input"
-                  data-testid="scenario-attachment-content"
-                  placeholder="request / response / json / curl"
-                  rows={3}
-                  wrap="soft"
-                />
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
   );
 }
 
@@ -1179,7 +441,6 @@ export default function App() {
   const [showReleaseNameInput, setShowReleaseNameInput] = useState(false);
   const [editingExistingCount, setEditingExistingCount] = useState(0);
   const [editingScenarioIds, setEditingScenarioIds] = useState(new Set());
-  const [activeScenarioPreviewId, setActiveScenarioPreviewId] = useState(null);
   const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
   const [uploadSelectionLabel, setUploadSelectionLabel] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -1386,10 +647,10 @@ export default function App() {
     sendUpdate(item, payload);
   };
 
-  const handleScenarioCommit = (item, value) => {
-    decrementEditingExisting();
-    const sanitizedValue = value === '' ? null : buildStructuredScenario(value);
-    sendUpdate({ ...item, scenario: value }, { scenario: sanitizedValue });
+  const handleScenarioSave = (item, value) => {
+    const scenario = buildStructuredScenario(value);
+    handleFieldChange(item.testId, 'scenario', scenario);
+    sendUpdate({ ...item, scenario }, { scenario });
     setEditingScenarioIds((prev) => {
       const next = new Set(prev);
       next.delete(item.testId);
@@ -1413,6 +674,7 @@ export default function App() {
 
   const isRequiredDraftFieldFilled = (draft, key) => {
     const value = draft?.[key];
+    if (key === 'scenario') return Boolean(buildStructuredScenario(value));
     return typeof value === 'string' ? value.trim() !== '' : value != null && value !== '';
   };
 
@@ -1915,11 +1177,11 @@ export default function App() {
 	                          </span>
                         ) : column.type === 'textarea' ? (
                           isScenarioColumn ? (
-                            <ScenarioStepEditor
+                            <ScenarioEditor
                               value={value}
-                              onChange={(nextValue) => handleNewFieldChange(index, column.key, nextValue)}
-                              onCommit={() => {}}
-	                            />
+                              onSave={(nextValue) => handleNewFieldChange(index, column.key, nextValue)}
+                              onCancel={() => handleNewFieldChange(index, column.key, value)}
+                            />
                           ) : (
                             <div className="textarea-with-preview">
                               <textarea
@@ -2035,24 +1297,17 @@ export default function App() {
                         ) : column.editable ? (
                           isScenarioColumn ? (
                             isEditingScenario ? (
-                              <ScenarioStepEditor
+                              <ScenarioEditor
                                 value={value}
-                                onChange={(nextValue) => handleFieldChange(item.testId, column.key, nextValue)}
-                                onCommit={(nextValue) => handleScenarioCommit(item, nextValue)}
-                                onFocus={incrementEditingExisting}
-	                                autoFocus
+                                onSave={(nextValue) => handleScenarioSave(item, nextValue)}
+                                onCancel={() => setEditingScenarioIds((prev) => {
+                                  const next = new Set(prev);
+                                  next.delete(item.testId);
+                                  return next;
+                                })}
                               />
                             ) : (
-                              <div
-                                className="markdown-preview-wrapper scenario-preview"
-	                                onClick={() =>
-                                  setEditingScenarioIds((prev) => {
-                                    const next = new Set(prev);
-                                    next.add(item.testId);
-                                    return next;
-                                  })
-                                }
-                              >
+                              <div className="markdown-preview-wrapper scenario-preview">
                                 <button
                                   type="button"
                                   className="scenario-export-button"
@@ -2065,12 +1320,15 @@ export default function App() {
                                 >
                                   <ExportIcon />
                                 </button>
-                                <ScenarioPreview
-                                  value={value}
-                                  previewId={item.testId}
-                                  activePreviewId={activeScenarioPreviewId}
-                                  onActivatePreview={setActiveScenarioPreviewId}
-                                />
+                                <button
+                                  type="button"
+                                  className="scenario-edit-button"
+                                  data-testid="scenario-edit"
+                                  onClick={() => setEditingScenarioIds((prev) => new Set(prev).add(item.testId))}
+                                >
+                                  Изменить
+                                </button>
+                                <ScenarioTree value={value} />
                               </div>
                             )
                           ) : column.type === 'textarea' ? (

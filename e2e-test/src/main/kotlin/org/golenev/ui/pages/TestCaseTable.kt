@@ -124,16 +124,20 @@ class TestCaseTable {
         detailedScenarioTextarea
             .shouldBe(visible.because("поле сценария должно быть видимым для ввода значения"))
             .typeOf(scenario)
+        `$`("$draftRowLocator [data-testid='scenario-save']").click()
     }
 
     @Step("Для каждого шага structured scenario проверяем строку, вводим текст и при наличии заполняем вложение")
     fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) {
-        steps.forEach { step ->
-            `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='${step.number}']")
+        steps.forEachIndexed { index, step ->
+            if (index > 0) {
+                `$`("$draftRowLocator [data-testid='scenario-root-add']").click()
+            }
+            `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-scenario-path='$index']")
                 .name("Строка шага ${step.number} detailed scenario.")
                 .shouldBe(visible.because("строка шага ${step.number} detailed scenario должна быть видимой на странице"))
 
-            `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='${step.number}'] [data-testid='scenario-step-input']")
+            `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-scenario-path='$index'] [data-testid='scenario-step-input']")
                 .name("Поле ввода текста шага ${step.number} detailed scenario.")
                 .shouldBe(visible.because("поле ввода текста шага ${step.number} detailed scenario должно быть видимым для ввода значения"))
                 .typeOf(step.text)
@@ -141,9 +145,12 @@ class TestCaseTable {
             val attachment = step.attachments.firstOrNull { attachment -> attachment.content.isNotBlank() }
 
             if (attachment != null) {
-                fillScenarioStepAttachment(step.number, attachment.content.trim())
+                fillScenarioStepAttachment(index + 1, attachment.content.trim())
             }
         }
+        `$`("$draftRowLocator [data-testid='scenario-save']")
+            .shouldBe(visible.because("кнопка общего сохранения structured scenario должна быть видимой"))
+            .click()
     }
 
     @Step("Дожидаемся видимости поля Notes и вводим значение")
@@ -257,31 +264,23 @@ class TestCaseTable {
 
     @Step("Открываем редактор вложения шага {stepNumber}, вводим содержимое, сохраняем и проверяем сворачивание поля")
     private fun fillScenarioStepAttachment(stepNumber: Int, attachment: String) {
-        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='$stepNumber'] [data-testid='scenario-attachment-add-button']")
+        val stepPath = stepNumber - 1
+        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-scenario-path='$stepPath'] [data-testid='scenario-attachment-add-button']")
             .name("Кнопка добавления вложения шага detailed scenario.")
             .shouldBe(visible.because("кнопка добавления вложения шага detailed scenario должна быть видимой перед кликом"))
             .click()
-        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='$stepNumber'] [data-testid='scenario-attachment-content']")
+        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-scenario-path='$stepPath'] [data-testid='scenario-attachment-content']")
             .name("Поле содержимого вложения шага detailed scenario.")
             .shouldBe(visible.because("поле содержимого вложения шага detailed scenario должно быть видимым на странице"))
-        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='$stepNumber'] [data-testid='scenario-attachment-content']")
+        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-scenario-path='$stepPath'] [data-testid='scenario-attachment-content']")
             .name("Поле содержимого вложения шага detailed scenario.")
             .click()
-        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='$stepNumber'] [data-testid='scenario-attachment-content']")
+        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-scenario-path='$stepPath'] [data-testid='scenario-attachment-content']")
             .name("Поле содержимого вложения шага detailed scenario.")
             .shouldBe(visible.because("поле содержимого вложения шага detailed scenario должно быть видимым для ввода значения"))
             .typeOf(attachment)
-        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='$stepNumber'] [data-testid='scenario-attachment-edit-button']")
-            .name("Кнопка сохранения вложения шага detailed scenario.")
-            .shouldBe(visible.because("кнопка сохранения вложения шага detailed scenario должна быть видимой перед кликом"))
-            .click()
-        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='$stepNumber'] [data-testid='scenario-attachment-toggle']")
-            .name("Плашка вложения шага detailed scenario.")
-            .shouldBe(visible.because("плашка вложения шага detailed scenario должна быть видимой на странице"))
-            .shouldHave(text("Вложение").because("после добавления вложения должна появиться плашка с текстом Вложение"))
-        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-step-number='$stepNumber'] [data-testid='scenario-attachment-content']")
-            .name("Поле содержимого вложения шага detailed scenario.")
-            .should(disappear.because("поле вложения должно закрыться после сохранения текста вложения"))
+        `$`("$draftRowLocator [data-testid='test-case-cell'][data-name='Detailed Scenario'] [data-testid='scenario-editor-step'][data-scenario-path='$stepPath'] [data-testid='scenario-attachment-content']")
+            .shouldHave(value(attachment).because("содержимое отдельного вложения должно сохраняться в редакторе до общего сохранения сценария"))
     }
 
     private fun savedRowLocator(testId: String): String =

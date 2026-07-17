@@ -1,6 +1,7 @@
 package com.example.report.service
 
 import com.example.report.dto.ScenarioAttachmentRequest
+import com.example.report.dto.ScenarioParameterRequest
 import com.example.report.dto.ScenarioRequest
 import com.example.report.dto.ScenarioStepRequest
 import org.apache.poi.ss.usermodel.BorderStyle
@@ -143,22 +144,21 @@ class ExcelExportService(
      */
     private fun formatScenario(scenario: ScenarioRequest?): String? {
         if (scenario == null) return null
-        return scenario.steps
-            .filter { step -> !step.text.isNullOrBlank() || !step.attachments.isNullOrEmpty() }
-            .joinToString("\n") { step ->
-                val number = step.number ?: 0
-                val text = step.text.orEmpty().trim()
-                val attachments = step.attachments.orEmpty()
-                    .filter { attachment -> !attachment.content.isNullOrBlank() }
-                    .joinToString("\n") { attachment ->
-                        "   [${attachment.type.orEmpty().ifBlank { "attachment" }}] ${attachment.content.orEmpty()}"
-                    }
-                if (attachments.isBlank()) {
-                    "$number. $text"
-                } else {
-                    "$number. $text\n$attachments"
+        fun render(steps: List<ScenarioStepRequest>, level: Int): List<String> = steps.flatMap { step ->
+            val indent = "   ".repeat(level)
+            buildList {
+                if (!step.text.isNullOrBlank()) add("$indent${step.text.trim()}")
+                step.parameters.forEach { parameter ->
+                    add("$indent   ${parameter.name.orEmpty()} — ${parameter.value.orEmpty()}")
                 }
+                step.attachments.orEmpty().forEach { attachment ->
+                    val name = attachment.name.orEmpty().ifBlank { "Attachment" }
+                    add("$indent   [$name] ${attachment.content.orEmpty()}")
+                }
+                addAll(render(step.subSteps, level + 1))
             }
+        }
+        return render(scenario.steps, 0).joinToString("\n").takeIf { it.isNotBlank() }
     }
 
     /**
@@ -167,10 +167,18 @@ class ExcelExportService(
     private fun formatSnapshotScenario(rawScenario: Any?): String? {
         return when (rawScenario) {
             null -> null
-            is String -> rawScenario
+            is String -> {
+                val trimmed = rawScenario.trim()
+                if (trimmed.startsWith("{")) {
+                    runCatching {
+                        val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+                        formatScenario(mapper.readValue(trimmed, ScenarioRequest::class.java))
+                    }.getOrElse { rawScenario }
+                } else rawScenario
+            }
             is ScenarioRequest -> formatScenario(rawScenario)
             is Map<*, *> -> {
-                val steps = (rawScenario["steps"] as? List<*>)
+                fun parseSteps(rawSteps: Any?): List<ScenarioStepRequest> = (rawSteps as? List<*>)
                     ?.mapNotNull { rawStep ->
                         val step = rawStep as? Map<*, *> ?: return@mapNotNull null
                         ScenarioStepRequest(
@@ -180,14 +188,26 @@ class ExcelExportService(
                                 ?.mapNotNull { rawAttachment ->
                                     val attachment = rawAttachment as? Map<*, *> ?: return@mapNotNull null
                                     ScenarioAttachmentRequest(
-                                        type = attachment["type"] as? String,
+                                        name = attachment["name"] as? String ?: attachment["type"] as? String,
+                                        mediaType = attachment["mediaType"] as? String,
                                         content = attachment["content"] as? String,
+                                        source = attachment["source"] as? String,
+                                        sizeBytes = (attachment["sizeBytes"] as? Number)?.toLong(),
                                     )
                                 }
                                 ?: emptyList(),
+                            subSteps = parseSteps(step["subSteps"]),
+                            durationMs = (step["durationMs"] as? Number)?.toLong(),
+                            parameters = (step["parameters"] as? List<*>)
+                                ?.mapNotNull { rawParameter ->
+                                    val parameter = rawParameter as? Map<*, *> ?: return@mapNotNull null
+                                    ScenarioParameterRequest(parameter["name"] as? String, parameter["value"]?.toString())
+                                }.orEmpty(),
                         )
                     }
-                    ?: return rawScenario.toString()
+                    .orEmpty()
+                val steps = parseSteps(rawScenario["steps"])
+                if (steps.isEmpty()) return rawScenario.toString()
                 formatScenario(ScenarioRequest(steps = steps))
             }
             else -> rawScenario.toString()
