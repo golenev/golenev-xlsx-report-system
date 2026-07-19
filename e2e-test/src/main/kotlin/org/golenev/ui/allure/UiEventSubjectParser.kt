@@ -1,5 +1,8 @@
 package org.golenev.ui.allure
 
+/**
+ * Разбирает subject из события Selenide в тип операции, условие успеха и пояснение `because`.
+ */
 object UiEventSubjectParser {
     private val checkOperations = listOf("should not have", "should not be", "should have", "should be", "should not", "should")
     private val actionConditions = linkedMapOf(
@@ -16,6 +19,12 @@ object UiEventSubjectParser {
         "type" to "editable: interactable, enabled и не readonly",
     )
 
+    /**
+     * Определяет, является ли subject проверкой или действием, и возвращает структурированное описание события.
+     *
+     * @param subject строковое описание операции Selenide из `LogEvent.subject`.
+     * @return разобранное UI-событие или `null`, если subject пустой либо не поддерживается.
+     */
     fun parse(subject: String): ParsedUiEvent? {
         val normalizedSubject = subject.trim()
         if (normalizedSubject.isBlank()) return null
@@ -35,6 +44,12 @@ object UiEventSubjectParser {
         )
     }
 
+    /**
+     * Разбирает subject проверки Selenide и извлекает условие успешного выполнения.
+     *
+     * @param subject нормализованное строковое описание проверки.
+     * @return разобранное событие проверки или `null`, если subject не похож на проверку.
+     */
     private fun parseCheck(subject: String): ParsedUiEvent? {
         val operation = checkOperations.firstOrNull { subject == it || subject.startsWith("$it(") } ?: return null
         val condition = subject.removePrefix(operation).trim().removeOuterParentheses()
@@ -47,6 +62,11 @@ object UiEventSubjectParser {
         )
     }
 
+    /**
+     * Удаляет одну внешнюю пару скобок, если она охватывает всю строку целиком.
+     *
+     * @return строку без внешних скобок либо исходную строку, если скобки не являются общей обёрткой.
+     */
     private fun String.removeOuterParentheses(): String {
         val value = trim()
         if (!value.startsWith("(") || !value.endsWith(")")) return value
@@ -61,6 +81,12 @@ object UiEventSubjectParser {
         return value.substring(1, value.lastIndex).trim()
     }
 
+    /**
+     * Извлекает вложенное пояснение `(because ...)` из условия проверки и возвращает условие без этого фрагмента.
+     *
+     * @param condition строковое условие проверки, возможно содержащее пояснение `because`.
+     * @return результат с очищенным условием и найденным пояснением.
+     */
     private fun extractBecause(condition: String): BecauseResult {
         val marker = "(because "
         var depth = 0
@@ -102,6 +128,14 @@ object UiEventSubjectParser {
         return BecauseResult(cleaned, because)
     }
 
+    /**
+     * Структурированное представление распознанного UI-события Selenide.
+     *
+     * @property eventType тип UI-события.
+     * @property operation название операции Selenide.
+     * @property successCondition условие успешного выполнения или `null`, если оно отсутствует.
+     * @property because пользовательское пояснение `because`, если оно было указано.
+     */
     data class ParsedUiEvent(
         val eventType: UiEventType,
         val operation: String,
@@ -109,5 +143,11 @@ object UiEventSubjectParser {
         val because: String?,
     )
 
+    /**
+     * Результат извлечения пояснения `because` из условия проверки.
+     *
+     * @property condition условие без фрагмента `because`.
+     * @property because найденное пояснение или `null`, если пояснение отсутствует.
+     */
     private data class BecauseResult(val condition: String, val because: String?)
 }
