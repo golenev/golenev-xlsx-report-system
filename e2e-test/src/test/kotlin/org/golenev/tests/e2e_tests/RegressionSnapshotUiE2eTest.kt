@@ -7,8 +7,10 @@ import io.qameta.allure.AllureId
 import org.golenev.db.tables.regression.RegressionDao
 import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.endpoints.ReportServiceDao
+import org.golenev.restapi.endpoints.ScenarioAttachmentRequest
+import org.golenev.restapi.endpoints.ScenarioRequest
+import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.restapi.endpoints.TestBatchRequest
-import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.mainPage
 import org.golenev.utils.TestDataGenerator
@@ -72,6 +74,7 @@ class RegressionSnapshotUiE2eTest {
                     testCase.copy(
                         testId = testId,
                         issueLink = "https://youtrack.test/issue/$testId",
+                        scenario = createRegressionSnapshotScenario(testId, index + 1),
                     )
                 }
         }
@@ -170,6 +173,74 @@ class RegressionSnapshotUiE2eTest {
             }
         }
     }
+
+    private fun createRegressionSnapshotScenario(testId: String, caseNumber: Int): ScenarioRequest {
+        val scenarioTitle = "Регрессионный снапшот $caseNumber для $testId"
+
+        fun attachments(stepPath: String): List<ScenarioAttachmentRequest> = listOf(
+            ScenarioAttachmentRequest(
+                name = "request-$stepPath.json",
+                mediaType = "application/json",
+                content = """
+                    {
+                      "testId": "$testId",
+                      "caseNumber": $caseNumber,
+                      "stepPath": "$stepPath",
+                      "action": "prepare-regression-snapshot"
+                    }
+                """.trimIndent(),
+                sizeBytes = 128,
+            ),
+            ScenarioAttachmentRequest(
+                name = "expected-$stepPath.txt",
+                mediaType = "text/plain",
+                content = "Ожидаем, что $scenarioTitle сохранит шаг $stepPath вместе с вложенными данными.",
+                sizeBytes = 96,
+            ),
+        )
+
+        fun subStep(parentNumber: Int, subNumber: Int, text: String): ScenarioStepRequest = ScenarioStepRequest(
+            number = subNumber,
+            text = text,
+            attachments = attachments("$parentNumber.$subNumber"),
+            durationMs = 100L * parentNumber + subNumber,
+        )
+
+        fun rootStep(number: Int, text: String, firstSubStep: String, secondSubStep: String): ScenarioStepRequest = ScenarioStepRequest(
+            number = number,
+            text = text,
+            attachments = attachments(number.toString()),
+            subSteps = listOf(
+                subStep(number, 1, firstSubStep),
+                subStep(number, 2, secondSubStep),
+            ),
+            durationMs = 1_000L * number,
+        )
+
+        return ScenarioRequest(
+            steps = listOf(
+                rootStep(
+                    number = 1,
+                    text = "Подготавливаем данные для $scenarioTitle",
+                    firstSubStep = "Формируем уникальный идентификатор и ссылку на задачу",
+                    secondSubStep = "Проверяем обязательные поля перед отправкой batch-запроса",
+                ),
+                rootStep(
+                    number = 2,
+                    text = "Запускаем регресс и фиксируем результаты для $scenarioTitle",
+                    firstSubStep = "Выбираем статус прогона в таблице UI",
+                    secondSubStep = "Завершаем регресс и ожидаем запись в regressions",
+                ),
+                rootStep(
+                    number = 3,
+                    text = "Проверяем payload снапшота для $scenarioTitle",
+                    firstSubStep = "Сверяем основные поля тест-кейса в payload",
+                    secondSubStep = "Сверяем вложенные шаги и оба вложения на каждом уровне",
+                ),
+            ),
+        )
+    }
+
 }
 
 private enum class RegressionRunStatus {
