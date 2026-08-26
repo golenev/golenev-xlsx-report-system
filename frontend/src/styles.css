@@ -1685,3 +1685,404 @@ tbody tr:nth-child(odd) .row-index-cell {
 .scenario-preview .scenario-preview-list {
   padding-right: 34px;
 }
+
+/* Draft test case workspace. The table DOM and all test hooks stay intact. */
+.report-table .new-row {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 12px;
+  width: min(calc(100vw - 52px), 1440px);
+  padding: 16px;
+  border-bottom: 1px solid #cbd5e1;
+  background: #f5f7fa;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.report-table .new-row > td {
+  position: relative;
+  display: flex;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  flex-direction: column;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #d8dee6;
+  overflow: hidden;
+}
+
+.report-table .new-row > td[data-name]::before {
+  content: attr(data-name);
+  display: block;
+  padding: 8px 10px 0;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.report-table .new-row > td[data-name='Detailed Scenario'] {
+  grid-column: 1 / -1;
+  order: 20;
+}
+
+.report-table .new-row > td[data-name='Notes'] {
+  grid-column: span 2;
+  order: 30;
+}
+
+.report-table .new-row > td[data-name='Draft Actions'] {
+  grid-column: 3 / -1;
+  order: 40;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 10px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.report-table .new-row > td[data-name='Draft Actions']::before {
+  display: none;
+}
+
+.report-table .new-row .save-btn,
+.report-table .new-row .cancel-btn {
+  min-width: 96px;
+  padding: 8px 12px;
+}
+
+.report-table .new-row .cancel-btn {
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.report-table .new-row .readonly-value,
+.report-table .new-row .regression-cell-content {
+  min-height: 39px;
+  padding: 9px 10px;
+}
+
+.report-table .new-row .cell-input,
+.report-table .new-row .cell-textarea,
+.report-table .new-row .priority-select {
+  min-height: 39px;
+  padding: 9px 10px;
+}
+
+.scenario-editor {
+  gap: 12px;
+  padding: 12px;
+  border: 0;
+  border-radius: 0;
+  background: #f8fafc;
+}
+
+.scenario-editor-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.scenario-editor-intro > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.scenario-editor-intro strong {
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.scenario-editor-intro span {
+  color: #667085;
+  font-size: 12px;
+}
+
+.scenario-editor-total {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #e9edf3;
+}
+
+.scenario-editor-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scenario-editor-node {
+  gap: 0;
+  border: 1px solid #dce1e8;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.scenario-step-toggle {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) max-content 18px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 13px;
+  border: 0;
+  background: #fff;
+  color: #172033;
+  cursor: pointer;
+  text-align: left;
+}
+
+.scenario-step-toggle:hover {
+  background: #fafbfc;
+}
+
+.scenario-step-index {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: #edf5ff;
+  color: #0a66c2;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.scenario-step-heading {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-step-counter {
+  min-width: 20px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #f1f3f5;
+  color: #64748b;
+  font-size: 11px;
+  text-align: center;
+}
+
+.scenario-summary-chevron {
+  color: #64748b;
+  font-size: 16px;
+  transition: transform 140ms ease;
+}
+
+[aria-expanded='true'] > .scenario-summary-chevron {
+  transform: rotate(180deg);
+}
+
+.scenario-step-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 0 13px 13px 53px;
+  border-top: 1px solid #edf0f4;
+}
+
+.scenario-field-label,
+.scenario-attachment-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.scenario-field-label {
+  padding-top: 13px;
+}
+
+.scenario-step-card-body .scenario-step-input,
+.scenario-attachment-fields input,
+.scenario-attachment-fields textarea {
+  width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid #cfd6df;
+  border-radius: 7px;
+  background: #fff;
+  color: #1f2937;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.scenario-editor-readonly {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: #f7f8fa;
+  color: #667085;
+  font-size: 11px;
+}
+
+.scenario-editor-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scenario-editor-section-title,
+.scenario-step-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.scenario-editor-section-title strong {
+  color: #94a3b8;
+}
+
+.scenario-link-action,
+.scenario-danger-action {
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.scenario-link-action { color: #0969da; }
+.scenario-link-action:hover { background: #edf5ff; }
+.scenario-danger-action { color: #b42318; }
+.scenario-danger-action:hover { background: #fff0ee; }
+
+.scenario-editor-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scenario-editor-attachment {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  border: 1px solid #e0e4ea;
+  border-radius: 8px;
+  background: #fbfcfd;
+  overflow: hidden;
+}
+
+.scenario-attachment-summary {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) max-content 18px;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: #334155;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+}
+
+.scenario-paperclip { color: #0a66c2; transform: rotate(-45deg); }
+.scenario-attachment-type { color: #94a3b8; font-size: 10px; }
+
+.scenario-attachment-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.scenario-attachment-fields .scenario-danger-action {
+  align-self: flex-start;
+}
+
+.scenario-step-actions {
+  justify-content: flex-start;
+}
+
+.scenario-editor-children {
+  gap: 8px;
+  margin: 8px 0 8px 28px;
+  padding-left: 10px;
+  border-left: 2px solid #dbe9f8;
+}
+
+.scenario-add-root {
+  align-self: flex-start;
+  padding: 9px 12px;
+  border: 1px dashed #aeb8c5;
+  border-radius: 8px;
+  background: transparent;
+  color: #0969da;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.scenario-add-root:hover {
+  border-color: #0a84ff;
+  background: #f0f7ff;
+}
+
+.scenario-editor-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin: 0;
+  padding-top: 11px;
+  border-top: 1px solid #dfe3e8;
+}
+
+.scenario-save-button {
+  padding: 8px 14px;
+}
+
+@media (max-width: 1000px) {
+  .report-table .new-row {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .report-table .new-row > td[data-name='Draft Actions'] {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .report-table .new-row {
+    grid-template-columns: minmax(0, 1fr);
+    width: calc(100vw - 34px);
+    padding: 10px;
+  }
+
+  .report-table .new-row > td[data-name='Detailed Scenario'],
+  .report-table .new-row > td[data-name='Notes'],
+  .report-table .new-row > td[data-name='Draft Actions'] {
+    grid-column: 1;
+  }
+
+  .scenario-step-card-body {
+    padding-left: 13px;
+  }
+
+  .scenario-editor-children {
+    margin-left: 12px;
+  }
+}
