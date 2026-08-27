@@ -71,15 +71,20 @@ function StepEditor({ step, path, number, onUpdate, onRemove }) {
   </section>;
 }
 
-export function ScenarioEditor({ value, onSave, onCancel }) {
+export function ScenarioEditor({ value, onSave, onCancel, onChange, showActions = true }) {
   const editableScenario = (scenarioValue) => {
     const scenario = normalizeScenario(scenarioValue);
     return scenario.steps.length ? scenario : { steps: [createScenarioStep()] };
   };
   const [draft, setDraft] = useState(() => editableScenario(value));
   useEffect(() => setDraft(editableScenario(value)), [value]);
-  const update = (path, updater) => setDraft((current) => ({ ...current, steps: updateStepAtPath(current.steps, path, updater) }));
-  const remove = (path) => setDraft((current) => ({ ...current, steps: removeStepAtPath(current.steps, path) }));
+  const commitDraft = (updater) => setDraft((current) => {
+    const next = updater(current);
+    onChange?.(serializeScenario(next));
+    return next;
+  });
+  const update = (path, updater) => commitDraft((current) => ({ ...current, steps: updateStepAtPath(current.steps, path, updater) }));
+  const remove = (path) => commitDraft((current) => ({ ...current, steps: removeStepAtPath(current.steps, path) }));
 
   return <div className="scenario-editor" data-testid="scenario-editor">
     <div className="scenario-editor-intro">
@@ -92,10 +97,10 @@ export function ScenarioEditor({ value, onSave, onCancel }) {
     <div className="scenario-editor-steps">
       {draft.steps.map((step, index) => <StepEditor key={index} step={step} path={[index]} number={index + 1} onUpdate={update} onRemove={remove} />)}
     </div>
-    <button type="button" className="scenario-add-root" data-testid="scenario-root-add" onClick={() => setDraft((current) => ({ ...current, steps: [...current.steps, createScenarioStep()] }))}>+ Добавить корневой шаг</button>
-    <div className="scenario-editor-actions">
+    <button type="button" className="scenario-add-root" data-testid="scenario-root-add" onClick={() => commitDraft((current) => ({ ...current, steps: [...current.steps, createScenarioStep()] }))}>+ Добавить корневой шаг</button>
+    {showActions && <div className="scenario-editor-actions">
       <button type="button" className="ghost-btn" data-testid="scenario-cancel" onClick={onCancel}>Отмена</button>
       <button type="button" className="secondary-btn scenario-save-button" data-testid="scenario-save" onClick={() => onSave(serializeScenario(draft))}>Сохранить сценарий</button>
-    </div>
+    </div>}
   </div>;
 }

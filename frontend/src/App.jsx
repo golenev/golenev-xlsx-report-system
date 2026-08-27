@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ReleaseAnalyticsWidget from './ReleaseAnalyticsWidget.tsx';
 import { ScenarioTree } from './ScenarioTree.jsx';
 import { ScenarioEditor } from './ScenarioEditor.jsx';
+import { TestCaseEditorModal } from './TestCaseEditorModal.jsx';
 import { buildScenarioExportText, normalizeScenario, serializeScenario } from './scenarioModel.js';
 const GENERAL_STATUS_OPTIONS = [
   { value: 'Очередь', color: '#e0e8ff', textColor: '#294a9a' },
@@ -440,7 +441,7 @@ export default function App() {
   const [releaseNameDraft, setReleaseNameDraft] = useState('');
   const [showReleaseNameInput, setShowReleaseNameInput] = useState(false);
   const [editingExistingCount, setEditingExistingCount] = useState(0);
-  const [editingScenarioIds, setEditingScenarioIds] = useState(new Set());
+  const [testCaseEditor, setTestCaseEditor] = useState(null);
   const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
   const [uploadSelectionLabel, setUploadSelectionLabel] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -603,8 +604,10 @@ export default function App() {
         throw new Error('Failed to save changes');
       }
       await loadData();
+      return true;
     } catch (err) {
       setError(err.message);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -647,17 +650,6 @@ export default function App() {
     sendUpdate(item, payload);
   };
 
-  const handleScenarioSave = (item, value) => {
-    const scenario = buildStructuredScenario(value);
-    handleFieldChange(item.testId, 'scenario', scenario);
-    sendUpdate({ ...item, scenario }, { scenario });
-    setEditingScenarioIds((prev) => {
-      const next = new Set(prev);
-      next.delete(item.testId);
-      return next;
-    });
-  };
-
   const handleNewFieldChange = (index, key, value) => {
     setNewItems((prev) =>
       prev.map((item, idx) => (idx === index ? { ...item, [key]: value } : item))
@@ -665,7 +657,7 @@ export default function App() {
   };
 
   const startNewRow = () => {
-    setNewItems((prev) => [...prev, createEmptyItem()]);
+    setTestCaseEditor({ mode: 'create', value: createEmptyItem() });
   };
 
   const cancelNewRow = (index) => {
@@ -896,6 +888,61 @@ export default function App() {
     downloadTextFile(fileName, content);
   };
 
+  const buildTestCasePayload = (draft) => {
+    const payload = { testId: (draft.testId || '').trim() };
+    FIELD_DEFINITIONS.forEach((field) => {
+      if (field.key === 'testId' || field.key === 'readyDate') return;
+      const value = draft[field.key];
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        payload[field.key] = field.key === 'scenario'
+          ? (buildStructuredScenario(trimmed) ?? trimmed)
+          : (trimmed || null);
+      } else if (value != null) {
+        payload[field.key] = value;
+      }
+    });
+    return payload;
+  };
+
+  const handleModalSave = async (draft) => {
+    const trimmedId = (draft.testId || '').trim();
+    if (!trimmedId) {
+      setError('Test ID is required');
+      return;
+    }
+    if (!isDraftReadyToSave(draft)) {
+      setError('Test ID, Category / Feature, Short Title and Detailed Scenario are required');
+      return;
+    }
+
+    if (testCaseEditor.mode === 'create') {
+      if (items.some((item) => String(item.testId).trim() === trimmedId)) {
+        setPopup({
+          title: 'Duplicate Test ID',
+          message: `Test case with ID "${trimmedId}" already exists. Please use a unique ID before saving.`
+        });
+        return;
+      }
+      try {
+        await createTest(buildTestCasePayload(draft));
+        setTestCaseEditor(null);
+      } catch (err) {
+        // Keep the modal open so the user can correct the draft.
+      }
+      return;
+    }
+
+    const original = items.find((item) => item.testId === testCaseEditor.value.testId);
+    if (!original) {
+      setError('Test case was not found');
+      return;
+    }
+    const payload = buildTestCasePayload({ ...draft, testId: original.testId });
+    const saved = await sendUpdate({ ...original, ...draft, testId: original.testId }, payload);
+    if (saved) setTestCaseEditor(null);
+  };
+
   const columns = TABLE_COLUMNS;
   const translate = (text) => translations[text] ?? text;
   const hasSelectedFiles = selectedUploadFiles.length > 0;
@@ -905,6 +952,15 @@ export default function App() {
 
   return (
     <div className="app-container">
+      {testCaseEditor && <TestCaseEditorModal
+        mode={testCaseEditor.mode}
+        value={testCaseEditor.value}
+        saving={saving}
+        generalStatusOptions={GENERAL_STATUS_OPTIONS}
+        priorityOptions={PRIORITY_OPTIONS}
+        onSave={handleModalSave}
+        onClose={() => setTestCaseEditor(null)}
+      />}
       {popup && (
         <div className="popup-backdrop" role="alertdialog" aria-modal="true">
           <div className="popup-card">
@@ -1249,8 +1305,6 @@ export default function App() {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
                     const isScenarioColumn = column.key === 'scenario';
-                    const isEditingScenario =
-                      isScenarioColumn && editingScenarioIds.has(item.testId);
                     const isRegressionColumn = column.type === 'regression';
                     const regressionValue = regressionResults[item.testId] ?? '';
                     const isMultilineColumn = MULTILINE_TEXT_KEYS.has(column.key);
@@ -1296,18 +1350,7 @@ export default function App() {
                           </div>
                         ) : column.editable ? (
                           isScenarioColumn ? (
-                            isEditingScenario ? (
-                              <ScenarioEditor
-                                value={value}
-                                onSave={(nextValue) => handleScenarioSave(item, nextValue)}
-                                onCancel={() => setEditingScenarioIds((prev) => {
-                                  const next = new Set(prev);
-                                  next.delete(item.testId);
-                                  return next;
-                                })}
-                              />
-                            ) : (
-                              <div className="markdown-preview-wrapper scenario-preview">
+                            <div className="markdown-preview-wrapper scenario-preview">
                                 <button
                                   type="button"
                                   className="scenario-export-button"
@@ -1322,10 +1365,10 @@ export default function App() {
                                 </button>
                                 <ScenarioTree
                                   value={value}
-                                  onEdit={() => setEditingScenarioIds((prev) => new Set(prev).add(item.testId))}
+                                  compact
+                                  onEdit={() => setTestCaseEditor({ mode: 'edit', value: { ...item } })}
                                 />
                               </div>
-                            )
                           ) : column.type === 'textarea' ? (
                             <div className="textarea-with-preview">
                               <textarea
