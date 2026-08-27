@@ -1990,8 +1990,11 @@ tbody tr:nth-child(odd) .row-index-cell {
 
 .scenario-editor-attachment {
   display: flex;
+  align-items: stretch;
   flex-direction: column;
   gap: 0;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0;
   border: 1px solid #e0e4ea;
   border-radius: 8px;
@@ -2046,6 +2049,9 @@ tbody tr:nth-child(odd) .row-index-cell {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 10px 0;
   border-top: 1px solid #e5e7eb;
   background: #fff;
