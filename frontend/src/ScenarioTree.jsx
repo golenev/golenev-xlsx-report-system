@@ -56,7 +56,7 @@ function ScenarioTreeNode({ step, path, stepNumbers, expandedStepPaths, expanded
   );
 }
 
-export function ScenarioTree({ value, onEdit, compact = false }) {
+export function ScenarioTree({ value, onEdit }) {
   const [expandedStepPaths, setExpandedStepPaths] = useState(() => new Set());
   const [expandedAttachmentPaths, setExpandedAttachmentPaths] = useState(() => new Set());
   const steps = useMemo(() => normalizeScenario(value).steps.filter(hasStepContent), [value]);
@@ -85,17 +85,6 @@ export function ScenarioTree({ value, onEdit, compact = false }) {
     }
   };
   if (!steps.length) return <span className="readonly-value">—</span>;
-  if (compact) {
-    const totalSteps = steps.reduce((total, step) => total + countDescendants(step) + 1, 0);
-    const totalAttachments = steps.reduce((total, step) => total + countAttachments(step), 0);
-    return <div className="scenario-compact-preview" data-testid="scenario-preview">
-      <div className="scenario-compact-copy">
-        <strong>{steps[0].text}</strong>
-        <span>{totalSteps} шагов{totalAttachments ? ` · ${totalAttachments} вложений` : ''}</span>
-      </div>
-      <button type="button" className="scenario-edit-button" data-testid="scenario-edit" onClick={onEdit}>Изменить</button>
-    </div>;
-  }
   return <div className="scenario-tree" data-testid="scenario-preview">
     <div className="scenario-tree-toolbar">
       <Chevron expanded={allExpanded} disabled={!hasExpandableContent} onClick={toggleAll} label={allExpanded ? 'Свернуть весь сценарий' : 'Развернуть весь сценарий'} testId="scenario-toggle-all" />

@@ -48,7 +48,7 @@ export function TestCaseEditorModal({
 
   return <div className="test-case-modal-layer" role="presentation" data-testid="test-case-editor-modal">
     <div className="test-case-modal-backdrop" aria-hidden="true" />
-    <aside className="test-case-modal" role="dialog" aria-modal="true" aria-labelledby="test-case-modal-title">
+    <section className="test-case-modal" role="dialog" aria-modal="true" aria-labelledby="test-case-modal-title">
       <header className="test-case-modal-header">
         <div>
           <span className="test-case-modal-eyebrow">{mode === 'create' ? 'Новый тест-кейс' : 'Редактирование тест-кейса'}</span>
@@ -117,7 +117,7 @@ export function TestCaseEditorModal({
           {saving ? 'Сохранение…' : 'Сохранить'}
         </button>
       </footer>
-    </aside>
+    </section>
 
     {confirmClose && <div className="unsaved-confirm-layer" role="presentation">
       <section className="unsaved-confirm" role="alertdialog" aria-modal="true" aria-labelledby="unsaved-confirm-title" aria-describedby="unsaved-confirm-description">

@@ -1365,7 +1365,6 @@ export default function App() {
                                 </button>
                                 <ScenarioTree
                                   value={value}
-                                  compact
                                   onEdit={() => setTestCaseEditor({ mode: 'edit', value: { ...item } })}
                                 />
                               </div>
