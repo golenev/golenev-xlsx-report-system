@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createScenarioAttachment, createScenarioStep, MAX_ATTACHMENTS_PER_STEP, normalizeScenario, removeStepAtPath, serializeScenario, updateStepAtPath } from './scenarioModel';
 
 function AttachmentEditor({ attachment, index, onChange, onRemove }) {
@@ -32,18 +32,13 @@ function StepEditor({ step, path, number, onUpdate, onRemove }) {
   const detailCount = step.subSteps.length + step.parameters.length + step.attachments.length;
 
   return <section className="scenario-editor-node" data-testid="scenario-editor-step" data-scenario-path={path.join('.')}>
-    <button type="button" className="scenario-step-toggle" onClick={() => setExpanded((current) => !current)} aria-expanded={expanded} aria-label={`${expanded ? 'Свернуть' : 'Развернуть'} шаг ${number}`}>
+    <div className="scenario-step-toggle">
+      <button type="button" className={`scenario-chevron scenario-chevron-step ${expanded ? 'expanded' : ''}`} onClick={() => setExpanded((current) => !current)} aria-expanded={expanded} aria-label={`${expanded ? 'Свернуть' : 'Развернуть'} шаг ${number}`} />
       <span className="scenario-step-index">{number}</span>
-      <span className="scenario-step-heading">{step.text.trim() || 'Новый шаг'}</span>
+      <input className="scenario-step-heading" data-testid="scenario-step-input" value={step.text} onChange={(event) => update((current) => ({ ...current, text: event.target.value }))} aria-label={`Описание шага ${number}`} placeholder="Новый шаг" />
       {detailCount > 0 && <span className="scenario-step-counter">{detailCount}</span>}
-      <span className={`scenario-chevron scenario-chevron-step ${expanded ? 'expanded' : ''}`} aria-hidden="true" />
-    </button>
+    </div>
     {expanded && <div className="scenario-step-card-body">
-      <label className="scenario-field-label">
-        <span>Описание шага</span>
-        <textarea className="cell-textarea scenario-step-input" data-testid="scenario-step-input" value={step.text} onChange={(event) => update((current) => ({ ...current, text: event.target.value }))} rows={3} placeholder="Опишите действие или ожидаемый результат" />
-      </label>
-
       {step.parameters.length > 0 && <div className="scenario-editor-readonly">Параметры выполнения <strong>{step.parameters.length}</strong> · сохраняются без изменений</div>}
 
       <div className="scenario-editor-section">
@@ -77,10 +72,20 @@ export function ScenarioEditor({ value, onSave, onCancel, onChange, showActions 
     return scenario.steps.length ? scenario : { steps: [createScenarioStep()] };
   };
   const [draft, setDraft] = useState(() => editableScenario(value));
-  useEffect(() => setDraft(editableScenario(value)), [value]);
+  const lastEmittedValue = useRef(null);
+  useEffect(() => {
+    const serializedValue = JSON.stringify(value);
+    if (serializedValue === lastEmittedValue.current) {
+      lastEmittedValue.current = null;
+      return;
+    }
+    setDraft(editableScenario(value));
+  }, [value]);
   const commitDraft = (updater) => setDraft((current) => {
     const next = updater(current);
-    onChange?.(serializeScenario(next));
+    const serialized = serializeScenario(next);
+    lastEmittedValue.current = JSON.stringify(serialized);
+    onChange?.(serialized);
     return next;
   });
   const update = (path, updater) => commitDraft((current) => ({ ...current, steps: updateStepAtPath(current.steps, path, updater) }));

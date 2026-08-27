@@ -1829,7 +1829,7 @@ tbody tr:nth-child(odd) .row-index-cell {
 
 .scenario-step-toggle {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) max-content 18px;
+  grid-template-columns: 14px 30px minmax(0, 1fr) max-content;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -1837,7 +1837,6 @@ tbody tr:nth-child(odd) .row-index-cell {
   border: 0;
   background: #fff;
   color: #172033;
-  cursor: pointer;
   text-align: left;
 }
 
@@ -1858,11 +1857,30 @@ tbody tr:nth-child(odd) .row-index-cell {
 }
 
 .scenario-step-heading {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 6px 8px;
   overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #172033;
   font-size: 13px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.scenario-step-heading:hover {
+  border-color: #dce1e8;
+  background: #fff;
+}
+
+.scenario-step-heading:focus {
+  border-color: #0a84ff;
+  outline: 3px solid rgba(10, 132, 255, 0.12);
+  background: #fff;
 }
 
 .scenario-step-counter {
@@ -1879,7 +1897,7 @@ tbody tr:nth-child(odd) .row-index-cell {
   display: flex;
   flex-direction: column;
   gap: 13px;
-  padding: 0 13px 13px 53px;
+  padding: 13px 13px 13px 53px;
   border-top: 1px solid #edf0f4;
 }
 
@@ -1997,9 +2015,13 @@ tbody tr:nth-child(odd) .row-index-cell {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 10px;
+  padding: 10px 0;
   border-top: 1px solid #e5e7eb;
   background: #fff;
+}
+
+.scenario-attachment-fields label > span {
+  padding: 0 10px;
 }
 
 .scenario-attachment-fields .scenario-danger-action {
