@@ -6,17 +6,13 @@ function AttachmentEditor({ attachment, index, onChange, onRemove }) {
   const displayName = attachment.name?.trim() || `Вложение ${index + 1}`;
 
   return <div className={`scenario-editor-attachment ${expanded ? 'expanded' : ''}`} data-testid="scenario-editor-attachment" data-attachment-index={index}>
-    <button type="button" className="scenario-attachment-summary" onClick={() => setExpanded((current) => !current)} aria-expanded={expanded}>
+    <div className="scenario-attachment-summary">
       <span className="scenario-paperclip" aria-hidden="true">↗</span>
-      <span>{displayName}</span>
+      <input className="scenario-attachment-heading" value={attachment.name} aria-label={displayName} placeholder={displayName} onChange={(event) => onChange({ ...attachment, name: event.target.value })} />
       {attachment.mediaType && <span className="scenario-attachment-type">{attachment.mediaType}</span>}
-      <span className={`scenario-chevron scenario-chevron-step ${expanded ? 'expanded' : ''}`} aria-hidden="true" />
-    </button>
+      <button type="button" className={`scenario-chevron scenario-chevron-step ${expanded ? 'expanded' : ''}`} onClick={() => setExpanded((current) => !current)} aria-expanded={expanded} aria-label={`${expanded ? 'Свернуть' : 'Развернуть'} вложение ${displayName}`} />
+    </div>
     {expanded && <div className="scenario-attachment-fields">
-      <label>
-        <span>Название вложения</span>
-        <input value={attachment.name} aria-label="Название вложения" onChange={(event) => onChange({ ...attachment, name: event.target.value })} />
-      </label>
       <label>
         <span>Содержимое</span>
         <textarea value={attachment.content} data-testid="scenario-attachment-content" aria-label="Содержимое вложения" onChange={(event) => onChange({ ...attachment, content: event.target.value })} rows={5} />
@@ -33,10 +29,10 @@ function StepEditor({ step, path, number, onUpdate, onRemove }) {
 
   return <section className="scenario-editor-node" data-testid="scenario-editor-step" data-scenario-path={path.join('.')}>
     <div className="scenario-step-toggle">
-      <button type="button" className={`scenario-chevron scenario-chevron-step ${expanded ? 'expanded' : ''}`} onClick={() => setExpanded((current) => !current)} aria-expanded={expanded} aria-label={`${expanded ? 'Свернуть' : 'Развернуть'} шаг ${number}`} />
       <span className="scenario-step-index">{number}</span>
       <input className="scenario-step-heading" data-testid="scenario-step-input" value={step.text} onChange={(event) => update((current) => ({ ...current, text: event.target.value }))} aria-label={`Описание шага ${number}`} placeholder="Новый шаг" />
       {detailCount > 0 && <span className="scenario-step-counter">{detailCount}</span>}
+      <button type="button" className={`scenario-chevron scenario-chevron-step ${expanded ? 'expanded' : ''}`} onClick={() => setExpanded((current) => !current)} aria-expanded={expanded} aria-label={`${expanded ? 'Свернуть' : 'Развернуть'} шаг ${number}`} />
     </div>
     {expanded && <div className="scenario-step-card-body">
       {step.parameters.length > 0 && <div className="scenario-editor-readonly">Параметры выполнения <strong>{step.parameters.length}</strong> · сохраняются без изменений</div>}
