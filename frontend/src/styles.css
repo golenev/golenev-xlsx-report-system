@@ -1875,16 +1875,6 @@ tbody tr:nth-child(odd) .row-index-cell {
   text-align: center;
 }
 
-.scenario-summary-chevron {
-  color: #64748b;
-  font-size: 16px;
-  transition: transform 140ms ease;
-}
-
-[aria-expanded='true'] > .scenario-summary-chevron {
-  transform: rotate(180deg);
-}
-
 .scenario-step-card-body {
   display: flex;
   flex-direction: column;
@@ -2108,7 +2098,7 @@ tbody tr:nth-child(odd) .row-index-cell {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  width: clamp(520px, 34vw, 760px);
+  width: 50vw;
   max-width: calc(100vw - 48px);
   height: min(88vh, 920px);
   max-height: calc(100vh - 48px);

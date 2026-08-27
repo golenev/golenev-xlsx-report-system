@@ -42,12 +42,22 @@ export function TestCaseEditorModal({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [confirmClose, dirty]);
 
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty]);
+
   const change = (key, nextValue) => {
     setDraft((current) => ({ ...current, [key]: nextValue }));
   };
 
   return <div className="test-case-modal-layer" role="presentation" data-testid="test-case-editor-modal">
-    <div className="test-case-modal-backdrop" aria-hidden="true" />
+    <div className="test-case-modal-backdrop" aria-hidden="true" onMouseDown={requestClose} />
     <section className="test-case-modal" role="dialog" aria-modal="true" aria-labelledby="test-case-modal-title">
       <header className="test-case-modal-header">
         <div>

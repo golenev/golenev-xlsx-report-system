@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { createScenarioAttachment, createScenarioStep, MAX_ATTACHMENTS_PER_STEP, normalizeScenario, removeStepAtPath, serializeScenario, updateStepAtPath } from './scenarioModel';
 
 function AttachmentEditor({ attachment, index, onChange, onRemove }) {
-  const [expanded, setExpanded] = useState(!attachment.content && attachment.name === 'Attachment');
+  const [expanded, setExpanded] = useState(false);
   const displayName = attachment.name?.trim() || `Вложение ${index + 1}`;
 
   return <div className={`scenario-editor-attachment ${expanded ? 'expanded' : ''}`} data-testid="scenario-editor-attachment" data-attachment-index={index}>
@@ -10,7 +10,7 @@ function AttachmentEditor({ attachment, index, onChange, onRemove }) {
       <span className="scenario-paperclip" aria-hidden="true">↗</span>
       <span>{displayName}</span>
       {attachment.mediaType && <span className="scenario-attachment-type">{attachment.mediaType}</span>}
-      <span className="scenario-summary-chevron" aria-hidden="true">⌄</span>
+      <span className={`scenario-chevron scenario-chevron-step ${expanded ? 'expanded' : ''}`} aria-hidden="true" />
     </button>
     {expanded && <div className="scenario-attachment-fields">
       <label>
@@ -27,7 +27,7 @@ function AttachmentEditor({ attachment, index, onChange, onRemove }) {
 }
 
 function StepEditor({ step, path, number, onUpdate, onRemove }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const update = (updater) => onUpdate(path, updater);
   const detailCount = step.subSteps.length + step.parameters.length + step.attachments.length;
 
@@ -36,7 +36,7 @@ function StepEditor({ step, path, number, onUpdate, onRemove }) {
       <span className="scenario-step-index">{number}</span>
       <span className="scenario-step-heading">{step.text.trim() || 'Новый шаг'}</span>
       {detailCount > 0 && <span className="scenario-step-counter">{detailCount}</span>}
-      <span className="scenario-summary-chevron" aria-hidden="true">⌄</span>
+      <span className={`scenario-chevron scenario-chevron-step ${expanded ? 'expanded' : ''}`} aria-hidden="true" />
     </button>
     {expanded && <div className="scenario-step-card-body">
       <label className="scenario-field-label">
