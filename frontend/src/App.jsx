@@ -1343,7 +1343,7 @@ export default function App() {
                               onChange={(newValue) =>
                                 handleRegressionStatusChange(item.testId, newValue)
                               }
-                              disabled={!isRegressionRunning || regressionSaving}
+                              disabled
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
 	                            />
@@ -1372,6 +1372,7 @@ export default function App() {
                             <div className="textarea-with-preview">
                               <textarea
                                 value={value}
+                                readOnly
                                 onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
                                 onBlur={() => handleBlur(item, column.key)}
                                 onFocus={incrementEditingExisting}
@@ -1379,7 +1380,7 @@ export default function App() {
 	                                data-testid={getInputTestId(column)}
 	                                data-role="input"
                                 data-name={columnDataName}
-                                data-disabled="false"
+                                data-disabled="true"
                               />
                               {column.key === 'scenario' && value.trim() && (
                                 <div
@@ -1392,7 +1393,7 @@ export default function App() {
                             <StatusDropdown
                               value={value}
                               onChange={(newValue) => handleGeneralStatusChange(item, newValue)}
-                              disabled={saving}
+                              disabled
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
 	                            />
@@ -1400,7 +1401,7 @@ export default function App() {
                             <PrioritySelect
                               value={value || PRIORITY_OPTIONS[3]}
                               onChange={(newValue) => handlePriorityChange(item, newValue)}
-                              disabled={saving}
+                              disabled
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
 	                            />
@@ -1408,6 +1409,7 @@ export default function App() {
                             <div className="multiline-textarea-wrapper">
                               <textarea
                                 value={value}
+                                readOnly
                                 onChange={(e) => {
                                   handleFieldChange(item.testId, column.key, e.target.value);
                                   autoResizeTextarea(e.target);
@@ -1418,13 +1420,14 @@ export default function App() {
 	                                data-testid={getInputTestId(column)}
 	                                data-role="input"
                                 data-name={columnDataName}
-                                data-disabled="false"
+                                data-disabled="true"
                               />
                             </div>
                           ) : (
                             <input
                               type="text"
                               value={value}
+                              readOnly
                               onChange={(e) => handleFieldChange(item.testId, column.key, e.target.value)}
                               onBlur={() => handleBlur(item, column.key)}
                               onFocus={incrementEditingExisting}
@@ -1432,7 +1435,7 @@ export default function App() {
 	                              data-testid={getInputTestId(column)}
                             data-role="input"
                             data-name={columnDataName}
-                            data-disabled="false"
+                            data-disabled="true"
                           />
                           )
                         ) : (
