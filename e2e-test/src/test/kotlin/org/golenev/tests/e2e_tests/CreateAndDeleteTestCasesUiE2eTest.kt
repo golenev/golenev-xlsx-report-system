@@ -88,12 +88,13 @@ class CreateAndDeleteTestCasesUiE2eTest {
 
                 mainPage.testCaseTable.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
                 mainPage.testCaseTable.checkDraftSaveEnabled()
-                mainPage.testCaseTable.checkAddRowEnabled()
+                mainPage.testCaseTable.checkAddRowDisabled()
 
                 val createRequestBody = interceptRequestBody(getSelenideProxy(), Paths.REPORTS.path) {
                     mainPage.testCaseTable.saveNewRow()
                 }
                 val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
+                mainPage.testCaseTable.checkAddRowEnabled()
 
                 step("Проверяем тело запроса создания тест-кейса ${testCase.testId}") {
                     actualCreateRequest.testId.shouldBe(testCase.testId, "actualCreateRequest.testId не совпало с ожидаемым")
@@ -122,7 +123,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
             step("Редактируем Category тест-кейса $testId и проверяем блокировку Add Row") {
                 mainPage.testCaseTable.updateCategory(testId, updatedCategory)
                 mainPage.testCaseTable.checkAddRowDisabled()
-                mainPage.unFocus()
+                mainPage.testCaseTable.saveChanges()
                 mainPage.testCaseTable.checkAddRowEnabled()
             }
         }
