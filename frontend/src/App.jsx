@@ -1343,7 +1343,7 @@ export default function App() {
                               onChange={(newValue) =>
                                 handleRegressionStatusChange(item.testId, newValue)
                               }
-                              disabled
+                              disabled={!isRegressionRunning || regressionSaving}
                               onFocus={incrementEditingExisting}
                               onBlur={decrementEditingExisting}
 	                            />
