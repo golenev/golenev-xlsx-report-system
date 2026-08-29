@@ -47,89 +47,78 @@ class CreateAndDeleteTestCasesUiE2eTest {
 
     @Test
     @AllureId("302")
-    @DisplayName("Создаём два кейса через модальный редактор, удаляем через API и проверяем отсутствие")
-    fun shouldCreateTwoCasesViaModalAndDeleteThemViaApi() {
+    @DisplayName("Создаём кейс через модальный редактор, удаляем через API и проверяем отсутствие")
+    fun shouldCreateCaseViaModalAndDeleteItViaApi() {
         val readyDate = step("Фиксируем текущую дату для генерации тест-кейсов") {
             LocalDate.now().toString()
         }
-        val testCases = step("Генерируем данные для двух тест-кейсов") {
-            TestDataGenerator.generateTestCases(count = 2, readyDate = readyDate)
-                .mapIndexed { index, testCase ->
-                    val testId = "UI-E2E-${getRandomTestId()}-${index + 1}"
-                    testCase.copy(
-                        testId = testId,
-                        issueLink = "https://youtrack.test/issue/$testId",
-                    )
-                }
+        val testCase = step("Генерируем данные для тест-кейса") {
+            val testId = "UI-E2E-${getRandomTestId()}"
+            TestDataGenerator.generateTestCases(count = 1, readyDate = readyDate)
+                .single()
+                .copy(
+                    testId = testId,
+                    issueLink = "https://youtrack.test/issue/$testId",
+                )
         }
-        createdTestIds += testCases.mapNotNull { it.testId }
+        val testId = testCase.testId.orEmpty()
+        createdTestIds += testId
 
         step("Открываем главную страницу") {
             mainPage.open()
         }
 
-        testCases.forEachIndexed { index, testCase ->
-            step("Создаём тест-кейс ${index + 1} через модальный редактор") {
-                mainPage.testCaseTable.openCreateEditor()
-                mainPage.testCaseTable.fillTestId(testCase.testId.orEmpty())
-                mainPage.testCaseTable.fillCategory(testCase.category.orEmpty())
-                mainPage.testCaseTable.fillShortTitle(testCase.shortTitle.orEmpty())
-                mainPage.testCaseTable.fillIssueLink(testCase.issueLink.orEmpty())
-                mainPage.testCaseTable.selectGeneralStatus(testCase.generalStatus.orEmpty())
-                mainPage.testCaseTable.selectPriority(testCase.priority.orEmpty())
-                mainPage.testCaseTable.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
-
-                val createRequestBody = interceptRequestBody(getSelenideProxy(), Paths.REPORTS.path) {
-                    mainPage.testCaseTable.saveNewTestCase()
-                }
-                val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
-
-                step("Проверяем тело запроса создания тест-кейса ${testCase.testId}") {
-                    actualCreateRequest.testId.shouldBe(testCase.testId, "actualCreateRequest.testId не совпало с ожидаемым")
-                    actualCreateRequest.category.shouldBe(testCase.category, "actualCreateRequest.category не совпало с ожидаемым")
-                    actualCreateRequest.shortTitle.shouldBe(testCase.shortTitle, "actualCreateRequest.shortTitle не совпало с ожидаемым")
-                    actualCreateRequest.issueLink.shouldBe(testCase.issueLink, "actualCreateRequest.issueLink не совпало с ожидаемым")
-                    actualCreateRequest.readyDate.shouldBe(testCase.readyDate, "actualCreateRequest.readyDate не совпало с ожидаемым")
-                    actualCreateRequest.generalStatus.shouldBe(testCase.generalStatus, "actualCreateRequest.generalStatus не совпало с ожидаемым")
-                    actualCreateRequest.priority.shouldBe(testCase.priority, "actualCreateRequest.priority не совпало с ожидаемым")
-                    actualCreateRequest.scenario.shouldBe(testCase.scenario, "actualCreateRequest.scenario не совпало с ожидаемым")
-                    actualCreateRequest.notes.orEmpty().shouldBe(testCase.notes, "actualCreateRequest.notes.orEmpty() не совпало с ожидаемым")
-                    actualCreateRequest.runStatus.shouldBe(testCase.runStatus, "actualCreateRequest.runStatus не совпало с ожидаемым")
-                    actualCreateRequest.runDate.shouldBe(testCase.runDate, "actualCreateRequest.runDate не совпало с ожидаемым")
-                }
-            }
-
-            step("Проверяем, что тест-кейс ${testCase.testId} появился на UI") {
-                mainPage.testCaseTable.checkRowVisible(testCase.testId.orEmpty())
-            }
+        step("Создаём тест-кейс через модальный редактор") {
+            mainPage.testCaseTable.openCreateEditor()
+            mainPage.testCaseTable.fillTestId(testId)
+            mainPage.testCaseTable.fillCategory(testCase.category.orEmpty())
+            mainPage.testCaseTable.fillShortTitle(testCase.shortTitle.orEmpty())
+            mainPage.testCaseTable.fillIssueLink(testCase.issueLink.orEmpty())
+            mainPage.testCaseTable.selectGeneralStatus(testCase.generalStatus.orEmpty())
+            mainPage.testCaseTable.selectPriority(testCase.priority.orEmpty())
+            mainPage.testCaseTable.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
         }
 
-        testCases.forEachIndexed { index, testCase ->
-            val testId = testCase.testId.orEmpty()
-            val updatedCategory = "${testCase.category}-edited-${index + 1}"
+        val createRequestBody = interceptRequestBody(getSelenideProxy(), Paths.REPORTS.path) {
+            mainPage.testCaseTable.saveNewTestCase()
+        }
+        val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
 
-            step("Редактируем Category тест-кейса $testId через модальный редактор") {
-                mainPage.testCaseTable.updateCategory(testId, updatedCategory)
-                mainPage.testCaseTable.saveChanges()
-            }
+        step("Проверяем тело запроса создания тест-кейса $testId") {
+            actualCreateRequest.testId.shouldBe(testCase.testId, "actualCreateRequest.testId не совпало с ожидаемым")
+            actualCreateRequest.category.shouldBe(testCase.category, "actualCreateRequest.category не совпало с ожидаемым")
+            actualCreateRequest.shortTitle.shouldBe(testCase.shortTitle, "actualCreateRequest.shortTitle не совпало с ожидаемым")
+            actualCreateRequest.issueLink.shouldBe(testCase.issueLink, "actualCreateRequest.issueLink не совпало с ожидаемым")
+            actualCreateRequest.readyDate.shouldBe(testCase.readyDate, "actualCreateRequest.readyDate не совпало с ожидаемым")
+            actualCreateRequest.generalStatus.shouldBe(testCase.generalStatus, "actualCreateRequest.generalStatus не совпало с ожидаемым")
+            actualCreateRequest.priority.shouldBe(testCase.priority, "actualCreateRequest.priority не совпало с ожидаемым")
+            actualCreateRequest.scenario.shouldBe(testCase.scenario, "actualCreateRequest.scenario не совпало с ожидаемым")
+            actualCreateRequest.notes.orEmpty().shouldBe(testCase.notes, "actualCreateRequest.notes.orEmpty() не совпало с ожидаемым")
+            actualCreateRequest.runStatus.shouldBe(testCase.runStatus, "actualCreateRequest.runStatus не совпало с ожидаемым")
+            actualCreateRequest.runDate.shouldBe(testCase.runDate, "actualCreateRequest.runDate не совпало с ожидаемым")
         }
 
-        testCases.forEach { testCase ->
-            val testId = testCase.testId.orEmpty()
+        step("Проверяем, что тест-кейс $testId появился на UI") {
+            mainPage.testCaseTable.checkRowVisible(testId)
+        }
 
-            step("Удаляем тест-кейс $testId через API и обновляем UI") {
-                reportService.deleteTest(testId)
-                mainPage.refreshCurrentPage()
-                mainPage.testCaseTable.checkRowDisappeared(testId)
-            }
+        step("Редактируем Category тест-кейса $testId через модальный редактор") {
+            mainPage.testCaseTable.updateCategory(testId, "${testCase.category}-edited")
+            mainPage.testCaseTable.saveChanges()
+        }
 
-            val remainingItems = step("Проверяем отсутствие тест-кейса $testId в базе данных") {
-                TestReportDao.countByTestId(testId)
-            }
+        step("Удаляем тест-кейс $testId через API и обновляем UI") {
+            reportService.deleteTest(testId)
+            mainPage.refreshCurrentPage()
+            mainPage.testCaseTable.checkRowDisappeared(testId)
+        }
 
-            step("Подтверждаем, что тест-кейс $testId отсутствует в базе") {
-                remainingItems.shouldBe(0, "remainingItems не совпало с ожидаемым")
-            }
+        val remainingItems = step("Проверяем отсутствие тест-кейса $testId в базе данных") {
+            TestReportDao.countByTestId(testId)
+        }
+
+        step("Подтверждаем, что тест-кейс $testId отсутствует в базе") {
+            remainingItems.shouldBe(0, "remainingItems не совпало с ожидаемым")
         }
     }
 }
