@@ -1,4 +1,4 @@
 interface:
   display_name: "Golenev Test Code Style"
-  short_description: "Правила оформления тестового кода проекта"
+  short_description: "РљРѕРґ-СЃС‚РёР»СЊ С‚РµСЃС‚РѕРІРѕРіРѕ С„СЂРµР№РјРІРѕСЂРєР° Kotlin"
   default_prompt: "Use $golenev-test-code-style to write or review test code in this repository."
