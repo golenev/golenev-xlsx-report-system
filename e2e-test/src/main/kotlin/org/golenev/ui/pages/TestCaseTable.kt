@@ -5,6 +5,7 @@ import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.ElementsCollection
 import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.Selenide.`$$`
+import com.codeborne.selenide.Selenide.`$x`
 import com.codeborne.selenide.SelenideElement
 import io.qameta.allure.Step
 import org.golenev.restapi.endpoints.ScenarioStepRequest
@@ -31,14 +32,14 @@ class TestCaseTable {
         `$`(editorLocator).name("Модальный редактор создания или изменения тест-кейса.")
 
     private val testIdInput = `$`("$editorLocator [data-testid='test-id-input']").name("Поле Test ID в модальном редакторе.")
-    private val categoryInput = `$`("$editorLocator [data-testid='category-input']").name("Поле Category / Feature в модальном редакторе.")
-    private val shortTitleInput = `$`("$editorLocator [data-testid='short-title-input']").name("Поле Short Title в модальном редакторе.")
+    private val categoryInput = modalFieldByLabel("Category / Feature", "textarea").name("Поле Category / Feature в модальном редакторе.")
+    private val shortTitleInput = modalFieldByLabel("Short Title", "textarea").name("Поле Short Title в модальном редакторе.")
     private val issueLinkInput = `$`("$editorLocator [data-testid='youtrack-link']").name("Поле YouTrack Issue Link в модальном редакторе.")
     private val generalStatusSelect = `$`("$editorLocator select[data-testid='status-dropdown']").name("Select General Test Status в модальном редакторе.")
     private val prioritySelect = `$`("$editorLocator select[data-testid='priority-select']").name("Select Priority в модальном редакторе.")
     private val notesTextarea = `$`("$editorLocator [data-testid='notes-input']").name("Поле Notes в модальном редакторе.")
     private val saveButton = `$`("$editorLocator [data-testid='save-test-case-button']").name("Кнопка сохранения модального редактора.")
-    private val readyDateInput = `$`("$editorLocator [data-testid='ready-date-input']").name("Поле Ready Date в модальном редакторе.")
+    private val readyDateInput = modalFieldByLabel("Ready Date", "input").name("Поле Ready Date в модальном редакторе.")
 
     private val savedRows: ElementsCollection =
         `$$`("$tableLocator [data-testid='test-case-row']").name("Сохранённые строки тест-кейсов")
@@ -104,7 +105,7 @@ class TestCaseTable {
                 .typeOf(step.text)
 
             step.attachments.firstOrNull { it.content.isNotBlank() }?.let { attachment ->
-                fillScenarioStepAttachment(index, attachment.content.trim())
+                fillScenarioStepAttachment(index, attachment.name, attachment.content.trim())
             }
         }
     }
@@ -195,17 +196,26 @@ class TestCaseTable {
     }
 
     @Step("Раскрываем шаг {stepIndex}, добавляем вложение и вводим его содержимое")
-    private fun fillScenarioStepAttachment(stepIndex: Int, attachment: String) {
+    private fun fillScenarioStepAttachment(stepIndex: Int, attachmentName: String, attachmentContent: String) {
         val step = scenarioStep(stepIndex)
-        step.`$`("[data-testid='scenario-step-toggle']").name("Кнопка раскрытия шага.").click()
+        step.`$`("[data-testid='scenario-step-toggle'], .scenario-step-toggle .scenario-chevron")
+            .name("Кнопка раскрытия шага.")
+            .click()
         step.`$`("[data-testid='scenario-attachment-add-button']").name("Кнопка добавления вложения.").shouldBe(visible).click()
         val attachmentEditor = step.`$`("[data-testid='scenario-editor-attachment']").name("Редактор вложения шага.")
-        attachmentEditor.`$`("[data-testid='scenario-attachment-toggle']").name("Кнопка раскрытия вложения.").click()
+        attachmentEditor.`$`(".scenario-attachment-heading")
+            .name("Поле имени вложения.")
+            .shouldBe(visible.because("имя вложения должно редактироваться в заголовке"))
+            .typeOf(attachmentName)
+            .shouldHave(value(attachmentName).because("имя вложения должно сохраняться до общего сохранения"))
+        attachmentEditor.`$`("[data-testid='scenario-attachment-toggle'], .scenario-attachment-summary .scenario-chevron")
+            .name("Кнопка раскрытия вложения.")
+            .click()
         attachmentEditor.`$`("[data-testid='scenario-attachment-content']")
             .name("Поле содержимого вложения.")
             .shouldBe(visible.because("поле содержимого должно быть видимым после раскрытия вложения"))
-            .typeOf(attachment)
-            .shouldHave(value(attachment).because("содержимое вложения должно сохраняться до общего сохранения"))
+            .typeOf(attachmentContent)
+            .shouldHave(value(attachmentContent).because("содержимое вложения должно сохраняться до общего сохранения"))
     }
 
     private fun scenarioStep(index: Int): SelenideElement =
@@ -213,6 +223,9 @@ class TestCaseTable {
 
     private fun scenarioStepInput(index: Int): SelenideElement =
         scenarioStep(index).`$`("[data-testid='scenario-step-input']")
+
+    private fun modalFieldByLabel(label: String, element: String): SelenideElement =
+        `$x`("//*[@data-testid='test-case-editor-modal']//label[.//span[normalize-space()='$label']]//$element")
 
     private fun savedRowLocator(testId: String): String =
         "$tableLocator [data-testid='test-case-row'][data-test-case-id='$testId']"
