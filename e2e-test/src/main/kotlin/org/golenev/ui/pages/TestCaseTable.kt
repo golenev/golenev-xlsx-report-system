@@ -6,6 +6,7 @@ import com.codeborne.selenide.ElementsCollection
 import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.Selenide.`$$`
 import com.codeborne.selenide.Selenide.`$x`
+import com.codeborne.selenide.Selenide.actions
 import com.codeborne.selenide.SelenideElement
 import io.qameta.allure.Step
 import org.golenev.restapi.endpoints.ScenarioStepRequest
@@ -13,6 +14,7 @@ import org.golenev.ui.allure.name
 import org.golenev.utils.CENTER
 import org.golenev.utils.shouldBeVisibleForInput
 import org.golenev.utils.typeOf
+import org.openqa.selenium.Keys
 
 /**
  * Component Object таблицы тест-кейсов и связанного с ней модального редактора.
@@ -40,6 +42,12 @@ class TestCaseTable {
     private val notesTextarea = `$`("$editorLocator [data-testid='notes-input']").name("Поле Notes в модальном редакторе.")
     private val saveButton = `$`("$editorLocator [data-testid='save-test-case-button']").name("Кнопка сохранения модального редактора.")
     private val readyDateInput = modalFieldByLabel("Ready Date", "input").name("Поле Ready Date в модальном редакторе.")
+    private val dirtyStatus = `$`("$editorLocator .test-case-modal-dirty").name("Статус несохранённых изменений модального редактора.")
+    private val closeButton = `$`("$editorLocator .test-case-modal-close").name("Крестик закрытия модального редактора.")
+    private val backdrop = `$`("$editorLocator .test-case-modal-backdrop").name("Область вне модального окна.")
+    private val unsavedChangesDialog = `$`("$editorLocator [role='alertdialog']").name("Предупреждение о несохранённых изменениях.")
+    private val discardUnsavedChangesButton = `$`("$editorLocator .unsaved-discard").name("Кнопка Не сохранять в предупреждении.")
+    private val continueEditingButton = `$`("$editorLocator [role='alertdialog'] .secondary-btn").name("Кнопка Продолжить редактирование в предупреждении.")
 
     private val savedRows: ElementsCollection =
         `$$`("$tableLocator [data-testid='test-case-row']").name("Сохранённые строки тест-кейсов")
@@ -166,6 +174,60 @@ class TestCaseTable {
         addRowButton.shouldBe(enabled).click()
         editor.shouldBe(visible.because("после Add Row должен открыться модальный редактор"))
         testIdInput.shouldBe(enabled.because("в режиме создания Test ID должен быть доступен"))
+    }
+
+    @Step("Проверяем статус изменений модального редактора: {expectedStatus}")
+    fun checkDirtyStatus(expectedStatus: String) {
+        dirtyStatus.shouldHave(text(expectedStatus).because("статус должен отражать наличие несохранённых изменений"))
+    }
+
+    @Step("Закрываем модальный редактор клавишей Esc")
+    fun closeEditorByEscape() {
+        actions().sendKeys(Keys.ESCAPE).perform()
+    }
+
+    @Step("Закрываем модальный редактор крестиком")
+    fun closeEditorByCloseButton() {
+        closeButton.shouldBe(visible).click()
+    }
+
+    @Step("Закрываем модальный редактор нажатием вне модального окна")
+    fun closeEditorByBackdropClick() {
+        backdrop.shouldBe(visible)
+        val leftVisibleAreaOffset = -(backdrop.size.width / 2) + 10
+        actions().moveToElement(backdrop, leftVisibleAreaOffset, 0).click().perform()
+    }
+
+    @Step("Проверяем, что модальный редактор закрыт")
+    fun checkEditorClosed() {
+        editor.shouldBe(disappear.because("модальный редактор без изменений должен закрываться без предупреждения"))
+    }
+
+    @Step("Проверяем предупреждение о несохранённых изменениях")
+    fun checkUnsavedChangesWarning() {
+        editor.shouldBe(visible.because("модальный редактор с несохранёнными изменениями должен оставаться открытым"))
+        unsavedChangesDialog
+            .shouldBe(visible.because("при попытке закрытия должно появиться предупреждение"))
+            .shouldHave(text("Сохранить изменения?").because("предупреждение должно предлагать сохранить изменения"))
+            .shouldHave(text("У вас есть несохранённые изменения.").because("предупреждение должно объяснять причину показа"))
+    }
+
+    @Step("Отказываемся от сохранения изменений и проверяем закрытие модального редактора")
+    fun discardUnsavedChanges() {
+        discardUnsavedChangesButton.shouldBe(visible).click()
+        editor.shouldBe(disappear.because("после отказа от сохранения модальный редактор должен закрыться"))
+    }
+
+    @Step("Продолжаем редактирование и проверяем возвращение в модальный редактор")
+    fun continueEditing() {
+        continueEditingButton.shouldBe(visible).click()
+        unsavedChangesDialog.shouldBe(disappear.because("после продолжения редактирования предупреждение должно закрыться"))
+        editor.shouldBe(visible.because("после закрытия предупреждения модальный редактор должен остаться открытым"))
+    }
+
+    @Step("Проверяем значение Category / Feature: {expectedCategory}")
+    fun checkCategoryValue(expectedCategory: String) {
+        categoryInput.shouldHave(value(expectedCategory).because("поле Category / Feature должно оставаться доступным для редактирования"))
     }
 
     @Step("Проверяем Ready Date в модальном редакторе: {expectedDate}")
