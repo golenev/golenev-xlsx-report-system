@@ -1046,13 +1046,15 @@ export default function App() {
               loading ||
                 saving ||
                 hasIncompleteNewRow ||
-                isEditingExistingRow
+                isEditingExistingRow ||
+                testCaseEditor !== null
             )}
             disabled={
               loading ||
                 saving ||
                 hasIncompleteNewRow ||
-                isEditingExistingRow
+                isEditingExistingRow ||
+                testCaseEditor !== null
             }
           >
             {translate('Add Row')}

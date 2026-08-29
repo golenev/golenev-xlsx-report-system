@@ -14,6 +14,7 @@ export function TestCaseEditorModal({
   const [confirmClose, setConfirmClose] = useState(false);
   const initialSnapshot = useMemo(() => JSON.stringify(value), [value]);
   const dirty = JSON.stringify(draft) !== initialSnapshot;
+  const canSave = Boolean(draft.testId?.trim() && draft.category?.trim() && draft.shortTitle?.trim() && draft.scenario);
 
   useEffect(() => {
     setDraft(value);
@@ -70,42 +71,42 @@ export function TestCaseEditorModal({
 
       <div className="test-case-modal-content">
         <div className="test-case-modal-fields">
-          <label>
+          <label data-role="field" data-name="Test ID">
             <span>Test ID</span>
             <input value={draft.testId || ''} disabled={mode === 'edit'} onChange={(event) => change('testId', event.target.value)} data-testid="test-id-input" />
           </label>
-          <label>
+          <label data-role="field" data-name="Priority">
             <span>Priority</span>
             <select value={draft.priority || priorityOptions[3]} onChange={(event) => change('priority', event.target.value)} data-testid="priority-select">
               {priorityOptions.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
-          <label className="test-case-modal-field-wide">
+          <label className="test-case-modal-field-wide" data-role="field" data-name="Category / Feature">
             <span>Category / Feature</span>
-            <textarea value={draft.category || ''} onChange={(event) => change('category', event.target.value)} rows={2} />
+            <textarea value={draft.category || ''} onChange={(event) => change('category', event.target.value)} rows={2} data-testid="category-input" />
           </label>
-          <label className="test-case-modal-field-wide">
+          <label className="test-case-modal-field-wide" data-role="field" data-name="Short Title">
             <span>Short Title</span>
-            <textarea value={draft.shortTitle || ''} onChange={(event) => change('shortTitle', event.target.value)} rows={2} />
+            <textarea value={draft.shortTitle || ''} onChange={(event) => change('shortTitle', event.target.value)} rows={2} data-testid="short-title-input" />
           </label>
-          <label className="test-case-modal-field-wide">
+          <label className="test-case-modal-field-wide" data-role="field" data-name="YouTrack Issue Link">
             <span>YouTrack Issue Link</span>
             <input value={draft.issueLink || ''} onChange={(event) => change('issueLink', event.target.value)} data-testid="youtrack-link" />
           </label>
-          <label>
+          <label data-role="field" data-name="General Test Status">
             <span>General Test Status</span>
             <select value={draft.generalStatus || ''} onChange={(event) => change('generalStatus', event.target.value)} data-testid="status-dropdown">
               <option value="">—</option>
               {generalStatusOptions.map((option) => <option key={option.value} value={option.value}>{option.value}</option>)}
             </select>
           </label>
-          <label>
+          <label data-role="field" data-name="Ready Date">
             <span>Ready Date</span>
-            <input value={draft.readyDate || ''} disabled />
+            <input value={draft.readyDate || ''} disabled data-testid="ready-date-input" />
           </label>
         </div>
 
-        <section className="test-case-modal-scenario" aria-labelledby="test-case-scenario-title">
+        <section className="test-case-modal-scenario" aria-labelledby="test-case-scenario-title" data-role="field" data-name="Detailed Scenario">
           <div className="test-case-modal-section-title">
             <div>
               <h3 id="test-case-scenario-title">Детальный сценарий</h3>
@@ -115,7 +116,7 @@ export function TestCaseEditorModal({
           <ScenarioEditor value={draft.scenario || ''} onChange={(nextValue) => change('scenario', nextValue)} showActions={false} />
         </section>
 
-        <label className="test-case-modal-notes">
+        <label className="test-case-modal-notes" data-role="field" data-name="Notes">
           <span>Notes</span>
           <textarea value={draft.notes || ''} onChange={(event) => change('notes', event.target.value)} rows={4} data-testid="notes-input" />
         </label>
@@ -123,7 +124,7 @@ export function TestCaseEditorModal({
 
       <footer className="test-case-modal-footer">
         <span className={dirty ? 'test-case-modal-dirty is-dirty' : 'test-case-modal-dirty'}>{dirty ? 'Есть несохранённые изменения' : 'Нет изменений'}</span>
-        <button type="button" className="secondary-btn" disabled={saving} onClick={() => onSave(draft)} data-testid="save-test-case-button">
+        <button type="button" className="secondary-btn" disabled={saving || !canSave} onClick={() => onSave(draft)} data-testid="save-test-case-button" data-role="button" data-action="save-test-case">
           {saving ? 'Сохранение…' : 'Сохранить'}
         </button>
       </footer>
