@@ -1,0 +1,4 @@
+interface:
+  display_name: "Golenev Pull Requests"
+  short_description: "Человекочитаемые PR на русском языке"
+  default_prompt: "Use $golenev-pull-request to create a review-ready pull request for this repository."
