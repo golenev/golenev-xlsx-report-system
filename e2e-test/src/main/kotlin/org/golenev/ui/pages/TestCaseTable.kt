@@ -17,17 +17,6 @@ import org.golenev.utils.typeOf
 import org.openqa.selenium.Keys
 
 /**
- * Пользовательский способ закрытия модального редактора тест-кейса.
- */
-enum class ModalCloseAction(private val displayName: String) {
-    ESCAPE("клавишей Esc"),
-    CLOSE_BUTTON("крестиком"),
-    BACKDROP("нажатием вне модального окна");
-
-    override fun toString(): String = displayName
-}
-
-/**
  * Component Object таблицы тест-кейсов и связанного с ней модального редактора.
  *
  * Таблица отвечает за просмотр сохранённых строк и открытие редактора. Создание и изменение
@@ -192,17 +181,21 @@ class TestCaseTable {
         dirtyStatus.shouldHave(text(expectedStatus).because("статус должен отражать наличие несохранённых изменений"))
     }
 
-    @Step("Закрываем модальный редактор способом: {action}")
-    fun closeEditor(action: ModalCloseAction) {
-        when (action) {
-            ModalCloseAction.ESCAPE -> actions().sendKeys(Keys.ESCAPE).perform()
-            ModalCloseAction.CLOSE_BUTTON -> closeButton.shouldBe(visible).click()
-            ModalCloseAction.BACKDROP -> {
-                backdrop.shouldBe(visible)
-                val leftVisibleAreaOffset = -(backdrop.size.width / 2) + 10
-                actions().moveToElement(backdrop, leftVisibleAreaOffset, 0).click().perform()
-            }
-        }
+    @Step("Закрываем модальный редактор клавишей Esc")
+    fun closeEditorByEscape() {
+        actions().sendKeys(Keys.ESCAPE).perform()
+    }
+
+    @Step("Закрываем модальный редактор крестиком")
+    fun closeEditorByCloseButton() {
+        closeButton.shouldBe(visible).click()
+    }
+
+    @Step("Закрываем модальный редактор нажатием вне модального окна")
+    fun closeEditorByBackdropClick() {
+        backdrop.shouldBe(visible)
+        val leftVisibleAreaOffset = -(backdrop.size.width / 2) + 10
+        actions().moveToElement(backdrop, leftVisibleAreaOffset, 0).click().perform()
     }
 
     @Step("Проверяем, что модальный редактор закрыт")
