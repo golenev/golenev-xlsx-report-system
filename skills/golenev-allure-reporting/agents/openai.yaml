@@ -1,0 +1,4 @@
+interface:
+  display_name: "Golenev Allure Reporting"
+  short_description: "Бизнес-маршруты тестов в Allure-отчётах"
+  default_prompt: "Use $golenev-allure-reporting to describe one test subject as a business-state route with nested technical evidence."

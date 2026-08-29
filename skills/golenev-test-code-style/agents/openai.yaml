@@ -1,0 +1,4 @@
+interface:
+  display_name: "Golenev Test Code Style"
+  short_description: "Код-стиль тестового фреймворка Kotlin"
+  default_prompt: "Use $golenev-test-code-style to write or review test code in this repository."
