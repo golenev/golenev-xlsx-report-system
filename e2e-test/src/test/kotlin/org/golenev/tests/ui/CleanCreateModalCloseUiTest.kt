@@ -1,6 +1,7 @@
 package org.golenev.tests.ui
 
 import com.codeborne.selenide.Selenide
+import io.qameta.allure.AllureId
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.ModalCloseAction
 import org.golenev.ui.pages.mainPage
@@ -8,8 +9,7 @@ import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.api.Test
 
 /**
  * Проверяет закрытие модального окна создания тест-кейса, пока пользователь не изменил данные.
@@ -31,10 +31,31 @@ class CleanCreateModalCloseUiTest {
         }
     }
 
-    @ParameterizedTest(name = "Модальное окно без изменений закрывается {0}")
-    @EnumSource(ModalCloseAction::class)
-    @DisplayName("Модальное окно без изменений закрывается без предупреждения")
-    fun shouldCloseCleanCreateModalWithoutWarning(action: ModalCloseAction) {
+    @Test
+    @AllureId("304")
+    @DisplayName("Модальное окно без изменений закрывается клавишей Esc")
+    fun shouldCloseCleanCreateModalByEscape() {
+        checkClosingWithoutWarning(ModalCloseAction.ESCAPE)
+    }
+
+    @Test
+    @AllureId("305")
+    @DisplayName("Модальное окно без изменений закрывается крестиком")
+    fun shouldCloseCleanCreateModalByCloseButton() {
+        checkClosingWithoutWarning(ModalCloseAction.CLOSE_BUTTON)
+    }
+
+    @Test
+    @AllureId("306")
+    @DisplayName("Модальное окно без изменений закрывается нажатием вне модального окна")
+    fun shouldCloseCleanCreateModalByBackdropClick() {
+        checkClosingWithoutWarning(ModalCloseAction.BACKDROP)
+    }
+
+    /**
+     * Выполняет общий сценарий закрытия неизменённой модалки указанным способом.
+     */
+    private fun checkClosingWithoutWarning(action: ModalCloseAction) {
         step("Открываем главную страницу") {
             mainPage.open()
         }
