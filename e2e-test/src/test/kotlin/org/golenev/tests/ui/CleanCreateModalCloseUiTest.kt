@@ -35,27 +35,27 @@ class CleanCreateModalCloseUiTest {
     @AllureId("304")
     @DisplayName("Модальное окно без изменений закрывается клавишей Esc")
     fun shouldCloseCleanCreateModalByEscape() {
-        checkClosingWithoutWarning(ModalCloseAction.ESCAPE)
+        checkClosingWithoutWarningTemplate(ModalCloseAction.ESCAPE)
     }
 
     @Test
     @AllureId("305")
     @DisplayName("Модальное окно без изменений закрывается крестиком")
     fun shouldCloseCleanCreateModalByCloseButton() {
-        checkClosingWithoutWarning(ModalCloseAction.CLOSE_BUTTON)
+        checkClosingWithoutWarningTemplate(ModalCloseAction.CLOSE_BUTTON)
     }
 
     @Test
     @AllureId("306")
     @DisplayName("Модальное окно без изменений закрывается нажатием вне модального окна")
     fun shouldCloseCleanCreateModalByBackdropClick() {
-        checkClosingWithoutWarning(ModalCloseAction.BACKDROP)
+        checkClosingWithoutWarningTemplate(ModalCloseAction.BACKDROP)
     }
 
     /**
      * Выполняет общий сценарий закрытия неизменённой модалки указанным способом.
      */
-    private fun checkClosingWithoutWarning(action: ModalCloseAction) {
+    private fun checkClosingWithoutWarningTemplate(action: ModalCloseAction) {
         step("Открываем главную страницу") {
             mainPage.open()
         }

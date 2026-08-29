@@ -35,27 +35,27 @@ class DirtyCreateModalCloseWarningUiTest {
     @AllureId("307")
     @DisplayName("При закрытии изменённого модального окна клавишей Esc появляется предупреждение")
     fun shouldWarnWhenClosingDirtyCreateModalByEscape() {
-        checkClosingWithWarning(ModalCloseAction.ESCAPE)
+        checkClosingWithWarningTemplate(ModalCloseAction.ESCAPE)
     }
 
     @Test
     @AllureId("308")
     @DisplayName("При закрытии изменённого модального окна крестиком появляется предупреждение")
     fun shouldWarnWhenClosingDirtyCreateModalByCloseButton() {
-        checkClosingWithWarning(ModalCloseAction.CLOSE_BUTTON)
+        checkClosingWithWarningTemplate(ModalCloseAction.CLOSE_BUTTON)
     }
 
     @Test
     @AllureId("309")
     @DisplayName("При закрытии изменённого модального окна нажатием вне модалки появляется предупреждение")
     fun shouldWarnWhenClosingDirtyCreateModalByBackdropClick() {
-        checkClosingWithWarning(ModalCloseAction.BACKDROP)
+        checkClosingWithWarningTemplate(ModalCloseAction.BACKDROP)
     }
 
     /**
      * Выполняет общий сценарий защиты изменений при закрытии модалки указанным способом.
      */
-    private fun checkClosingWithWarning(action: ModalCloseAction) {
+    private fun checkClosingWithWarningTemplate(action: ModalCloseAction) {
         step("Открываем главную страницу") {
             mainPage.open()
         }
