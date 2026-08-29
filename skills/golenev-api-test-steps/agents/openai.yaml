@@ -1,0 +1,4 @@
+interface:
+  display_name: "Golenev API Test Steps"
+  short_description: "ѕостроение API-шагов и контрактных тестов"
+  default_prompt: "Use $golenev-api-test-steps to implement API steps and tests for this repository."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Golenev Test Code Style"
+  short_description: "Правила оформления тестового кода проекта"
+  default_prompt: "Use $golenev-test-code-style to write or review test code in this repository."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Golenev Allure Reporting"
+  short_description: "Allure-шаги и читаемые тестовые отчёты"
+  default_prompt: "Use $golenev-allure-reporting to structure Allure steps and reporting for this repository."

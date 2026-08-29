@@ -1,0 +1,4 @@
+interface:
+  display_name: "Golenev UI Test Steps"
+  short_description: "Построение UI-шагов и тестовых сценариев"
+  default_prompt: "Use $golenev-ui-test-steps to implement UI steps and tests for this repository."
