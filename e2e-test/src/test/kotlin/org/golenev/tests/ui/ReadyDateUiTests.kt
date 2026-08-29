@@ -54,8 +54,8 @@ class ReadyDateUiTests {
         val today = step("Определяем сегодняшнюю дату") { LocalDate.now().toString() }
 
         step("Открываем главную страницу") { mainPage.open() }
-        step("Начинаем создание новой строки") { mainPage.testCaseTable.startNewRow() }
-        step("Проверяем, что Ready Date сразу автоматически заполнена сегодняшней датой") { mainPage.testCaseTable.checkDraftReadyDate(today) }
+        step("Открываем модальный редактор создания тест-кейса") { mainPage.testCaseTable.openCreateEditor() }
+        step("Проверяем, что Ready Date в модальном редакторе заполнена сегодняшней датой") { mainPage.testCaseTable.checkEditorReadyDate(today) }
         step("Заполняем поле Test ID значением $randomTestId") { mainPage.testCaseTable.fillTestId(randomTestId) }
         step("Заполняем поле Category / Feature значением $category") { mainPage.testCaseTable.fillCategory(category) }
         step("Заполняем поле Short Title значением $shortTitle") { mainPage.testCaseTable.fillShortTitle(shortTitle) }
@@ -63,7 +63,7 @@ class ReadyDateUiTests {
         step("Выбираем значение General Test Status: $generalStatus") { mainPage.testCaseTable.selectGeneralStatus(generalStatus) }
         step("Выбираем значение Priority: $priority") { mainPage.testCaseTable.selectPriority(priority) }
         step("Заполняем поле Detailed Scenario значением $detailedScenario") { mainPage.testCaseTable.fillDetailedScenario(detailedScenario) }
-        step("Сохраняем новую строку без указания Ready Date") { mainPage.testCaseTable.saveNewRow() }
+        step("Сохраняем новый тест-кейс без изменения Ready Date") { mainPage.testCaseTable.saveNewTestCase() }
         step("Проверяем, что тест-кейс появился в таблице") { mainPage.testCaseTable.checkRowVisible(randomTestId) }
         step("Проверяем, что Ready Date всё ещё заполнена сегодняшней датой") { mainPage.testCaseTable.checkReadyDate(randomTestId, today) }
     }

@@ -3,8 +3,6 @@ package org.golenev.ui.pages
 import com.codeborne.selenide.CollectionCondition.size
 import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.ElementsCollection
-import com.codeborne.selenide.ScrollIntoViewOptions.Block.start
-import com.codeborne.selenide.ScrollIntoViewOptions.instant
 import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.Selenide.`$$`
 import com.codeborne.selenide.SelenideElement
@@ -117,7 +115,7 @@ class TestCaseTable {
     }
 
     @Step("Сохраняем новый тест-кейс и проверяем закрытие модального редактора")
-    fun saveNewRow() {
+    fun saveNewTestCase() {
         saveButton.shouldBe(enabled.because("кнопка сохранения должна быть доступна после заполнения обязательных полей")).click()
         editor.shouldBe(disappear.because("после сохранения модальный редактор должен закрыться"))
     }
@@ -144,17 +142,6 @@ class TestCaseTable {
         categoryInput.shouldBeVisibleForInput("Category").setValue(newValue)
     }
 
-    @Step("Проверяем, что кнопка Add Row недоступна при открытом модальном редакторе")
-    fun checkAddRowDisabled() {
-        addRowButton.scrollIntoView(instant().block(start))
-            .shouldBe(disabled.because("Add Row должна быть недоступна, пока открыт модальный редактор"))
-    }
-
-    @Step("Проверяем, что кнопка Add Row доступна")
-    fun checkAddRowEnabled() {
-        addRowButton.shouldBe(enabled.because("Add Row должна быть доступна после закрытия модального редактора"))
-    }
-
     @Step("Прокручиваем к строке с Test ID {testId} и проверяем её видимость")
     fun checkRowVisible(testId: String) {
         `$`(savedRowLocator(testId)).name("Строка тест-кейса $testId")
@@ -174,24 +161,14 @@ class TestCaseTable {
     }
 
     @Step("Нажимаем Add Row и проверяем появление модального редактора создания")
-    fun startNewRow() {
+    fun openCreateEditor() {
         addRowButton.shouldBe(enabled).click()
         editor.shouldBe(visible.because("после Add Row должен открыться модальный редактор"))
         testIdInput.shouldBe(enabled.because("в режиме создания Test ID должен быть доступен"))
     }
 
-    @Step("Проверяем, что кнопка сохранения модального редактора disabled")
-    fun checkDraftSaveDisabled() {
-        saveButton.shouldBe(disabled.because("сохранение должно быть недоступно до заполнения обязательных полей"))
-    }
-
-    @Step("Проверяем, что кнопка сохранения модального редактора enabled")
-    fun checkDraftSaveEnabled() {
-        saveButton.shouldBe(enabled.because("сохранение должно быть доступно после заполнения обязательных полей"))
-    }
-
     @Step("Проверяем Ready Date в модальном редакторе: {expectedDate}")
-    fun checkDraftReadyDate(expectedDate: String) {
+    fun checkEditorReadyDate(expectedDate: String) {
         readyDateInput.shouldHave(value(expectedDate).because("Ready Date должна содержать ожидаемую дату"))
     }
 

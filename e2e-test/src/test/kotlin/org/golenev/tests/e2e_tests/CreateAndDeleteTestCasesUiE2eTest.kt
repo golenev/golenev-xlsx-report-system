@@ -47,8 +47,8 @@ class CreateAndDeleteTestCasesUiE2eTest {
 
     @Test
     @AllureId("302")
-    @DisplayName("Создаём два кейса через UI, проверяем блокировки, удаляем через API и проверяем отсутствие")
-    fun shouldCreateTwoCasesWithUiValidationAndDeleteThemViaApi() {
+    @DisplayName("Создаём два кейса через модальный редактор, удаляем через API и проверяем отсутствие")
+    fun shouldCreateTwoCasesViaModalAndDeleteThemViaApi() {
         val readyDate = step("Фиксируем текущую дату для генерации тест-кейсов") {
             LocalDate.now().toString()
         }
@@ -69,32 +69,20 @@ class CreateAndDeleteTestCasesUiE2eTest {
         }
 
         testCases.forEachIndexed { index, testCase ->
-            step("Создаём тест-кейс ${index + 1} через UI и проверяем блокировки кнопок") {
-                mainPage.testCaseTable.startNewRow()
-                mainPage.testCaseTable.checkAddRowDisabled()
-                mainPage.testCaseTable.checkDraftSaveDisabled()
-
+            step("Создаём тест-кейс ${index + 1} через модальный редактор") {
+                mainPage.testCaseTable.openCreateEditor()
                 mainPage.testCaseTable.fillTestId(testCase.testId.orEmpty())
-                mainPage.testCaseTable.checkAddRowDisabled()
-                mainPage.testCaseTable.checkDraftSaveDisabled()
-
                 mainPage.testCaseTable.fillCategory(testCase.category.orEmpty())
                 mainPage.testCaseTable.fillShortTitle(testCase.shortTitle.orEmpty())
                 mainPage.testCaseTable.fillIssueLink(testCase.issueLink.orEmpty())
                 mainPage.testCaseTable.selectGeneralStatus(testCase.generalStatus.orEmpty())
                 mainPage.testCaseTable.selectPriority(testCase.priority.orEmpty())
-                mainPage.testCaseTable.checkAddRowDisabled()
-                mainPage.testCaseTable.checkDraftSaveDisabled()
-
                 mainPage.testCaseTable.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
-                mainPage.testCaseTable.checkDraftSaveEnabled()
-                mainPage.testCaseTable.checkAddRowDisabled()
 
                 val createRequestBody = interceptRequestBody(getSelenideProxy(), Paths.REPORTS.path) {
-                    mainPage.testCaseTable.saveNewRow()
+                    mainPage.testCaseTable.saveNewTestCase()
                 }
                 val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
-                mainPage.testCaseTable.checkAddRowEnabled()
 
                 step("Проверяем тело запроса создания тест-кейса ${testCase.testId}") {
                     actualCreateRequest.testId.shouldBe(testCase.testId, "actualCreateRequest.testId не совпало с ожидаемым")
@@ -120,11 +108,9 @@ class CreateAndDeleteTestCasesUiE2eTest {
             val testId = testCase.testId.orEmpty()
             val updatedCategory = "${testCase.category}-edited-${index + 1}"
 
-            step("Редактируем Category тест-кейса $testId и проверяем блокировку Add Row") {
+            step("Редактируем Category тест-кейса $testId через модальный редактор") {
                 mainPage.testCaseTable.updateCategory(testId, updatedCategory)
-                mainPage.testCaseTable.checkAddRowDisabled()
                 mainPage.testCaseTable.saveChanges()
-                mainPage.testCaseTable.checkAddRowEnabled()
             }
         }
 

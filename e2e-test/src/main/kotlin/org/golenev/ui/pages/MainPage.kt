@@ -2,7 +2,6 @@ package org.golenev.ui.pages
 
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Selenide
-import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.Selenide.element
 import com.codeborne.selenide.SelenideElement
 import org.golenev.ui.allure.name
@@ -25,9 +24,6 @@ class MainPage {
     private val headerTitle: SelenideElement =
         element("h1").name("Заголовок страницы, по которому проверяется успешное открытие или обновление Test Report.")
 
-    private val body: SelenideElement =
-        `$`("body").name("Элемент body страницы, по которому можно снять фокус с активного поля.")
-
     @Step("Переходим по базовому URL и дожидаемся отображения заголовка Test Report")
     fun open() {
         Selenide.open("/")
@@ -43,11 +39,6 @@ class MainPage {
     @Step("Проверяем текст заголовка страницы Test Report")
     fun checkTitle() {
         headerTitle.shouldHave(text("Test Report").because("после открытия страницы должен отображаться заголовок отчета"))
-    }
-
-    @Step("Нажимаем на body страницы для снятия фокуса с активного поля")
-    fun unFocus() {
-        body.click()
     }
 
 }
