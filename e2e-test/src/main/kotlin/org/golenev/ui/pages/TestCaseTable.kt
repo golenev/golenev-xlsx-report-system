@@ -57,6 +57,8 @@ class TestCaseTable {
     private val closeButton = `$`("$editorLocator .test-case-modal-close").name("Крестик закрытия модального редактора.")
     private val backdrop = `$`("$editorLocator .test-case-modal-backdrop").name("Область вне модального окна.")
     private val unsavedChangesDialog = `$`("$editorLocator [role='alertdialog']").name("Предупреждение о несохранённых изменениях.")
+    private val discardUnsavedChangesButton = `$`("$editorLocator .unsaved-discard").name("Кнопка Не сохранять в предупреждении.")
+    private val continueEditingButton = `$`("$editorLocator [role='alertdialog'] .secondary-btn").name("Кнопка Продолжить редактирование в предупреждении.")
 
     private val savedRows: ElementsCollection =
         `$$`("$tableLocator [data-testid='test-case-row']").name("Сохранённые строки тест-кейсов")
@@ -215,6 +217,24 @@ class TestCaseTable {
             .shouldBe(visible.because("при попытке закрытия должно появиться предупреждение"))
             .shouldHave(text("Сохранить изменения?").because("предупреждение должно предлагать сохранить изменения"))
             .shouldHave(text("У вас есть несохранённые изменения.").because("предупреждение должно объяснять причину показа"))
+    }
+
+    @Step("Отказываемся от сохранения изменений и проверяем закрытие модального редактора")
+    fun discardUnsavedChanges() {
+        discardUnsavedChangesButton.shouldBe(visible).click()
+        editor.shouldBe(disappear.because("после отказа от сохранения модальный редактор должен закрыться"))
+    }
+
+    @Step("Продолжаем редактирование и проверяем возвращение в модальный редактор")
+    fun continueEditing() {
+        continueEditingButton.shouldBe(visible).click()
+        unsavedChangesDialog.shouldBe(disappear.because("после продолжения редактирования предупреждение должно закрыться"))
+        editor.shouldBe(visible.because("после закрытия предупреждения модальный редактор должен остаться открытым"))
+    }
+
+    @Step("Проверяем значение Category / Feature: {expectedCategory}")
+    fun checkCategoryValue(expectedCategory: String) {
+        categoryInput.shouldHave(value(expectedCategory).because("поле Category / Feature должно оставаться доступным для редактирования"))
     }
 
     @Step("Проверяем Ready Date в модальном редакторе: {expectedDate}")
