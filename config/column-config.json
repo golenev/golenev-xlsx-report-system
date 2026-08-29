@@ -1,15 +1,15 @@
 {
   "columns": {
     "actions": 72,
-    "testId": 100,
-    "category": 150,
+    "testId": 180,
+    "category": 200,
     "shortTitle": 220,
     "issueLink": 180,
     "readyDate": 140,
-    "generalStatus": 120,
-    "priority": 100,
-    "scenario": 500,
-    "notes": 150,
+    "generalStatus": 140,
+    "priority": 140,
+    "scenario": 300,
+    "notes": 220,
     "regressionStatus": 180
   },
   "translations": {
@@ -17,7 +17,7 @@
     "Upload Test Cases": "Upload Test Cases",
     "Add Row": "Add Row",
     "Export to Excel": "Export to Excel",
-    "Cancel": "Cancel",
+    "Cancel": "Отменить",
     "Confirm upload": "Confirm upload",
     "Uploading…": "Uploading…",
     "Saving…": "Saving…",
@@ -33,12 +33,12 @@
     "Priority": "Priority",
     "Detailed Scenario": "Детальный сценарий",
     "Notes": "Notes",
-    "Regress Run": "Regress Run",
-    "Cancel Regression": "Cancel Regression",
+    "Regress Run": "Режим запуска регресса",
+    "Cancel Regression": "Отменить регресс",
     "Regression on release-version": "Regression on release-version",
-    "is in progress. Stop it ?": "is in progress. Stop it ?",
-    "Release name": "Release name",
-    "Save": "Save",
-    "Would you run regress": "Would you run regress"
+    "is in progress. Stop it ?": "в процессе. Завершить ?",
+    "Release name": "Введите имя выпускаемого релиза",
+    "Save": "Сохранить",
+    "Would you run regress": "Запускаем регресс?"
   }
 }

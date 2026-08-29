@@ -10,4 +10,4 @@ spring:
   flyway:
     enabled: false
 column-config:
-  path: src/main/resources/config/column-config.json
+  path: ../config/column-config.json
