@@ -21,6 +21,8 @@ fun SelenideElement.name(alias: String): SelenideElement {
  * @return текущая коллекция Selenide-элементов.
  */
 fun ElementsCollection.name(alias: String): ElementsCollection {
-    UiElementNameRegistry.register(toString(), alias)
+    val collectionDescription = toString()
+    UiElementNameRegistry.register(collectionDescription, alias)
+    UiElementNameRegistry.register(collectionDescription.removeSurrounding("[", "]"), alias)
     return this
 }
