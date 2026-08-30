@@ -37,3 +37,15 @@ tasks.withType<Test> {
     useJUnitPlatform()
     systemProperty("user.timezone", "Europe/Moscow")
 }
+
+tasks.register<Test>("unitTest") {
+    description = "Runs backend unit tests without Spring API contract tests."
+    group = "verification"
+    exclude("com/example/report/contract/**")
+}
+
+tasks.register<Test>("contractTest") {
+    description = "Runs backend Spring API contract tests."
+    group = "verification"
+    include("com/example/report/contract/**")
+}
