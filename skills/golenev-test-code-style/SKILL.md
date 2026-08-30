@@ -7,6 +7,7 @@ description: Enforce the Kotlin/JUnit conventions of the golenev-xlsx-report-sys
 
 ## Область применения
 
+- Перед любой работой с backend unit- или contract-тестами полностью прочитать `backend/src/test/UNIT-TESTING-RULES.md`; считать его источником маршрута диагностики, API-инвариантов и карты покрытия для LLM.
 - Правила этого skill про `AllureId`, `step {}`, Selenide lifecycle, endpoint DAO, Page Object, шаблоны сценариев и пакеты `org.golenev.*` относятся только к модулю `e2e-test`.
 - Для unit-тестов в `backend/src/test` не применять e2e-код-стиль, Allure-аннотации, бизнес-шаги и слои тестового UI/API-фреймворка.
 - Backend unit-тесты писать в традиционном стиле JUnit 5 и Mockito: изолировать тестируемый класс, не поднимать Spring context без необходимости, использовать понятные backtick-имена и структуру arrange/act/assert.
