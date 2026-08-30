@@ -2,7 +2,6 @@ package org.golenev.ui.pages
 
 import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.Selenide.`$`
-import com.codeborne.selenide.Selenide.`$$`
 import com.codeborne.selenide.Selenide.element
 import com.codeborne.selenide.SelenideElement
 import org.golenev.ui.allure.name
@@ -14,8 +13,7 @@ import io.qameta.allure.Step
  */
 class RegressionWidget {
     private val regressionStartButton: SelenideElement =
-        `$$`("div.regression-actions")
-            .findBy(text("Would you run regress"))
+        `$`("[data-testid='regression-start-button']")
             .name("Кнопка открытия формы запуска regression run.")
 
     private val regressionReleaseInput: SelenideElement =

@@ -1157,6 +1157,7 @@ export default function App() {
                               <button
                                 type="button"
                                 className="danger-btn"
+                                data-testid="regression-start-button"
                                 onClick={() => setShowReleaseNameInput(true)}
                                 disabled={loading || saving || regressionSaving || regressionLoading}
                               >
