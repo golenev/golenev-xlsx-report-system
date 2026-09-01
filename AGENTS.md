@@ -34,3 +34,19 @@
    - задать пользователю вопрос о дальнейших действиях.
 3. Если пользователь после объяснения подтверждает исходное требование, следовать ему в пределах инструкций более высокого приоритета и ограничений безопасности.
 4. Перед созданием или обновлением pull request обязательно прочитать и применить `skills/golenev-pull-request/SKILL.md`.
+
+### Карта обязательных инструкций
+
+Перед выполнением задачи определить её тип по этой карте. Если задача пересекает несколько строк, прочитать и применить все перечисленные источники.
+
+| Тип задачи | Обязательные инструкции |
+|---|---|
+| Вёрстка, React-компоненты, CSS, таблицы, формы, модалки, виджеты и frontend-взаимодействия | `skills/golenev-frontend-layout/SKILL.md` |
+| Тесты и framework-код модуля `e2e-test` | `skills/golenev-test-code-style/SKILL.md` |
+| UI/E2E-тесты, Page Object, Selenide-локаторы и браузерные сценарии | `skills/golenev-test-code-style/SKILL.md`, `skills/golenev-ui-test-steps/SKILL.md`, `skills/golenev-allure-reporting/SKILL.md` |
+| API/E2E-тесты, endpoint DAO, REST Assured и DTO тестового API-слоя | `skills/golenev-test-code-style/SKILL.md`, `skills/golenev-api-test-steps/SKILL.md`, `skills/golenev-allure-reporting/SKILL.md` |
+| Backend unit- и contract-тесты | `backend/src/test/UNIT-TESTING-RULES.md`; e2e/Allure-код-стиль не применять |
+| Создание, обновление или передача pull request | `skills/golenev-pull-request/SKILL.md` |
+| Изменение пользовательского или API-поведения | релевантные разделы `USER_SCENARIOS.md`; при изменении поведения синхронно обновить документ |
+
+Историю чата не считать единственным источником проектных требований. Долговечные решения закреплять в production-коде, тестах, `USER_SCENARIOS.md`, `AGENTS.md` или профильном `SKILL.md`.
