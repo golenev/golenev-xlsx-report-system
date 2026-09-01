@@ -1,0 +1,4 @@
+interface:
+  display_name: "Вёрстка Golenev"
+  short_description: "Единообразная React/CSS-вёрстка проекта"
+  default_prompt: "Используй $golenev-frontend-layout, чтобы реализовать новый интерфейс в существующем стиле проекта и сохранить тестовые контракты."
