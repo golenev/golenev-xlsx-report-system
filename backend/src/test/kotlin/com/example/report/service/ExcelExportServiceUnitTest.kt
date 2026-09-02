@@ -6,6 +6,7 @@ import com.example.report.dto.ScenarioRequest
 import com.example.report.dto.ScenarioStepRequest
 import com.example.report.dto.TestReportItemDto
 import com.example.report.dto.TestReportResponse
+import org.apache.poi.ss.usermodel.BorderStyle
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -116,6 +117,66 @@ class ExcelExportServiceUnitTest {
             val sheet = it.getSheet("Test Report")
             assertEquals(0, sheet.lastRowNum, "Пустой snapshot должен создавать workbook только с header row")
             assertTrue(sheet.getRow(0).getCell(0).stringCellValue.isNotBlank(), "Header row должен быть заполнен даже для пустого snapshot")
+        }
+    }
+
+    @Test
+    fun `generate workbook preserves oversized cell across visually joined rows without splitting unicode pair`() {
+        val oversizedAttachment = "😀".repeat(20_000)
+        Mockito.`when`(testReportService.getReport()).thenReturn(
+            TestReportResponse(
+                items = listOf(
+                    TestReportItemDto(
+                        testId = "T-LONG",
+                        category = "API",
+                        shortTitle = "Oversized scenario",
+                        issueLink = null,
+                        readyDate = null,
+                        generalStatus = null,
+                        priority = null,
+                        scenario = ScenarioRequest(
+                            steps = listOf(
+                                ScenarioStepRequest(
+                                    number = 1,
+                                    text = "step",
+                                    attachments = listOf(
+                                        ScenarioAttachmentRequest(name = "log", content = oversizedAttachment),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        notes = null,
+                        updatedAt = null,
+                        runStatus = null,
+                    ),
+                ),
+                columnConfig = emptyMap(),
+            ),
+        )
+
+        val workbook = XSSFWorkbook(ByteArrayInputStream(service.generateWorkbook()))
+        workbook.use {
+            val sheet = it.getSheet("Test Report")
+            val scenarioChunks = (1..sheet.lastRowNum).map { rowIndex ->
+                sheet.getRow(rowIndex).getCell(7).stringCellValue
+            }
+            val expectedScenario = "step\n   [log] $oversizedAttachment"
+
+            assertEquals(2, sheet.lastRowNum, "Длинный сценарий должен занимать две строки данных")
+            assertTrue(scenarioChunks.all { chunk -> chunk.length <= 32_767 }, "Каждая часть сценария должна укладываться в лимит Excel")
+            assertEquals(expectedScenario, scenarioChunks.joinToString(""), "Сценарий должен сохраняться без потери символов")
+            assertTrue(
+                sheet.mergedRegions.any { region ->
+                    region.firstRow == 1 && region.lastRow == 2 && region.firstColumn == 0 && region.lastColumn == 0
+                },
+                "Обычная колонка должна объединяться по высоте частей сценария",
+            )
+            assertTrue(
+                sheet.mergedRegions.none { region -> region.firstColumn == 7 },
+                "Части сценария нельзя объединять, иначе Excel сохранит только первую часть",
+            )
+            assertEquals(BorderStyle.NONE, sheet.getRow(1).getCell(7).cellStyle.borderBottom)
+            assertEquals(BorderStyle.NONE, sheet.getRow(2).getCell(7).cellStyle.borderTop)
         }
     }
 }

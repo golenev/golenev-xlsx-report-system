@@ -8,6 +8,8 @@ import org.apache.poi.ss.usermodel.BorderStyle
 import org.apache.poi.ss.usermodel.FillPatternType
 import org.apache.poi.ss.usermodel.HorizontalAlignment
 import org.apache.poi.ss.usermodel.IndexedColors
+import org.apache.poi.ss.util.CellRangeAddress
+import org.apache.poi.ss.util.RegionUtil
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.springframework.stereotype.Service
 import java.io.ByteArrayOutputStream
@@ -98,6 +100,19 @@ class ExcelExportService(
             borderRight = BorderStyle.THIN
             wrapText = true
         }
+        val firstContinuationStyle = workbook.createCellStyle().apply {
+            cloneStyleFrom(cellStyle)
+            borderBottom = BorderStyle.NONE
+        }
+        val middleContinuationStyle = workbook.createCellStyle().apply {
+            cloneStyleFrom(cellStyle)
+            borderTop = BorderStyle.NONE
+            borderBottom = BorderStyle.NONE
+        }
+        val lastContinuationStyle = workbook.createCellStyle().apply {
+            cloneStyleFrom(cellStyle)
+            borderTop = BorderStyle.NONE
+        }
 
         val headers = listOf(
             "Test ID",
@@ -122,14 +137,36 @@ class ExcelExportService(
             }
         }
 
-        rows.forEachIndexed { rowIndex, row ->
-            val sheetRow = sheet.createRow(rowIndex + 1)
-            val values = columnKeys.map { key -> row[key] }
-            values.forEachIndexed { cellIndex, value ->
-                val cell = sheetRow.createCell(cellIndex)
-                cell.setCellValue(value ?: "")
-                cell.cellStyle = cellStyle
+        var nextRowIndex = 1
+        rows.forEach { row ->
+            val chunksByColumn = columnKeys.map { key -> splitToExcelCells(row[key]) }
+            val rowSpan = chunksByColumn.maxOf { it.size }
+
+            repeat(rowSpan) { rowOffset ->
+                val sheetRow = sheet.createRow(nextRowIndex + rowOffset)
+                chunksByColumn.forEachIndexed { cellIndex, chunks ->
+                    val cell = sheetRow.createCell(cellIndex)
+                    cell.setCellValue(chunks.getOrElse(rowOffset) { "" })
+                    cell.cellStyle = when {
+                        rowSpan == 1 -> cellStyle
+                        rowOffset == 0 -> firstContinuationStyle
+                        rowOffset == rowSpan - 1 -> lastContinuationStyle
+                        else -> middleContinuationStyle
+                    }
+                }
             }
+
+            chunksByColumn.forEachIndexed { cellIndex, chunks ->
+                if (rowSpan > 1 && chunks.size == 1) {
+                    val region = CellRangeAddress(nextRowIndex, nextRowIndex + rowSpan - 1, cellIndex, cellIndex)
+                    sheet.addMergedRegion(region)
+                    RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet)
+                    RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet)
+                    RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet)
+                    RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet)
+                }
+            }
+            nextRowIndex += rowSpan
         }
 
         ByteArrayOutputStream().use { outputStream ->
@@ -159,6 +196,27 @@ class ExcelExportService(
             }
         }
         return render(scenario.steps, 0).joinToString("\n").takeIf { it.isNotBlank() }
+    }
+
+    private fun splitToExcelCells(value: String?): List<String> {
+        val source = value.orEmpty()
+        if (source.isEmpty()) return listOf("")
+
+        return buildList {
+            var startIndex = 0
+            while (startIndex < source.length) {
+                var endIndex = minOf(startIndex + EXCEL_CELL_CHARACTER_LIMIT, source.length)
+                if (
+                    endIndex < source.length &&
+                    Character.isHighSurrogate(source[endIndex - 1]) &&
+                    Character.isLowSurrogate(source[endIndex])
+                ) {
+                    endIndex--
+                }
+                add(source.substring(startIndex, endIndex))
+                startIndex = endIndex
+            }
+        }
     }
 
     /**
@@ -247,4 +305,8 @@ class ExcelExportService(
         val scenario: String?,
         val notes: String?,
     )
+
+    private companion object {
+        const val EXCEL_CELL_CHARACTER_LIMIT = 32_767
+    }
 }
