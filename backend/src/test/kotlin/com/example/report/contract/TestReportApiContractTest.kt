@@ -3,6 +3,7 @@ package com.example.report.contract
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasSize
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -11,6 +12,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import java.io.ByteArrayInputStream
 
 class TestReportApiContractTest : ContractTestSupport() {
 
@@ -225,8 +227,21 @@ class TestReportApiContractTest : ContractTestSupport() {
     }
 
     @Test
-    fun `excel export returns attachment headers and xlsx body`() {
-        createTestCase("CONTRACT-XLSX")
+    fun `excel export preserves oversized scenario in visually joined rows`() {
+        val oversizedAttachment = "x".repeat(40_000)
+        mockMvc.post("/api/tests?forceUpdate=true") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """
+                {
+                  "testId":"CONTRACT-XLSX",
+                  "category":"API",
+                  "shortTitle":"Oversized export",
+                  "scenario":{"steps":[{"number":1,"text":"step","attachments":[{"name":"log","content":"$oversizedAttachment"}]}]}
+                }
+            """.trimIndent()
+        }.andExpect {
+            status { isOk() }
+        }
 
         val response = mockMvc.get("/api/tests/export/excel")
             .andExpect {
@@ -240,6 +255,21 @@ class TestReportApiContractTest : ContractTestSupport() {
         assertTrue(response.contentAsByteArray.size > 100, "XLSX response должен содержать workbook")
         assertEquals('P'.code.toByte(), response.contentAsByteArray[0])
         assertEquals('K'.code.toByte(), response.contentAsByteArray[1])
+
+        XSSFWorkbook(ByteArrayInputStream(response.contentAsByteArray)).use { workbook ->
+            val sheet = workbook.getSheet("Test Report")
+            val scenario = (1..sheet.lastRowNum).joinToString("") { rowIndex ->
+                sheet.getRow(rowIndex).getCell(7).stringCellValue
+            }
+
+            assertEquals("step\n   [log] $oversizedAttachment", scenario)
+            assertTrue(
+                sheet.mergedRegions.any { region ->
+                    region.firstRow == 1 && region.lastRow == 2 && region.firstColumn == 0 && region.lastColumn == 0
+                },
+                "Колонки тест-кейса должны визуально объединяться по высоте частей сценария",
+            )
+        }
     }
 
     @Test
