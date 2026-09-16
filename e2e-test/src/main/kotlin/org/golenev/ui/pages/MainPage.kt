@@ -4,6 +4,7 @@ import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.Selenide.element
 import com.codeborne.selenide.SelenideElement
+import com.codeborne.selenide.WebDriverRunner.url
 import org.golenev.ui.allure.name
 import io.qameta.allure.Step
 
@@ -30,6 +31,12 @@ class MainPage {
         checkTitle()
     }
 
+    @Step("Переходим на главную страницу с параметрами представления таблицы: {query}")
+    fun openWithQuery(query: String) {
+        Selenide.open("/?${query.removePrefix("?")}")
+        checkTitle()
+    }
+
     @Step("Обновляем страницу браузера и дожидаемся отображения заголовка Test Report")
     fun refreshCurrentPage() {
         Selenide.refresh()
@@ -39,6 +46,26 @@ class MainPage {
     @Step("Проверяем текст заголовка страницы Test Report")
     fun checkTitle() {
         headerTitle.shouldHave(text("Test Report").because("после открытия страницы должен отображаться заголовок отчета"))
+    }
+
+    @Step("Проверяем параметры URL представления таблицы: {expectedParameters}")
+    fun checkUrlParameters(expectedParameters: List<String>) {
+        val currentUrl = url()
+        expectedParameters.forEach { parameter ->
+            check(currentUrl.contains(parameter)) {
+                "URL '$currentUrl' должен содержать параметр '$parameter'"
+            }
+        }
+    }
+
+    @Step("Проверяем отсутствие параметров в URL представления таблицы: {unexpectedParameters}")
+    fun checkUrlDoesNotContain(unexpectedParameters: List<String>) {
+        val currentUrl = url()
+        unexpectedParameters.forEach { parameter ->
+            check(!currentUrl.contains(parameter)) {
+                "URL '$currentUrl' не должен содержать параметр '$parameter'"
+            }
+        }
     }
 
 }

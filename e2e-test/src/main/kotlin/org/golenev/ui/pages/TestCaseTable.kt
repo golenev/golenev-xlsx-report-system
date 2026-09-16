@@ -1,6 +1,7 @@
 package org.golenev.ui.pages
 
 import com.codeborne.selenide.CollectionCondition.size
+import com.codeborne.selenide.CollectionCondition.sizeGreaterThan
 import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.ElementsCollection
 import com.codeborne.selenide.Selenide.`$`
@@ -51,6 +52,18 @@ class TestCaseTable {
 
     private val savedRows: ElementsCollection =
         `$$`("$tableLocator [data-testid='test-case-row']").name("Сохранённые строки тест-кейсов")
+
+    private val activeFilterChips: ElementsCollection =
+        `$$`("[data-testid='active-filter-chip']").name("Чипы активных фильтров таблицы")
+
+    private val clearAllFiltersButton: SelenideElement =
+        `$`("[data-action='clear-all-filters']").name("Кнопка сброса всех активных фильтров.")
+
+    private val groupingSelect: SelenideElement =
+        `$`("[data-testid='table-group-select']").name("Select группировки строк таблицы.")
+
+    private val emptyFilterResult: SelenideElement =
+        `$`("[data-testid='table-empty-result']").name("Сообщение об отсутствии строк по заданным фильтрам.")
 
     @Step("Прокручиваем таблицу к строке с Test ID {testId} и проверяем её отображение")
     operator fun get(testId: String): TestCaseTable = apply { checkRowVisible(testId) }
@@ -167,6 +180,142 @@ class TestCaseTable {
     @Step("Проверяем количество сохранённых строк таблицы: {expectedCount}")
     fun checkSavedRowsCount(expectedCount: Int) {
         savedRows.shouldHave(size(expectedCount).because("количество строк должно соответствовать ожидаемому"))
+    }
+
+    @Step("Проверяем наличие фильтра в каждой колонке таблицы: {columnKeys}")
+    fun checkColumnFilterButtons(columnKeys: List<String>) {
+        columnKeys.forEach { columnKey ->
+            filterButton(columnKey)
+                .shouldBe(visible.because("кнопка фильтра должна отображаться в колонке $columnKey"))
+                .shouldHave(attribute("data-state", "inactive"))
+        }
+    }
+
+    @Step("Открываем фильтр колонки {columnKey}")
+    fun openColumnFilter(columnKey: String) {
+        filterButton(columnKey).shouldBe(enabled).click()
+        filterPanel(columnKey).shouldBe(visible.because("панель фильтра колонки $columnKey должна открыться"))
+    }
+
+    @Step("Задаём текстовый фильтр колонки {columnKey}: {query}")
+    fun setTextFilter(columnKey: String, query: String) {
+        openColumnFilter(columnKey)
+        filterPanel(columnKey).`$`("[data-testid='table-filter-search']")
+            .name("Поле текстового фильтра колонки $columnKey.")
+            .shouldBe(visible)
+            .setValue(query)
+    }
+
+    @Step("Выбираем значения фильтра колонки {columnKey}: {values}")
+    fun selectFilterValues(columnKey: String, values: List<String>) {
+        openColumnFilter(columnKey)
+        values.forEach { value ->
+            filterPanel(columnKey)
+                .`$`("[data-testid='table-filter-option'][data-value='$value'] input")
+                .name("Значение $value фильтра колонки $columnKey.")
+                .shouldBe(enabled.because("значение фильтра должно быть доступно для выбора"))
+                .click()
+        }
+    }
+
+    @Step("Применяем фильтр колонки {columnKey}")
+    fun applyColumnFilter(columnKey: String) {
+        filterPanel(columnKey).`$`("[data-action='apply-filter']")
+            .name("Кнопка применения фильтра колонки $columnKey.")
+            .shouldBe(enabled)
+            .click()
+        filterPanel(columnKey).shouldBe(disappear.because("после применения панель фильтра должна закрыться"))
+        filterButton(columnKey).shouldHave(attribute("data-state", "active"))
+    }
+
+    @Step("Закрываем фильтр колонки {columnKey} без применения")
+    fun closeColumnFilterWithoutApplying(columnKey: String) {
+        actions().sendKeys(Keys.ESCAPE).perform()
+        filterPanel(columnKey).shouldBe(disappear.because("панель фильтра должна закрыться без применения черновика"))
+    }
+
+    @Step("Проверяем активный фильтр колонки {columnKey} с описанием {expectedDescription}")
+    fun checkActiveFilter(columnKey: String, expectedDescription: String) {
+        `$`("[data-testid='active-filter-chip'][data-name='$columnKey']")
+            .name("Чип активного фильтра колонки $columnKey.")
+            .shouldBe(visible)
+            .shouldHave(text(expectedDescription))
+    }
+
+    @Step("Проверяем количество активных фильтров: {expectedCount}")
+    fun checkActiveFiltersCount(expectedCount: Int) {
+        activeFilterChips.shouldHave(size(expectedCount).because("количество чипов должно совпадать с количеством активных фильтров"))
+    }
+
+    @Step("Удаляем активный фильтр колонки {columnKey}")
+    fun removeActiveFilter(columnKey: String) {
+        `$`("[data-testid='active-filter-chip'][data-name='$columnKey']")
+            .name("Чип активного фильтра колонки $columnKey.")
+            .shouldBe(enabled)
+            .click()
+        filterButton(columnKey).shouldHave(attribute("data-state", "inactive"))
+    }
+
+    @Step("Сбрасываем все активные фильтры")
+    fun clearAllFilters() {
+        clearAllFiltersButton.shouldBe(enabled).click()
+        activeFilterChips.shouldHave(size(0).because("после общего сброса активных фильтров не должно остаться"))
+    }
+
+    @Step("Проверяем сообщение об отсутствии тест-кейсов по заданным фильтрам")
+    fun checkEmptyFilterResult() {
+        emptyFilterResult
+            .shouldBe(visible.because("для пустого результата должно отображаться отдельное сообщение"))
+            .shouldHave(text("По заданным фильтрам тест-кейсы не найдены"))
+    }
+
+    @Step("Группируем строки таблицы по колонке {columnKey}")
+    fun groupBy(columnKey: String) {
+        groupingSelect.shouldBe(visible).selectOptionByValue(columnKey)
+        groupingSelect.shouldHave(value(columnKey))
+    }
+
+    @Step("Проверяем группу {groupValue} для колонки {columnKey}")
+    fun checkGroupVisible(columnKey: String, groupValue: String) {
+        groupRow(columnKey, groupValue)
+            .shouldBe(visible.because("группа $groupValue должна отображаться после группировки"))
+            .shouldHave(attribute("data-state", "expanded"))
+    }
+
+    @Step("Проверяем отсутствие группы {groupValue} для колонки {columnKey}")
+    fun checkGroupDisappeared(columnKey: String, groupValue: String) {
+        groupRow(columnKey, groupValue)
+            .shouldBe(disappear.because("группа $groupValue не должна отображаться"))
+    }
+
+    @Step("Сворачиваем группу {groupValue} колонки {columnKey}")
+    fun collapseGroup(columnKey: String, groupValue: String) {
+        groupRow(columnKey, groupValue).`$`("[data-testid='table-group-toggle']")
+            .name("Кнопка сворачивания группы $groupValue.")
+            .shouldBe(enabled)
+            .click()
+        groupRow(columnKey, groupValue).shouldHave(attribute("data-state", "collapsed"))
+    }
+
+    @Step("Проверяем, что группировка выбрана по колонке {columnKey}")
+    fun checkGrouping(columnKey: String) {
+        groupingSelect.shouldHave(value(columnKey))
+        `$$`("[data-testid='table-group-row']")
+            .shouldHave(sizeGreaterThan(0).because("после выбора группировки должны отображаться заголовки групп"))
+    }
+
+    @Step("Проверяем, что группировка не выбрана")
+    fun checkGroupingInactive() {
+        groupingSelect.shouldHave(value(""))
+        `$$`("[data-testid='table-group-row']")
+            .shouldHave(size(0).because("без группировки заголовки групп не должны отображаться"))
+    }
+
+    @Step("Проверяем доступность редактирования Regress Run для тест-кейса {testId}")
+    fun checkRegressionStatusEditable(testId: String) {
+        `$`("${savedRowLocator(testId)} [data-testid='regress-run-button']")
+            .name("Select Regress Run в строке тест-кейса $testId.")
+            .shouldBe(enabled.because("фильтрация не должна блокировать редактирование Regress Run"))
     }
 
     @Step("Нажимаем Add Row и проверяем появление модального редактора создания")
@@ -291,4 +440,16 @@ class TestCaseTable {
 
     private fun savedRowLocator(testId: String): String =
         "$tableLocator [data-testid='test-case-row'][data-test-case-id='$testId']"
+
+    private fun filterButton(columnKey: String): SelenideElement =
+        `$`("[data-testid='table-filter-button'][data-name='$columnKey']")
+            .name("Кнопка фильтра колонки $columnKey.")
+
+    private fun filterPanel(columnKey: String): SelenideElement =
+        `$`("[data-testid='table-filter-panel'][data-name='$columnKey']")
+            .name("Панель фильтра колонки $columnKey.")
+
+    private fun groupRow(columnKey: String, groupValue: String): SelenideElement =
+        `$`("[data-testid='table-group-row'][data-name='$columnKey'][data-value='$groupValue']")
+            .name("Группа $groupValue колонки $columnKey.")
 }

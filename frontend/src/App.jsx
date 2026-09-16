@@ -3,7 +3,20 @@ import ReleaseAnalyticsWidget from './ReleaseAnalyticsWidget.tsx';
 import { ScenarioTree } from './ScenarioTree.jsx';
 import { ScenarioEditor } from './ScenarioEditor.jsx';
 import { TestCaseEditorModal } from './TestCaseEditorModal.jsx';
+import { TableFilterPanel } from './TableFilterPanel.jsx';
 import { buildScenarioExportText, normalizeScenario, serializeScenario } from './scenarioModel.js';
+import {
+  EMPTY_FILTER_VALUE,
+  FILTER_KINDS,
+  GROUPABLE_COLUMNS,
+  applyTableFilters,
+  collectFilterOptions,
+  describeFilter,
+  groupTableItems,
+  isFilterActive,
+  parseTableViewState,
+  serializeTableViewState
+} from './tableViewModel.js';
 const GENERAL_STATUS_OPTIONS = [
   { value: 'Очередь', color: '#e0e8ff', textColor: '#294a9a' },
   { value: 'В работе', color: '#fff4e0', textColor: '#9a5b29' },
@@ -65,7 +78,10 @@ const REGRESSION_COLUMN = {
   type: 'regression'
 };
 
-const TABLE_COLUMNS = [...FIELD_DEFINITIONS, REGRESSION_COLUMN];
+const TABLE_COLUMNS = [...FIELD_DEFINITIONS, REGRESSION_COLUMN].map((column) => ({
+  ...column,
+  filterKind: FILTER_KINDS[column.key]
+}));
 
 
 const DEFAULT_ISSUE_LINK = 'https://youtrackru/issue/';
@@ -445,6 +461,15 @@ export default function App() {
   const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
   const [uploadSelectionLabel, setUploadSelectionLabel] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [tableFilters, setTableFilters] = useState(
+    () => parseTableViewState(window.location.search).filters
+  );
+  const [groupBy, setGroupBy] = useState(
+    () => parseTableViewState(window.location.search).groupBy
+  );
+  const [openFilter, setOpenFilter] = useState(null);
+  const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
+  const [regressionFilterSnapshot, setRegressionFilterSnapshot] = useState({});
   const uploadInputRef = useRef(null);
 
   const loadData = async () => {
@@ -477,6 +502,7 @@ export default function App() {
       const data = await response.json();
       setRegressionState(data);
       setRegressionResults(data.results ?? {});
+      setRegressionFilterSnapshot(data.results ?? {});
       if (data.status !== 'RUNNING') {
         setShowReleaseNameInput(false);
       }
@@ -491,6 +517,24 @@ export default function App() {
     loadData();
     loadRegressionState();
   }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const nextState = parseTableViewState(window.location.search);
+      setTableFilters(nextState.filters);
+      setGroupBy(nextState.groupBy);
+      setCollapsedGroups(new Set());
+      setOpenFilter(null);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    const search = serializeTableViewState(tableFilters, groupBy, window.location.search);
+    const nextUrl = `${window.location.pathname}${search}${window.location.hash}`;
+    window.history.replaceState(window.history.state, '', nextUrl);
+  }, [groupBy, tableFilters]);
 
   useEffect(() => {
     const textareas = document.querySelectorAll('.multiline-textarea');
@@ -684,6 +728,107 @@ export default function App() {
     return [...items].sort(compareTestIds);
   }, [items]);
 
+  const liveFilterItems = useMemo(
+    () => sortedItems.map((item) => ({
+      ...item,
+      regressionStatus: regressionResults[item.testId] ?? ''
+    })),
+    [regressionResults, sortedItems]
+  );
+
+  const filterItems = useMemo(
+    () => sortedItems.map((item) => ({
+      ...item,
+      regressionStatus: regressionFilterSnapshot[item.testId] ?? ''
+    })),
+    [regressionFilterSnapshot, sortedItems]
+  );
+
+  const filteredItems = useMemo(
+    () => applyTableFilters(filterItems, tableFilters),
+    [filterItems, tableFilters]
+  );
+
+  const visibleTableRows = useMemo(() => {
+    let displayIndex = 0;
+    if (!groupBy) {
+      return filteredItems.map((item) => ({
+        type: 'item',
+        item,
+        displayIndex: ++displayIndex
+      }));
+    }
+    return groupTableItems(filteredItems, groupBy).flatMap((group) => [
+      { type: 'group', group },
+      ...(collapsedGroups.has(group.value)
+        ? []
+        : group.items.map((item) => ({
+            type: 'item',
+            item,
+            displayIndex: ++displayIndex
+          })))
+    ]);
+  }, [collapsedGroups, filteredItems, groupBy]);
+
+  const activeFilters = useMemo(
+    () => Object.entries(tableFilters).filter(([, filter]) => isFilterActive(filter)),
+    [tableFilters]
+  );
+
+  const handleOpenColumnFilter = (event, column) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const panelWidth = 288;
+    setOpenFilter({
+      column,
+      position: {
+        top: Math.max(12, Math.min(bounds.bottom + 6, window.innerHeight - 420)),
+        left: Math.max(12, Math.min(bounds.left, window.innerWidth - panelWidth - 12))
+      }
+    });
+  };
+
+  const handleApplyColumnFilter = (key, filter) => {
+    setRegressionFilterSnapshot(regressionResults);
+    setTableFilters((current) => {
+      const next = { ...current };
+      if (filter && isFilterActive(filter)) next[key] = filter;
+      else delete next[key];
+      return next;
+    });
+    setCollapsedGroups(new Set());
+    setOpenFilter(null);
+  };
+
+  const handleClearColumnFilter = (key) => {
+    setTableFilters((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+    setCollapsedGroups(new Set());
+    setOpenFilter(null);
+  };
+
+  const handleClearAllFilters = () => {
+    setTableFilters({});
+    setCollapsedGroups(new Set());
+    setOpenFilter(null);
+  };
+
+  const handleGroupByChange = (value) => {
+    setGroupBy(GROUPABLE_COLUMNS.has(value) ? value : '');
+    setCollapsedGroups(new Set());
+  };
+
+  const toggleGroup = (value) => {
+    setCollapsedGroups((current) => {
+      const next = new Set(current);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  };
+
   const missingRegressionStatuses = useMemo(() => {
     if (!isRegressionRunning) {
       return false;
@@ -724,6 +869,7 @@ export default function App() {
       const data = await response.json();
       setRegressionState(data);
       setRegressionResults({});
+      setRegressionFilterSnapshot({});
       setShowReleaseNameInput(false);
       setReleaseNameDraft('');
     } catch (err) {
@@ -768,6 +914,7 @@ export default function App() {
       const data = await response.json();
       setRegressionState(data);
       setRegressionResults({});
+      setRegressionFilterSnapshot({});
       setShowReleaseNameInput(false);
       setReleaseNameDraft('');
     } catch (err) {
@@ -788,6 +935,7 @@ export default function App() {
       const data = await response.json();
       setRegressionState(data);
       setRegressionResults({});
+      setRegressionFilterSnapshot({});
       setShowReleaseNameInput(false);
       setReleaseNameDraft('');
     } catch (err) {
@@ -1067,10 +1215,89 @@ export default function App() {
       </header>
       <ReleaseAnalyticsWidget />
       {error && <div className="error-banner">{error}</div>}
+      {openFilter && (
+        <TableFilterPanel
+          column={{ ...openFilter.column, label: translate(openFilter.column.label) }}
+          filter={tableFilters[openFilter.column.key]}
+          options={collectFilterOptions(liveFilterItems, openFilter.column.key)}
+          position={openFilter.position}
+          translate={translate}
+          onApply={(filter) => handleApplyColumnFilter(openFilter.column.key, filter)}
+          onClear={() => handleClearColumnFilter(openFilter.column.key)}
+          onClose={() => setOpenFilter(null)}
+        />
+      )}
       {loading ? (
         <div className="loader">{translate('Loading…')}</div>
       ) : (
-        <div className="table-wrapper" data-testid="test-report-table">
+        <>
+          <section
+            className="table-view-toolbar"
+            data-testid="table-view-toolbar"
+            data-role="toolbar"
+            data-name="test-case-table-view"
+          >
+            <label className="table-group-control">
+              <span>{translate('Group by')}</span>
+              <select
+                value={groupBy}
+                onChange={(event) => handleGroupByChange(event.target.value)}
+                data-testid="table-group-select"
+                data-role="select"
+                data-action="group-by"
+                data-name="table-grouping"
+                data-state={groupBy ? 'active' : 'inactive'}
+              >
+                <option value="">{translate('No grouping')}</option>
+                {columns.filter((column) => GROUPABLE_COLUMNS.has(column.key)).map((column) => (
+                  <option key={column.key} value={column.key}>{translate(column.label)}</option>
+                ))}
+              </select>
+            </label>
+            <div
+              className="active-filters"
+              data-testid="active-filters-panel"
+              data-role="filter-summary"
+              data-state={activeFilters.length > 0 ? 'active' : 'empty'}
+            >
+              <span className="active-filters-label">{translate('Active filters')}</span>
+              {activeFilters.length === 0 ? (
+                <span className="active-filters-empty">{translate('None')}</span>
+              ) : (
+                <>
+                  {activeFilters.map(([key, filter]) => {
+                    const column = columns.find((item) => item.key === key);
+                    return (
+                      <button
+                        type="button"
+                        className="active-filter-chip"
+                        key={key}
+                        onClick={() => handleClearColumnFilter(key)}
+                        title={translate('Remove filter')}
+                        data-testid="active-filter-chip"
+                        data-role="filter-chip"
+                        data-action="remove-filter"
+                        data-name={key}
+                      >
+                        <span>{translate(column?.label ?? key)}: {describeFilter(filter, translate)}</span>
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    className="ghost-btn clear-all-filters"
+                    onClick={handleClearAllFilters}
+                    data-role="button"
+                    data-action="clear-all-filters"
+                  >
+                    {translate('Clear all')}
+                  </button>
+                </>
+              )}
+            </div>
+          </section>
+          <div className="table-wrapper" data-testid="test-report-table">
           <table className="report-table">
             <thead>
               <tr data-role="header" data-testid="head-row">
@@ -1102,6 +1329,22 @@ export default function App() {
                       >
                         <div className="header-title">
                           <span>{translate(column.label)}</span>
+                          <button
+                            type="button"
+                            className="table-filter-button"
+                            onClick={(event) => handleOpenColumnFilter(event, column)}
+                            title={`${translate('Filter')}: ${translate(column.label)}`}
+                            aria-label={`${translate('Open filter')}: ${translate(column.label)}`}
+                            aria-expanded={openFilter?.column.key === column.key}
+                            aria-controls={`table-filter-panel-${column.key}`}
+                            data-testid="table-filter-button"
+                            data-role="button"
+                            data-action="open-column-filter"
+                            data-name={column.key}
+                            data-state={isFilterActive(tableFilters[column.key]) ? 'active' : 'inactive'}
+                          >
+                            <span aria-hidden="true">▾</span>
+                          </button>
                         </div>
                         {column.key === 'regressionStatus' && (
                           <div className="regression-actions">
@@ -1301,9 +1544,51 @@ export default function App() {
                   })}
                 </tr>
               ))}
-              {sortedItems.map((item, rowIndex) => (
+              {visibleTableRows.length === 0 && newItems.length === 0 && (
+                <tr data-testid="table-empty-result" data-role="empty-state">
+                  <td className="table-empty-result" colSpan={TABLE_COLUMNS.length + 1}>
+                    {activeFilters.length > 0
+                      ? translate('No test cases match the filters')
+                      : translate('No test cases')}
+                  </td>
+                </tr>
+              )}
+              {visibleTableRows.map((entry) => {
+                if (entry.type === 'group') {
+                  const isCollapsed = collapsedGroups.has(entry.group.value);
+                  return (
+                    <tr
+                      key={`group-${groupBy}-${entry.group.value}`}
+                      className="table-group-row"
+                      data-testid="table-group-row"
+                      data-role="rowgroup"
+                      data-name={groupBy}
+                      data-value={entry.group.value}
+                      data-state={isCollapsed ? 'collapsed' : 'expanded'}
+                    >
+                      <td colSpan={TABLE_COLUMNS.length + 1}>
+                        <button
+                          type="button"
+                          className="table-group-toggle"
+                          onClick={() => toggleGroup(entry.group.value)}
+                          aria-expanded={!isCollapsed}
+                          data-testid="table-group-toggle"
+                          data-role="button"
+                          data-action="toggle-group"
+                          data-name={groupBy}
+                          data-value={entry.group.value}
+                        >
+                          <span className="table-group-chevron" aria-hidden="true">▾</span>
+                          <span>{entry.group.value === EMPTY_FILTER_VALUE ? translate('No value') : entry.group.label}</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                }
+                const item = entry.item;
+                return (
                 <tr key={item.testId} data-testid="test-case-row" data-test-case-id={item.testId}>
-                  <td className="row-index-cell" data-role="cell" data-testid="test-case-cell" data-name="Row Index">{rowIndex + 1}</td>
+                  <td className="row-index-cell" data-role="cell" data-testid="test-case-cell" data-name="Row Index">{entry.displayIndex}</td>
                   {TABLE_COLUMNS.map((column) => {
                     const width = getColumnWidth(column);
                     const value = item[column.key] ?? '';
@@ -1452,10 +1737,12 @@ export default function App() {
                     );
                   })}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
