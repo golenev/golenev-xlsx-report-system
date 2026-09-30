@@ -1,12 +1,9 @@
 package com.example.report.service
 
 import com.example.report.config.ColumnConfigProperties
-import com.example.report.dto.ScenarioAttachmentRequest
-import com.example.report.dto.ScenarioParameterRequest
-import com.example.report.dto.ScenarioRequest
-import com.example.report.dto.ScenarioStepRequest
-import com.example.report.dto.TestUpsertItem
+import com.example.report.dto.*
 import com.example.report.entity.TestReportEntity
+import com.example.report.repository.TestAttachmentRepository
 import com.example.report.repository.TestReportRepository
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -14,7 +11,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
-import java.util.Optional
+import java.util.*
 
 class TestReportScenarioUnitTest {
 
@@ -22,12 +19,14 @@ class TestReportScenarioUnitTest {
     private val columnConfigService: ColumnConfigService = Mockito.mock(ColumnConfigService::class.java)
     private val regressionService: RegressionService = Mockito.mock(RegressionService::class.java)
     private val objectMapper = jacksonObjectMapper()
+    private val testAttachmentRepository = Mockito.mock(TestAttachmentRepository::class.java)
     private val service = TestReportService(
         testReportRepository,
         columnConfigService,
         regressionService,
         objectMapper,
         fixedClock,
+        testAttachmentRepository,
     )
 
     @Test
@@ -73,19 +72,14 @@ class TestReportScenarioUnitTest {
 
         val captor = ArgumentCaptor.forClass(TestReportEntity::class.java)
         Mockito.verify(testReportRepository).save(captor.capture())
-        val stored = objectMapper.readValue(captor.value.scenario, ScenarioRequest::class.java)
+        val stored = captor.value.scenario
         val root = stored.steps.single()
-        val attachment = root.attachments.orEmpty().single()
         val child = root.subSteps.single()
 
         assertEquals(7, root.number)
         assertEquals("root step", root.text)
         assertNull(root.durationMs)
-        assertEquals("request", attachment.name)
-        assertEquals("application/json", attachment.mediaType)
-        assertEquals("  body is not trimmed  ", attachment.content)
-        assertEquals("source.txt", attachment.source)
-        assertNull(attachment.sizeBytes)
+        assertEquals(null, root.attachments)
         assertEquals(15, child.durationMs)
         assertEquals("expected", child.parameters.single().name)
         assertEquals(" value ", child.parameters.single().value)
@@ -184,6 +178,7 @@ class TestReportScenarioUnitTest {
     private fun entity(testId: String, scenario: String) = TestReportEntity(testId = testId).apply {
         category = "API"
         shortTitle = "Title"
-        this.scenario = scenario
+        this.scenario = runCatching { objectMapper.readValue(scenario, ScenarioRequest::class.java) }
+            .getOrElse { service.buildScenarioFromText(scenario) }
     }
 }

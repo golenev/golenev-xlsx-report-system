@@ -1,8 +1,12 @@
 package com.example.report.repository
 
 import com.example.report.entity.TestReportEntity
+import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
-import java.util.Optional
+import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
+import java.util.*
 
 /**
  * Spring Data JPA repository для строк тестового отчёта.
@@ -17,4 +21,8 @@ interface TestReportRepository : JpaRepository<TestReportEntity, Long> {
      * Spring Data формирует запрос по имени метода: `findByTestId` означает фильтр по полю `testId`.
      */
     fun findByTestId(testId: String): Optional<TestReportEntity>
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select report from TestReportEntity report where report.testId = :testId")
+    fun findForUpdateByTestId(@Param("testId") testId: String): Optional<TestReportEntity>
 }

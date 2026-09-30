@@ -61,6 +61,7 @@ data class ScenarioStepRequest(
     val subSteps: List<ScenarioStepRequest> = emptyList(),
     val durationMs: Long? = null,
     val parameters: List<ScenarioParameterRequest> = emptyList(),
+    val stepNumber: Int? = null,
 )
 
 data class ScenarioAttachmentRequest(
@@ -88,6 +89,7 @@ class ScenarioRequestDeserializer : JsonDeserializer<ScenarioRequest>() {
             ?.map { stepNode ->
                 ScenarioStepRequest(
                     number = stepNode.path("number").takeIf { it.isNumber }?.asInt(),
+                    stepNumber = stepNode.path("stepNumber").takeIf { it.isNumber }?.asInt(),
                     text = stepNode.path("text").asText(),
                     attachments = stepNode.path("attachments")
                         .takeIf { it.isArray }

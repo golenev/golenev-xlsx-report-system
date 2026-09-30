@@ -4,10 +4,7 @@ import com.codeborne.selenide.CollectionCondition.size
 import com.codeborne.selenide.CollectionCondition.sizeGreaterThan
 import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.ElementsCollection
-import com.codeborne.selenide.Selenide.`$`
-import com.codeborne.selenide.Selenide.`$$`
-import com.codeborne.selenide.Selenide.`$x`
-import com.codeborne.selenide.Selenide.actions
+import com.codeborne.selenide.Selenide.*
 import com.codeborne.selenide.SelenideElement
 import io.qameta.allure.Step
 import org.golenev.restapi.endpoints.ScenarioStepRequest
@@ -203,7 +200,7 @@ class TestCaseTable {
         filterPanel(columnKey).`$`("[data-testid='table-filter-search']")
             .name("Поле текстового фильтра колонки $columnKey.")
             .shouldBe(visible)
-            .setValue(query)
+            .typeOf(query)
     }
 
     @Step("Выбираем значения фильтра колонки {columnKey}: {values}")
@@ -306,7 +303,7 @@ class TestCaseTable {
 
     @Step("Проверяем, что группировка не выбрана")
     fun checkGroupingInactive() {
-        groupingSelect.shouldHave(value(""))
+        groupingSelect.shouldHave(exactValue(""))
         `$$`("[data-testid='table-group-row']")
             .shouldHave(size(0).because("без группировки заголовки групп не должны отображаться"))
     }

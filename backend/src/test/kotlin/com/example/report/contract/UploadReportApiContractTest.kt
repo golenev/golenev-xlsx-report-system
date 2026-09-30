@@ -1,14 +1,12 @@
 package com.example.report.contract
 
-import org.hamcrest.Matchers.containsString
-import org.hamcrest.Matchers.equalTo
-import org.hamcrest.Matchers.hasSize
+import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.Test
+import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.multipart
 import org.springframework.test.web.servlet.post
-import org.springframework.http.MediaType
 
 class UploadReportApiContractTest : ContractTestSupport() {
 
@@ -85,6 +83,33 @@ class UploadReportApiContractTest : ContractTestSupport() {
     }
 
     @Test
+    fun `upload rejects allure result that references missing attachment file without changing report`() {
+        createTestCase("UNCHANGED")
+        val resultFile = MockMultipartFile(
+            "files",
+            "missing-attachment-result.json",
+            MediaType.APPLICATION_JSON_VALUE,
+            allureResult("UPLOAD-MISSING", "Incomplete Allure", "failed", "response.txt").toByteArray(),
+        )
+
+        mockMvc.multipart("/uploadReport") {
+            file(resultFile)
+            param("paths", "allure-results/missing-attachment-result.json")
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.message", containsString("testId=UPLOAD-MISSING"))
+            jsonPath("$.message", containsString("stepNumber=1"))
+            jsonPath("$.message", containsString("missing-attachment-result.json"))
+            jsonPath("$.message", containsString("response.txt"))
+        }
+
+        mockMvc.get("/api/tests").andExpect {
+            jsonPath("$.items", hasSize<Any>(1))
+            jsonPath("$.items[0].testId", equalTo("UNCHANGED"))
+        }
+    }
+
+    @Test
     fun `upload keeps manual fields of existing test by default`() {
         createTestCase("UPLOAD-EXISTING")
         val resultFile = MockMultipartFile(
@@ -141,7 +166,7 @@ class UploadReportApiContractTest : ContractTestSupport() {
 
         mockMvc.get("/api/tests")
             .andExpect {
-                jsonPath("$.items[0].runStatus", equalTo("FAILED"))
+                jsonPath("$.items[0].runStatus") { doesNotExist() }
             }
         mockMvc.get("/api/regressions/current")
             .andExpect {

@@ -1,12 +1,10 @@
 package org.golenev.db.tables.regression
 
+import org.golenev.db.jsonbColumn
 import org.golenev.restapi.endpoints.TestUpsertItem
-import org.golenev.utils.JsonUtils
-import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
-import org.jetbrains.exposed.sql.json.jsonb
 import java.time.LocalDate
 
 object RegressionTable : Table("regressions") {
@@ -41,6 +39,3 @@ data class RegressionPayloadDto(
     val releaseName: String? = null,
     val tests: List<TestUpsertItem>? = null,
 )
-
-inline fun <reified T : Any> Table.jsonbColumn(name: String): Column<T> =
-    jsonb(name, { JsonUtils.objectMapper.writeValueAsString(it) }, { JsonUtils.objectMapper.readValue(it, T::class.java) })

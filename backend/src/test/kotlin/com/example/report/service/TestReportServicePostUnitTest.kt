@@ -4,14 +4,16 @@ import com.example.report.dto.ScenarioAttachmentRequest
 import com.example.report.dto.ScenarioRequest
 import com.example.report.dto.ScenarioStepRequest
 import com.example.report.dto.TestUpsertItem
+import com.example.report.entity.TestAttachmentEntity
 import com.example.report.entity.TestReportEntity
+import com.example.report.repository.TestAttachmentRepository
 import com.example.report.repository.TestReportRepository
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
-import java.util.Optional
-import org.junit.jupiter.api.Assertions.assertEquals
+import java.util.*
 
 class TestReportServicePostUnitTest {
 
@@ -19,7 +21,8 @@ class TestReportServicePostUnitTest {
     private val columnConfigService: ColumnConfigService = Mockito.mock(ColumnConfigService::class.java)
     private val regressionService: RegressionService = Mockito.mock(RegressionService::class.java)
     private val objectMapper = jacksonObjectMapper()
-    private val service = TestReportService(testReportRepository, columnConfigService, regressionService, objectMapper, fixedClock)
+    private val testAttachmentRepository = Mockito.mock(TestAttachmentRepository::class.java)
+    private val service = TestReportService(testReportRepository, columnConfigService, regressionService, objectMapper, fixedClock, testAttachmentRepository)
 
     /**
      * Юнит-тест моделирует сервисный слой POST /api/tests для нового testId: валидный structured scenario
@@ -50,12 +53,15 @@ class TestReportServicePostUnitTest {
 
         val saved = ArgumentCaptor.forClass(TestReportEntity::class.java)
         Mockito.verify(testReportRepository).save(saved.capture())
-        val scenario = objectMapper.readValue(saved.value.scenario, Map::class.java)
+        val scenario = objectMapper.convertValue(saved.value.scenario, Map::class.java)
         val steps = scenario["steps"] as List<*>
         val firstStep = steps.single() as Map<*, *>
         assertEquals("Отправляем POST /api/tests", firstStep["text"])
-        val attachments = firstStep["attachments"] as List<*>
-        assertEquals("request payload", (attachments.single() as Map<*, *>)["content"])
+        assertEquals(null, firstStep["attachments"])
+        val attachmentInvocation = Mockito.mockingDetails(testAttachmentRepository).invocations
+            .single { it.method.name == "saveAll" }
+        val attachments = attachmentInvocation.arguments.single() as Iterable<*>
+        assertEquals("request payload", (attachments.single() as TestAttachmentEntity).content)
     }
 
     /**
@@ -84,7 +90,7 @@ class TestReportServicePostUnitTest {
 
         val saved = ArgumentCaptor.forClass(TestReportEntity::class.java)
         Mockito.verify(testReportRepository).save(saved.capture())
-        val scenario = objectMapper.readValue(saved.value.scenario, Map::class.java)
+        val scenario = objectMapper.convertValue(saved.value.scenario, Map::class.java)
         val steps = scenario["steps"] as List<*>
         assertEquals(1, steps.size)
         assertEquals(2, (steps.single() as Map<*, *>)["number"])

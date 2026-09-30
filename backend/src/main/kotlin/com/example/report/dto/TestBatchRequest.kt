@@ -71,6 +71,7 @@ data class ScenarioStepRequest(
     val subSteps: List<ScenarioStepRequest> = emptyList(),
     val durationMs: Long? = null,
     val parameters: List<ScenarioParameterRequest> = emptyList(),
+    val stepNumber: Int? = null,
 )
 
 data class ScenarioParameterRequest(

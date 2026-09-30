@@ -5,20 +5,21 @@ import com.example.report.dto.RegressionStopRequest
 import com.example.report.entity.RegressionEntity
 import com.example.report.model.RegressionStatus
 import com.example.report.repository.RegressionRepository
+import com.example.report.repository.TestAttachmentRepository
 import com.example.report.repository.TestReportRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import java.time.LocalDate
-import java.util.Optional
+import java.util.*
 
 class RegressionServiceStateUnitTest {
 
     private val regressionRepository: RegressionRepository = Mockito.mock(RegressionRepository::class.java)
     private val testReportRepository: TestReportRepository = Mockito.mock(TestReportRepository::class.java)
     private val excelExportService: ExcelExportService = Mockito.mock(ExcelExportService::class.java)
-    private val service = RegressionService(regressionRepository, testReportRepository, excelExportService, fixedClock)
+    private val testAttachmentRepository: TestAttachmentRepository = Mockito.mock(TestAttachmentRepository::class.java)
+    private val service = RegressionService(regressionRepository, testReportRepository, testAttachmentRepository, excelExportService, fixedClock)
 
     @Test
     fun `current state is idle for no running regression and exposes only valid accumulated results`() {

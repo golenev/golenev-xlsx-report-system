@@ -1,23 +1,26 @@
 package com.example.report.service
 
 import com.example.report.entity.RegressionEntity
+import com.example.report.entity.TestAttachmentEntity
 import com.example.report.entity.TestReportEntity
 import com.example.report.model.RegressionStatus
 import com.example.report.repository.RegressionRepository
+import com.example.report.repository.TestAttachmentRepository
 import com.example.report.repository.TestReportRepository
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import java.time.LocalDate
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 
 class RegressionServiceScenarioSnapshotTest {
 
     private val regressionRepository: RegressionRepository = Mockito.mock(RegressionRepository::class.java)
     private val testReportRepository: TestReportRepository = Mockito.mock(TestReportRepository::class.java)
     private val excelExportService: ExcelExportService = Mockito.mock(ExcelExportService::class.java)
-    private val service = RegressionService(regressionRepository, testReportRepository, excelExportService, fixedClock)
+    private val testAttachmentRepository: TestAttachmentRepository = Mockito.mock(TestAttachmentRepository::class.java)
+    private val service = RegressionService(regressionRepository, testReportRepository, testAttachmentRepository, excelExportService, fixedClock)
 
     /**
      * Юнит-тест фиксирует текущий контракт snapshot: при остановке регресса persisted JSON scenario
@@ -35,12 +38,15 @@ class RegressionServiceScenarioSnapshotTest {
         val test = TestReportEntity(testId = "UNIT-1").apply {
             category = "E2E_FOR_AUTOTEST"
             shortTitle = "Structured scenario in snapshot"
-            scenario = """
-                {"steps":[{"number":1,"text":"Открываем отчёт","attachments":[{"type":"text","content":"request/response"}]}]}
-            """.trimIndent()
+            scenario = com.example.report.dto.ScenarioRequest(
+                listOf(com.example.report.dto.ScenarioStepRequest(number = 1, text = "Открываем отчёт", attachments = emptyList())),
+            )
         }
         Mockito.`when`(regressionRepository.findFirstByStatusOrderByRegressionDateDesc(RegressionStatus.RUNNING)).thenReturn(running)
         Mockito.`when`(testReportRepository.findAll()).thenReturn(listOf(test))
+        Mockito.`when`(testAttachmentRepository.findAllByTestIdIn(listOf("UNIT-1"))).thenReturn(
+            listOf(TestAttachmentEntity(testId = "UNIT-1", stepNumber = 1, name = "text", content = "request/response")),
+        )
         Mockito.`when`(regressionRepository.save(Mockito.any(RegressionEntity::class.java))).thenAnswer { it.arguments[0] }
 
         service.stopRegression(com.example.report.dto.RegressionStopRequest(results = mapOf("UNIT-1" to "PASSED")))

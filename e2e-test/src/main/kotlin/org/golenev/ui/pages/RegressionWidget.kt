@@ -4,9 +4,9 @@ import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.Selenide.element
 import com.codeborne.selenide.SelenideElement
+import io.qameta.allure.Step
 import org.golenev.ui.allure.name
 import org.golenev.utils.typeOf
-import io.qameta.allure.Step
 
 /**
  * Component Object глобального виджета управления regression run в шапке страницы.
@@ -61,5 +61,10 @@ class RegressionWidget {
     @Step("Дожидаемся видимости кнопки Stop regression run и нажимаем её")
     fun stopRegress() {
         regressionStopButton.shouldBe(visible.because("кнопка остановки regression run должна быть видимой перед кликом")).click()
+    }
+
+    @Step("Проверяем завершение regression run")
+    fun checkRegressionStopped() {
+        regressionStartButton.shouldBe(visible.because("кнопка запуска regression run должна появиться после завершения regression run"))
     }
 }

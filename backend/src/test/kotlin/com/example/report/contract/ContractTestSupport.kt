@@ -1,6 +1,7 @@
 package com.example.report.contract
 
 import com.example.report.repository.RegressionRepository
+import com.example.report.repository.TestAttachmentRepository
 import com.example.report.repository.TestReportRepository
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,9 +33,13 @@ abstract class ContractTestSupport {
     @Autowired
     protected lateinit var regressionRepository: RegressionRepository
 
+    @Autowired
+    protected lateinit var testAttachmentRepository: TestAttachmentRepository
+
     @BeforeEach
     fun cleanDatabase() {
         regressionRepository.deleteAll()
+        testAttachmentRepository.deleteAll()
         testReportRepository.deleteAll()
     }
 

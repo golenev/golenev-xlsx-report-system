@@ -1,19 +1,18 @@
 package helpers
 
+import com.example.report.dto.ScenarioAttachmentRequest
+import com.example.report.dto.ScenarioParameterRequest
+import com.example.report.dto.ScenarioRequest
+import com.example.report.dto.ScenarioStepRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.example.report.dto.ScenarioAttachmentRequest
-import com.example.report.dto.ScenarioRequest
-import com.example.report.dto.ScenarioStepRequest
-import com.example.report.dto.ScenarioParameterRequest
-import org.slf4j.LoggerFactory
 import org.springframework.web.util.HtmlUtils
+import java.io.InputStream
 
 private const val MAX_ATTACHMENT_CHARS = 50_000
-private val logger = LoggerFactory.getLogger("AllureReportParser")
 
 // ---- Модели для парсинга Allure JSON ----
 
@@ -74,10 +73,16 @@ data class TestCaseModel(
     val runStatus: String?,
 )
 
-data class AllureUpload(
+class AllureUpload(
     val path: String,
-    val content: ByteArray,
-)
+    val size: Long,
+    private val streamProvider: () -> InputStream,
+) {
+    constructor(path: String, content: ByteArray) : this(path, content.size.toLong(), { content.inputStream() })
+
+    fun openStream(): InputStream = streamProvider()
+    fun readBytes(): ByteArray = openStream().use { it.readBytes() }
+}
 
 // Внутренняя DTO: результат парсинга одного файла до окончательного назначения ID
 private data class RawTestCase(
@@ -104,7 +109,7 @@ private fun isTestCaseJson(upload: AllureUpload, mapper: ObjectMapper): Boolean 
     if (!upload.path.lowercase().endsWith(".json")) return false
 
     val root: JsonNode = try {
-        mapper.readTree(upload.content)
+        upload.openStream().use(mapper::readTree)
     } catch (_: Exception) {
         return false
     }
@@ -171,11 +176,20 @@ private fun formatAttachmentContent(attachment: Attachment, upload: AllureUpload
 
     if (!isText) {
         val safeType = type ?: "unknown"
-        val size = attachment.size ?: upload.content.size.toLong()
+        val size = attachment.size ?: upload.size
         return "[binary attachment: $safeType; size=$size]"
     }
 
-    val rawText = upload.content.toString(Charsets.UTF_8)
+    val rawText = upload.openStream().bufferedReader(Charsets.UTF_8).use { reader ->
+        val result = StringBuilder()
+        val buffer = CharArray(4096)
+        while (result.length <= MAX_ATTACHMENT_CHARS) {
+            val read = reader.read(buffer)
+            if (read < 0) break
+            result.append(buffer, 0, read)
+        }
+        result.toString()
+    }
     val normalized = if (isHtml) sanitizeHtmlAttachment(rawText) else rawText
     return if (normalized.length > MAX_ATTACHMENT_CHARS) {
         normalized.take(MAX_ATTACHMENT_CHARS) + "...TRUNCATED..."
@@ -191,7 +205,6 @@ private fun extractRawTestCase(
     jsonString: String,
     fileName: String,
     filesByName: Map<String, AllureUpload>,
-    attachmentsEnabled: Boolean,
 ): RawTestCase {
     val mapper = jacksonObjectMapper()
     val report = try {
@@ -203,7 +216,9 @@ private fun extractRawTestCase(
     /**
      * Достаёт вложения шага и превращает их в структурированные attachment DTO.
      */
-    fun processAttachments(step: Step): List<ScenarioAttachmentRequest> {
+    var nextStepNumber = 1
+
+    fun processAttachments(step: Step, stepNumber: Int): List<ScenarioAttachmentRequest> {
         val files = step.attachments.orEmpty()
         if (files.isEmpty()) return emptyList()
 
@@ -211,14 +226,17 @@ private fun extractRawTestCase(
             val sourceName = attachment.source ?: "unknown"
             val title = attachment.name ?: "Attachment"
             val upload = filesByName[baseName(sourceName)]
-            val content = upload?.let { formatAttachmentContent(attachment, it) }
-                ?: "[Attachment file is missing]"
+                ?: throw IllegalStateException(
+                    "Нарушен контракт allure-results: testId=${report.labels?.firstOrNull { it.name == "AS_ID" }?.value ?: "unknown"}, " +
+                        "stepNumber=$stepNumber, resultFile=$fileName, отсутствует файл вложения $sourceName"
+                )
+            val content = formatAttachmentContent(attachment, upload)
             ScenarioAttachmentRequest(
                 name = title,
                 mediaType = attachment.type,
                 content = content,
                 source = sourceName,
-                sizeBytes = upload?.content?.size?.toLong() ?: attachment.size,
+                sizeBytes = upload.size,
             )
         }
     }
@@ -231,10 +249,12 @@ private fun extractRawTestCase(
             if (steps == null) return emptyList()
 
             return steps.mapIndexed { index, step ->
+                val stepNumber = nextStepNumber++
                 ScenarioStepRequest(
                     number = index + 1,
+                    stepNumber = stepNumber,
                     text = step.name,
-                    attachments = processAttachments(step),
+                    attachments = processAttachments(step, stepNumber),
                     subSteps = traverse(step.steps),
                     durationMs = if (step.start != null && step.stop != null && step.stop >= step.start) step.stop - step.start else null,
                     parameters = step.parameters.orEmpty().map { parameter ->
@@ -339,15 +359,6 @@ fun parseAllureReportsFromUploads(uploads: List<AllureUpload>): List<TestCaseMod
     val mapper = jacksonObjectMapper()
     val classification = uploads.associateWith { isTestCaseJson(it, mapper) }
     val testCaseUploads = classification.filterValues { it }.keys
-    val attachmentsEnabled = uploads.any { upload ->
-        val fileName = baseName(upload.path).lowercase()
-        !fileName.endsWith(".json") || fileName.contains("attachment")
-    }
-
-    if (!attachmentsEnabled) {
-        logger.warn("Attachments files not provided; scenario will not include request/response")
-    }
-
     if (testCaseUploads.isEmpty()) {
         throw IllegalStateException("JSON-файлы тестов не найдены в загрузке")
     }
@@ -356,8 +367,8 @@ fun parseAllureReportsFromUploads(uploads: List<AllureUpload>): List<TestCaseMod
     val rawCases: MutableList<Pair<String, RawTestCase>> = mutableListOf()
 
     testCaseUploads.forEach { upload ->
-        val content = upload.content.toString(Charsets.UTF_8)
-        val raw = extractRawTestCase(content, upload.path, filesByName, attachmentsEnabled)
+        val content = upload.openStream().bufferedReader(Charsets.UTF_8).use { it.readText() }
+        val raw = extractRawTestCase(content, upload.path, filesByName)
         rawCases.add(upload.path to raw)
     }
 
