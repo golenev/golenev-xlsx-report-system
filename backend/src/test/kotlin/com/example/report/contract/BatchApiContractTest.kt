@@ -93,8 +93,8 @@ class BatchApiContractTest : ContractTestSupport() {
                 jsonPath("$.items", hasSize<Any>(2))
                 jsonPath("$.items[0].testId", equalTo("BATCH-RUN-1"))
                 jsonPath("$.items[0].priority", equalTo("High"))
-                jsonPath("$.items[0].runStatus", equalTo("PASSED"))
-                jsonPath("$.items[1].runStatus", equalTo("SKIPPED"))
+                jsonPath("$.items[0].runStatus") { doesNotExist() }
+                jsonPath("$.items[1].runStatus") { doesNotExist() }
             }
         mockMvc.get("/api/regressions/current")
             .andExpect {

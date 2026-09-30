@@ -1,15 +1,12 @@
 package com.example.report.service
 
-import com.example.report.dto.RegressionStartRequest
-import com.example.report.dto.RegressionStateResponse
-import com.example.report.dto.RegressionStopRequest
-import com.example.report.dto.RegressionReleaseSummary
-import com.example.report.dto.RegressionSnapshotResponse
-import com.example.report.dto.validateRegressionResults
+import com.example.report.dto.*
 import com.example.report.entity.RegressionEntity
 import com.example.report.model.RegressionStatus
 import com.example.report.repository.RegressionRepository
+import com.example.report.repository.TestAttachmentRepository
 import com.example.report.repository.TestReportRepository
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import jakarta.transaction.Transactional
 import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
@@ -17,12 +14,12 @@ import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.time.Clock
 import java.time.LocalDate
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
 @Service
 class RegressionService(
     private val regressionRepository: RegressionRepository,
     private val testReportRepository: TestReportRepository,
+    private val testAttachmentRepository: TestAttachmentRepository,
     @Lazy private val excelExportService: ExcelExportService,
     private val clock: Clock,
 ) {
@@ -97,6 +94,8 @@ class RegressionService(
             )
         }
 
+        val attachments = runCatching { testAttachmentRepository.findAllByTestIdIn(tests.map { it.testId }) }
+            .getOrNull().orEmpty().groupBy { it.testId }
         val payload = mapOf(
             "regressionDate" to running.regressionDate.toString(),
             "status" to RegressionStatus.COMPLETED.name,
@@ -110,7 +109,10 @@ class RegressionService(
                     "readyDate" to it.readyDate?.toString(),
                     "generalStatus" to it.generalStatus,
                     "priority" to it.priority,
-                    "scenario" to formatSnapshotScenario(it.scenario),
+                    "scenario" to jacksonObjectMapper().convertValue(
+                        ScenarioAttachmentMapper.assemble(it.scenario, attachments[it.testId].orEmpty()),
+                        Map::class.java,
+                    ),
                     "notes" to it.notes,
                     "regressionStatus" to results[it.testId]
                 )
@@ -122,13 +124,6 @@ class RegressionService(
         regressionRepository.save(running)
 
         return running.toResponse(emptyMap())
-    }
-
-    private fun formatSnapshotScenario(scenario: String?): Any? {
-        if (scenario == null) return null
-        val trimmed = scenario.trim()
-        if (!trimmed.startsWith("{")) return scenario
-        return runCatching { jacksonObjectMapper().readValue(trimmed, Map::class.java) }.getOrElse { scenario }
     }
 
     /**

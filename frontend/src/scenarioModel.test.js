@@ -32,11 +32,11 @@ test('editing a parent and one attachment does not mutate nested metadata or sib
   assert.equal(leaf.parameters[0].value, '2026-07-16');
 });
 
-test('nested steps use one continuous preorder numbering without subsection numbers', () => {
+test('nested steps use continuous preorder numbers supplied by backend', () => {
   const scenario = normalizeScenario({
     steps: [
-      { text: 'root-1', subSteps: [{ text: 'child-1', subSteps: [{ text: 'leaf-1' }] }] },
-      { text: 'root-2', subSteps: [{ text: 'child-2' }] }
+      { text: 'root-1', stepNumber: 1, subSteps: [{ text: 'child-1', stepNumber: 2, subSteps: [{ text: 'leaf-1', stepNumber: 3 }] }] },
+      { text: 'root-2', stepNumber: 4, subSteps: [{ text: 'child-2', stepNumber: 5 }] }
     ]
   });
   assert.deepEqual(Array.from(buildScenarioStepNumbers(scenario.steps).entries()), [

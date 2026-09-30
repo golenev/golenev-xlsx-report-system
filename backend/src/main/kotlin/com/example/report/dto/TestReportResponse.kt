@@ -28,7 +28,6 @@ data class TestReportResponse(
  * @property scenario структурированный сценарий со шагами и вложениями.
  * @property notes заметки пользователя.
  * @property updatedAt время последнего обновления строкой для отображения в UI.
- * @property runStatus статус текущего регрессионного прогона, если регресс активен.
  */
 data class TestReportItemDto(
     val testId: String,
@@ -41,5 +40,4 @@ data class TestReportItemDto(
     val scenario: ScenarioRequest?,
     val notes: String?,
     val updatedAt: String?,
-    val runStatus: String?,
 )

@@ -1,12 +1,7 @@
 package com.example.report.service
 
 import com.example.report.config.ColumnConfigProperties
-import com.example.report.dto.ScenarioAttachmentRequest
-import com.example.report.dto.ScenarioRequest
-import com.example.report.dto.ScenarioStepRequest
-import com.example.report.dto.TestReportItemDto
-import com.example.report.dto.TestReportResponse
-import org.apache.poi.ss.usermodel.BorderStyle
+import com.example.report.dto.*
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -51,7 +46,6 @@ class ExcelExportServiceUnitTest {
                         ),
                         notes = "note",
                         updatedAt = null,
-                        runStatus = null,
                     ),
                 ),
                 columnConfig = mapOf("testId" to 100, "scenario" to 200),
@@ -63,11 +57,16 @@ class ExcelExportServiceUnitTest {
             val sheet = it.getSheet("Test Report")
             assertCellEquals("Test ID", sheet.getRow(0).getCell(0).stringCellValue, "A1")
             assertCellEquals("Detailed Scenario", sheet.getRow(0).getCell(7).stringCellValue, "H1")
-            org.junit.jupiter.api.Assertions.assertTrue(sheet.getRow(1).getCell(7).stringCellValue.contains("   вложенный шаг"))
+            org.junit.jupiter.api.Assertions.assertTrue(sheet.getRow(1).getCell(7).stringCellValue.contains("   2. вложенный шаг"))
             assertEquals(100 * 40, sheet.getColumnWidth(0), "Ширина testId должна применяться из columnConfig")
             assertEquals(200 * 40, sheet.getColumnWidth(7), "Ширина scenario должна применяться из columnConfig")
             assertCellEquals("T-1", sheet.getRow(1).getCell(0).stringCellValue, "A2")
-            assertCellEquals("открыть отчёт\n   [text] payload\n   вложенный шаг", sheet.getRow(1).getCell(7).stringCellValue, "H2")
+            assertCellEquals("1. открыть отчёт\n   2. вложенный шаг", sheet.getRow(1).getCell(7).stringCellValue, "H2")
+            val attachmentSheet = it.getSheet("Attachments")
+            assertCellEquals("T-1", attachmentSheet.getRow(1).getCell(0).stringCellValue, "Attachments!A2")
+            assertCellEquals("1", attachmentSheet.getRow(1).getCell(1).stringCellValue, "Attachments!B2")
+            assertCellEquals("payload", attachmentSheet.getRow(1).getCell(2).stringCellValue, "Attachments!C2")
+            assertTrue(attachmentSheet.getRow(1).heightInPoints >= attachmentSheet.defaultRowHeightInPoints)
         }
     }
 
@@ -147,7 +146,6 @@ class ExcelExportServiceUnitTest {
                         ),
                         notes = null,
                         updatedAt = null,
-                        runStatus = null,
                     ),
                 ),
                 columnConfig = emptyMap(),
@@ -157,26 +155,13 @@ class ExcelExportServiceUnitTest {
         val workbook = XSSFWorkbook(ByteArrayInputStream(service.generateWorkbook()))
         workbook.use {
             val sheet = it.getSheet("Test Report")
-            val scenarioChunks = (1..sheet.lastRowNum).map { rowIndex ->
-                sheet.getRow(rowIndex).getCell(7).stringCellValue
-            }
-            val expectedScenario = "step\n   [log] $oversizedAttachment"
-
-            assertEquals(2, sheet.lastRowNum, "Длинный сценарий должен занимать две строки данных")
-            assertTrue(scenarioChunks.all { chunk -> chunk.length <= 32_767 }, "Каждая часть сценария должна укладываться в лимит Excel")
-            assertEquals(expectedScenario, scenarioChunks.joinToString(""), "Сценарий должен сохраняться без потери символов")
-            assertTrue(
-                sheet.mergedRegions.any { region ->
-                    region.firstRow == 1 && region.lastRow == 2 && region.firstColumn == 0 && region.lastColumn == 0
-                },
-                "Обычная колонка должна объединяться по высоте частей сценария",
-            )
-            assertTrue(
-                sheet.mergedRegions.none { region -> region.firstColumn == 7 },
-                "Части сценария нельзя объединять, иначе Excel сохранит только первую часть",
-            )
-            assertEquals(BorderStyle.NONE, sheet.getRow(1).getCell(7).cellStyle.borderBottom)
-            assertEquals(BorderStyle.NONE, sheet.getRow(2).getCell(7).cellStyle.borderTop)
+            assertEquals(1, sheet.lastRowNum)
+            assertEquals("1. step", sheet.getRow(1).getCell(7).stringCellValue)
+            val attachmentSheet = it.getSheet("Attachments")
+            val chunks = (1..attachmentSheet.lastRowNum).map { attachmentSheet.getRow(it).getCell(2).stringCellValue }
+            assertEquals(2, attachmentSheet.lastRowNum)
+            assertTrue(chunks.all { chunk -> chunk.length <= 32_767 })
+            assertEquals(oversizedAttachment, chunks.joinToString(""))
         }
     }
 }

@@ -16,6 +16,7 @@ export function createScenarioStep(step = {}) {
     : [];
   return {
     number: Number.isFinite(step.number) ? step.number : null,
+    stepNumber: Number.isFinite(step.stepNumber) ? step.stepNumber : null,
     text: step.text ?? '',
     durationMs: Number.isFinite(step.durationMs) && step.durationMs >= 0 ? step.durationMs : null,
     parameters: Array.isArray(step.parameters)
@@ -96,12 +97,10 @@ export function countAttachments(step) {
 
 export function buildScenarioStepNumbers(steps) {
   const numbers = new Map();
-  let nextNumber = 1;
   const visit = (items, parentPath = '') => {
     items.filter(hasStepContent).forEach((step, index) => {
       const path = parentPath ? `${parentPath}.${index}` : String(index);
-      numbers.set(path, nextNumber);
-      nextNumber += 1;
+      numbers.set(path, step.stepNumber);
       visit(step.subSteps, path);
     });
   };

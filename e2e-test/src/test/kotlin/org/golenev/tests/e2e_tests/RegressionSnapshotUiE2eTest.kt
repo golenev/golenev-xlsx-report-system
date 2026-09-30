@@ -2,19 +2,15 @@ package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
 import io.kotest.matchers.nulls.shouldNotBeNull
-import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.regression.RegressionDao
 import org.golenev.db.tables.testReportTable.TestReportDao
-import org.golenev.restapi.endpoints.ReportServiceDao
-import org.golenev.restapi.endpoints.ScenarioAttachmentRequest
-import org.golenev.restapi.endpoints.ScenarioRequest
-import org.golenev.restapi.endpoints.ScenarioStepRequest
-import org.golenev.restapi.endpoints.TestBatchRequest
+import org.golenev.restapi.endpoints.*
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.pages.mainPage
 import org.golenev.utils.TestDataGenerator
 import org.golenev.utils.getRandomTestId
+import org.golenev.utils.shouldBe
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -116,6 +112,7 @@ class RegressionSnapshotUiE2eTest {
 
         step("Завершаем регресс через UI") {
             mainPage.regressionWidget.stopRegress()
+            mainPage.regressionWidget.checkRegressionStopped()
         }
 
         val regression = step("Проверяем появление записи в таблице regressions") {
@@ -146,7 +143,10 @@ class RegressionSnapshotUiE2eTest {
 
         val expectedTests = testCases.map { testCase ->
             val testId = testCase.testId.shouldNotBeNull()
-            testCase.copy(regressionStatus = expectedStatuses[testId]?.name)
+            testCase.copy(
+                scenario = testCase.scenario?.withBackendStepNumbers(),
+                regressionStatus = expectedStatuses[testId]?.name,
+            )
         }
 
         step("Проверяем, что в снапшоте есть все два тест-кейса") {
@@ -239,6 +239,17 @@ class RegressionSnapshotUiE2eTest {
                 ),
             ),
         )
+    }
+
+    private fun ScenarioRequest.withBackendStepNumbers(): ScenarioRequest {
+        var nextStepNumber = 1
+        fun number(steps: List<ScenarioStepRequest>): List<ScenarioStepRequest> = steps.map { step ->
+            step.copy(
+                stepNumber = nextStepNumber++,
+                subSteps = number(step.subSteps),
+            )
+        }
+        return copy(steps = number(steps))
     }
 
 }

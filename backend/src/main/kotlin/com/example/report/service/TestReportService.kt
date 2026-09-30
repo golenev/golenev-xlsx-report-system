@@ -1,17 +1,11 @@
 package com.example.report.service
 
-import com.example.report.dto.TestBatchRequest
-import com.example.report.dto.TestReportItemDto
-import com.example.report.dto.ScenarioAttachmentRequest
-import com.example.report.dto.ScenarioRequest
-import com.example.report.dto.ScenarioStepRequest
-import com.example.report.dto.ScenarioParameterRequest
-import com.example.report.dto.TestReportResponse
-import com.example.report.dto.TestUpsertItem
+import com.example.report.dto.*
 import com.example.report.entity.TestReportEntity
 import com.example.report.model.GeneralTestStatus
-import com.example.report.model.RegressionRunStatus
 import com.example.report.model.Priority
+import com.example.report.model.RegressionRunStatus
+import com.example.report.repository.TestAttachmentRepository
 import com.example.report.repository.TestReportRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.transaction.Transactional
@@ -29,6 +23,7 @@ class TestReportService(
     private val regressionService: RegressionService,
     private val objectMapper: ObjectMapper,
     private val clock: Clock,
+    private val testAttachmentRepository: TestAttachmentRepository,
 ) {
     private companion object {
         const val DEFAULT_GENERAL_STATUS = "Готово"
@@ -42,9 +37,12 @@ class TestReportService(
      * Возвращает полный отчёт по тест-кейсам с сортировкой, настройками колонок и переводами.
      */
     fun getReport(): TestReportResponse {
-        val items = testReportRepository.findAll()
+        val entities = testReportRepository.findAll()
+        val attachments = runCatching { testAttachmentRepository.findAllByTestIdIn(entities.map { it.testId }) }
+            .getOrNull().orEmpty().groupBy { it.testId }
+        val items = entities
             .sortedWith { a, b -> compareTestIds(a.testId, b.testId) }
-            .map { it.toDto() }
+            .map { it.toDto(attachments[it.testId].orEmpty()) }
         val config = columnConfigService.getConfig()
         return TestReportResponse(
             items = items,
@@ -60,7 +58,7 @@ class TestReportService(
     @Transactional
     fun upsertTest(request: TestUpsertItem, forceUpdate: Boolean) {
         val normalizedId = normalizeTestId(request.testId)
-        val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
+        val existing = findForUpdate(normalizedId)
         val validated = validateAndNormalize(
             item = request,
             existing = existing,
@@ -69,7 +67,7 @@ class TestReportService(
             forceUpdate = forceUpdate,
             allowFallback = true,
         )
-        upsertSingle(validated, existing, forceUpdate, false)
+        upsertSingle(validated, existing, forceUpdate)
     }
 
     /**
@@ -83,7 +81,7 @@ class TestReportService(
         request.items
             .map { item ->
                 val normalizedId = normalizeTestId(item.testId)
-                val existing = testReportRepository.findByTestId(normalizedId).orElse(null)
+                val existing = findForUpdate(normalizedId)
                 val validated = validateAndNormalize(
                     item = item,
                     existing = existing,
@@ -97,7 +95,7 @@ class TestReportService(
                 }
                 validated to existing
             }
-            .forEach { (validated, existing) -> upsertSingle(validated, existing, forceUpdate, isRegressRunning) }
+            .forEach { (validated, existing) -> upsertSingle(validated, existing, forceUpdate) }
 
         if (isRegressRunning && regressionResults.isNotEmpty()) {
             regressionService.syncRunningRegressionResults(regressionResults)
@@ -124,13 +122,12 @@ class TestReportService(
         item: ValidatedUpsert,
         existing: TestReportEntity?,
         forceUpdate: Boolean,
-        isRegressRunning: Boolean,
     ) {
         if (existing != null) {
             val entity = existing
             entity.category = item.category
             entity.shortTitle = item.shortTitle
-            entity.scenario = item.scenario
+            if (item.replaceScenario) replaceScenario(entity.testId, entity, item.scenario)
 
             if (forceUpdate && item.readyDate != null) {
                 entity.readyDate = item.readyDate
@@ -142,9 +139,6 @@ class TestReportService(
                 applyManualUpdate(item.manualFields.priority) { entity.priority = it }
                 applyManualUpdate(item.manualFields.notes) { entity.notes = it }
             }
-            if (isRegressRunning) {
-                entity.runStatus = item.runStatus
-            }
             entity.updatedAt = OffsetDateTime.now(clock)
             testReportRepository.save(entity)
             return
@@ -153,7 +147,8 @@ class TestReportService(
         val newEntity = TestReportEntity(testId = item.testId)
         newEntity.category = item.category
         newEntity.shortTitle = item.shortTitle
-        newEntity.scenario = item.scenario
+        val separated = ScenarioAttachmentMapper.separate(item.testId, item.scenario)
+        newEntity.scenario = separated.scenario
         newEntity.readyDate = item.readyDate ?: LocalDate.now(clock)
 
         newEntity.issueLink = when {
@@ -176,11 +171,9 @@ class TestReportService(
                 item.manualFields.notes.value ?: DEFAULT_NOTES
             else -> DEFAULT_NOTES
         }
-        if (isRegressRunning) {
-            newEntity.runStatus = item.runStatus
-        }
         newEntity.updatedAt = OffsetDateTime.now(clock)
         testReportRepository.save(newEntity)
+        testAttachmentRepository.saveAll(separated.attachments)
     }
 
     /**
@@ -253,6 +246,7 @@ class TestReportService(
             category = category,
             shortTitle = shortTitle,
             scenario = scenario,
+            replaceScenario = item.scenario != null || existing == null,
             readyDate = readyDate,
             manualFields = manualFields,
             runStatus = runStatus,
@@ -262,7 +256,7 @@ class TestReportService(
     /**
      * Преобразует сущность тест-кейса из базы данных в DTO для ответа API.
      */
-    private fun TestReportEntity.toDto(): TestReportItemDto = TestReportItemDto(
+    private fun TestReportEntity.toDto(attachments: List<com.example.report.entity.TestAttachmentEntity>): TestReportItemDto = TestReportItemDto(
         testId = testId,
         category = category,
         shortTitle = shortTitle,
@@ -270,10 +264,9 @@ class TestReportService(
         readyDate = readyDate,
         generalStatus = generalStatus,
         priority = priority,
-        scenario = deserializeScenario(scenario),
+        scenario = ScenarioAttachmentMapper.assemble(repairFlatScenarioAttachmentSteps(scenario), attachments),
         notes = notes,
         updatedAt = updatedAt?.toString(),
-        runStatus = runStatus,
     )
 
     /**
@@ -350,14 +343,13 @@ class TestReportService(
      */
     private fun normalizeScenarioField(
         incoming: ScenarioRequest?,
-        existing: String?,
+        existing: ScenarioRequest?,
         allowFallback: Boolean,
-    ): String {
+    ): ScenarioRequest {
         if (incoming != null) return normalizeStructuredScenario(incoming)
 
         if (allowFallback) {
-            val fallback = existing?.trim()?.takeIf { it.isNotEmpty() }
-            if (fallback != null) return fallback
+            if (existing != null && existing.steps.isNotEmpty()) return existing
         }
         requiredFieldMissing("scenario")
     }
@@ -365,14 +357,14 @@ class TestReportService(
     /**
      * Валидирует структурированный сценарий и сериализует непустые шаги в JSON для хранения.
      */
-    private fun normalizeStructuredScenario(scenario: ScenarioRequest): String {
+    private fun normalizeStructuredScenario(scenario: ScenarioRequest): ScenarioRequest {
         val normalizedSteps = normalizeScenarioSteps(scenario.steps, "scenario.steps")
 
         if (normalizedSteps.isEmpty()) {
             requiredFieldMissing("scenario")
         }
 
-        return objectMapper.writeValueAsString(ScenarioRequest(steps = normalizedSteps))
+        return ScenarioRequest(steps = normalizedSteps)
     }
 
     /**
@@ -406,6 +398,7 @@ class TestReportService(
 
         ScenarioStepRequest(
             number = number,
+            stepNumber = null,
             text = text,
             attachments = normalizedAttachments,
             subSteps = subSteps,
@@ -417,18 +410,6 @@ class TestReportService(
     /**
      * Преобразует сохранённый сценарий из JSON или старого текстового формата в структурированный DTO.
      */
-    private fun deserializeScenario(stored: String): ScenarioRequest {
-        val trimmed = stored.trim()
-        if (trimmed.startsWith("{")) {
-            try {
-                return repairFlatScenarioAttachmentSteps(objectMapper.readValue(trimmed, ScenarioRequest::class.java))
-            } catch (ex: Exception) {
-                // Existing text storage can contain non-JSON scenarios. Fall through and expose them as structured steps.
-            }
-        }
-        return buildScenarioFromText(stored)
-    }
-
     /**
      * Склеивает legacy JSON, где строки markdown-вложений могли сохраниться как отдельные шаги.
      */
@@ -589,11 +570,24 @@ class TestReportService(
         val testId: String,
         val category: String,
         val shortTitle: String,
-        val scenario: String,
+        val scenario: ScenarioRequest,
+        val replaceScenario: Boolean,
         val readyDate: LocalDate?,
         val manualFields: ManualFields,
         val runStatus: String?,
     )
+
+    private fun replaceScenario(testId: String, entity: TestReportEntity, scenario: ScenarioRequest) {
+        val separated = ScenarioAttachmentMapper.separate(testId, scenario)
+        entity.scenario = separated.scenario
+        testAttachmentRepository.deleteAllByTestId(testId)
+        testAttachmentRepository.saveAll(separated.attachments)
+    }
+
+    private fun findForUpdate(testId: String): TestReportEntity? {
+        val locked = runCatching { testReportRepository.findForUpdateByTestId(testId) }.getOrNull()
+        return locked?.orElse(null) ?: testReportRepository.findByTestId(testId).orElse(null)
+    }
 
     private data class ManualField<T>(
         val provided: Boolean,

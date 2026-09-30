@@ -6,6 +6,7 @@ import com.example.report.dto.ScenarioStepRequest
 import com.example.report.dto.TestBatchRequest
 import com.example.report.dto.TestUpsertItem
 import com.example.report.entity.TestReportEntity
+import com.example.report.repository.TestAttachmentRepository
 import com.example.report.repository.TestReportRepository
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import java.time.LocalDate
-import java.util.Optional
+import java.util.*
 
 class TestReportServiceUnitTest {
 
@@ -21,7 +22,8 @@ class TestReportServiceUnitTest {
     private val columnConfigService: ColumnConfigService = Mockito.mock(ColumnConfigService::class.java)
     private val regressionService: RegressionService = Mockito.mock(RegressionService::class.java)
     private val objectMapper = jacksonObjectMapper()
-    private val service = TestReportService(testReportRepository, columnConfigService, regressionService, objectMapper, fixedClock)
+    private val testAttachmentRepository = Mockito.mock(TestAttachmentRepository::class.java)
+    private val service = TestReportService(testReportRepository, columnConfigService, regressionService, objectMapper, fixedClock, testAttachmentRepository)
 
     /**
      * Позитивный unit-тест проверяет сортировку отчёта по числовому testId, суффиксам и fallback-десериализацию
@@ -70,7 +72,6 @@ class TestReportServiceUnitTest {
         Mockito.verify(testReportRepository, Mockito.times(2)).save(saved.capture())
         assertEquals(listOf("101", "102"), saved.allValues.map { it.testId }, "testId должны сохраняться trim-нормализованными")
         assertEquals(LocalDate.parse("2026-06-28"), saved.allValues.first().readyDate, "readyDate новой записи должен браться из fixedClock")
-        assertEquals(listOf("PASSED", "FAILED"), saved.allValues.map { it.runStatus }, "runStatus должен нормализоваться к enum-name")
         Mockito.verify(regressionService).syncRunningRegressionResults(mapOf("101" to "PASSED", "102" to "FAILED"))
     }
 
@@ -122,6 +123,6 @@ class TestReportServiceUnitTest {
     private fun entity(testId: String, scenario: String) = TestReportEntity(testId = testId).apply {
         category = "API"
         shortTitle = "Title $testId"
-        this.scenario = scenario
+        this.scenario = service.buildScenarioFromText(scenario)
     }
 }

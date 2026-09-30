@@ -50,7 +50,7 @@ class UploadReportController(
         val uploads = files.mapIndexed { index, file ->
             val fallbackName = file.originalFilename ?: "file-$index.json"
             val path = paths?.getOrNull(index)?.takeIf { it.isNotBlank() } ?: fallbackName
-            AllureUpload(path = path, content = file.bytes)
+            AllureUpload(path = path, size = file.size, streamProvider = file::getInputStream)
         }
 
         val parsedCases = try {

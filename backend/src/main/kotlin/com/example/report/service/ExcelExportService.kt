@@ -45,11 +45,12 @@ class ExcelExportService(
                 "readyDate" to it.readyDate?.toString(),
                 "generalStatus" to it.generalStatus,
                 "priority" to it.priority,
-                "scenario" to formatScenario(it.scenario),
+                "scenario" to formatScenario(it.scenario, includeNumbers = true, includeAttachments = false),
                 "notes" to it.notes,
             )
         }
-        return renderWorkbook(rows, report.columnConfig)
+        val attachments = report.items.flatMap { item -> collectAttachments(item.testId, item.scenario) }
+        return renderWorkbook(rows, report.columnConfig, attachments)
     }
 
     /**
@@ -79,7 +80,8 @@ class ExcelExportService(
      */
     private fun renderWorkbook(
         rows: List<Map<String, String?>>,
-        columnConfig: Map<String, Int>
+        columnConfig: Map<String, Int>,
+        attachments: List<AttachmentRow> = emptyList(),
     ): ByteArray {
         val workbook = XSSFWorkbook()
         val sheet = workbook.createSheet("Test Report")
@@ -154,6 +156,7 @@ class ExcelExportService(
                         else -> middleContinuationStyle
                     }
                 }
+                sheetRow.heightInPoints = calculateRowHeight(chunksByColumn.map { it.getOrElse(rowOffset) { "" } })
             }
 
             chunksByColumn.forEachIndexed { cellIndex, chunks ->
@@ -169,6 +172,8 @@ class ExcelExportService(
             nextRowIndex += rowSpan
         }
 
+        renderAttachmentSheet(workbook, headerStyle, cellStyle, attachments)
+
         ByteArrayOutputStream().use { outputStream ->
             workbook.write(outputStream)
             workbook.close()
@@ -179,24 +184,87 @@ class ExcelExportService(
     /**
      * Преобразует структурированный сценарий в многострочный человекочитаемый текст для ячейки Excel.
      */
-    private fun formatScenario(scenario: ScenarioRequest?): String? {
+    private fun formatScenario(
+        scenario: ScenarioRequest?,
+        includeNumbers: Boolean = false,
+        includeAttachments: Boolean = true,
+    ): String? {
         if (scenario == null) return null
+        var nextStepNumber = 1
         fun render(steps: List<ScenarioStepRequest>, level: Int): List<String> = steps.flatMap { step ->
+            val stepNumber = step.stepNumber ?: nextStepNumber
+            nextStepNumber = stepNumber + 1
             val indent = "   ".repeat(level)
             buildList {
-                if (!step.text.isNullOrBlank()) add("$indent${step.text.trim()}")
+                if (!step.text.isNullOrBlank()) {
+                    add(if (includeNumbers) "$indent$stepNumber. ${step.text.trim()}" else "$indent${step.text.trim()}")
+                }
                 step.parameters.forEach { parameter ->
                     add("$indent   ${parameter.name.orEmpty()} — ${parameter.value.orEmpty()}")
                 }
-                step.attachments.orEmpty().forEach { attachment ->
-                    val name = attachment.name.orEmpty().ifBlank { "Attachment" }
-                    add("$indent   [$name] ${attachment.content.orEmpty()}")
+                if (includeAttachments) {
+                    step.attachments.orEmpty().forEach { attachment ->
+                        val name = attachment.name.orEmpty().ifBlank { "Attachment" }
+                        add("$indent   [$name] ${attachment.content.orEmpty()}")
+                    }
                 }
                 addAll(render(step.subSteps, level + 1))
             }
         }
         return render(scenario.steps, 0).joinToString("\n").takeIf { it.isNotBlank() }
     }
+
+    private fun collectAttachments(testId: String, scenario: ScenarioRequest?): List<AttachmentRow> {
+        if (scenario == null) return emptyList()
+        var nextStepNumber = 1
+        fun visit(steps: List<ScenarioStepRequest>): List<AttachmentRow> = steps.flatMap { step ->
+            val stepNumber = step.stepNumber ?: nextStepNumber
+            nextStepNumber = stepNumber + 1
+            step.attachments.orEmpty().map { AttachmentRow(testId, stepNumber, it.content.orEmpty()) } + visit(step.subSteps)
+        }
+        return visit(scenario.steps)
+    }
+
+    private fun renderAttachmentSheet(
+        workbook: XSSFWorkbook,
+        headerStyle: org.apache.poi.xssf.usermodel.XSSFCellStyle,
+        bodyStyle: org.apache.poi.xssf.usermodel.XSSFCellStyle,
+        attachments: List<AttachmentRow>,
+    ) {
+        val sheet = workbook.createSheet("Attachments")
+        val headerRow = sheet.createRow(0)
+        listOf("Test Id", "Step number", "Attachment").forEachIndexed { index, value ->
+            headerRow.createCell(index).also {
+                it.setCellValue(value)
+                it.cellStyle = headerStyle
+            }
+        }
+        sheet.setColumnWidth(0, 18 * 256)
+        sheet.setColumnWidth(1, 14 * 256)
+        sheet.setColumnWidth(2, 80 * 256)
+        var rowIndex = 1
+        attachments.forEach { attachment ->
+            splitToExcelCells(attachment.content).forEach { content ->
+                val row = sheet.createRow(rowIndex++)
+                listOf(attachment.testId, attachment.stepNumber.toString(), content).forEachIndexed { index, value ->
+                    row.createCell(index).apply {
+                        setCellValue(value)
+                        cellStyle = bodyStyle
+                    }
+                }
+                row.heightInPoints = calculateRowHeight(listOf(attachment.testId, attachment.stepNumber.toString(), content), 80)
+            }
+        }
+    }
+
+    private fun calculateRowHeight(values: List<String>, attachmentWidth: Int = 48): Float {
+        val lines = values.maxOfOrNull { value ->
+            value.lines().sumOf { line -> maxOf(1, (line.length + attachmentWidth - 1) / attachmentWidth) }
+        } ?: 1
+        return (lines * 15f).coerceAtMost(409f)
+    }
+
+    private data class AttachmentRow(val testId: String, val stepNumber: Int, val content: String)
 
     private fun splitToExcelCells(value: String?): List<String> {
         val source = value.orEmpty()

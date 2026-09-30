@@ -1,12 +1,10 @@
 package com.example.report.entity
 
+import com.example.report.dto.ScenarioRequest
 import com.example.report.model.Priority
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
@@ -38,8 +36,9 @@ data class TestReportEntity(
     @Column(name = "priority", nullable = false)
     var priority: String = Priority.MEDIUM.value,
 
-    @Column(name = "scenario", columnDefinition = "text", nullable = false)
-    var scenario: String = "",
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "scenario", columnDefinition = "jsonb", nullable = false)
+    var scenario: ScenarioRequest = ScenarioRequest(),
 
     @Column(name = "notes", columnDefinition = "text")
     var notes: String? = null,
@@ -47,6 +46,4 @@ data class TestReportEntity(
     @Column(name = "updated_at")
     var updatedAt: OffsetDateTime? = null,
 
-    @Column(name = "run_status")
-    var runStatus: String? = null,
 )

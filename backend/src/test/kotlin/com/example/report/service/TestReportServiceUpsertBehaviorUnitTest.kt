@@ -5,28 +5,30 @@ import com.example.report.dto.ScenarioStepRequest
 import com.example.report.dto.TestBatchRequest
 import com.example.report.dto.TestUpsertItem
 import com.example.report.entity.TestReportEntity
+import com.example.report.repository.TestAttachmentRepository
 import com.example.report.repository.TestReportRepository
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.util.Optional
+import java.util.*
 
 class TestReportServiceUpsertBehaviorUnitTest {
 
     private val testReportRepository: TestReportRepository = Mockito.mock(TestReportRepository::class.java)
     private val columnConfigService: ColumnConfigService = Mockito.mock(ColumnConfigService::class.java)
     private val regressionService: RegressionService = Mockito.mock(RegressionService::class.java)
+    private val testAttachmentRepository = Mockito.mock(TestAttachmentRepository::class.java)
     private val service = TestReportService(
         testReportRepository,
         columnConfigService,
         regressionService,
         jacksonObjectMapper(),
         fixedClock,
+        testAttachmentRepository,
     )
 
     @Test
@@ -59,7 +61,6 @@ class TestReportServiceUpsertBehaviorUnitTest {
         assertEquals("Готово", saved.generalStatus)
         assertEquals("Medium", saved.priority)
         assertEquals("", saved.notes)
-        assertNull(saved.runStatus)
         assertEquals(OffsetDateTime.parse("2026-06-28T10:15:30Z"), saved.updatedAt)
     }
 
@@ -90,7 +91,6 @@ class TestReportServiceUpsertBehaviorUnitTest {
         assertEquals("В работе", saved.generalStatus)
         assertEquals("High", saved.priority)
         assertEquals("", saved.notes)
-        assertNull(saved.runStatus, "Одиночный upsert не должен применять runStatus")
     }
 
     @Test
@@ -122,7 +122,6 @@ class TestReportServiceUpsertBehaviorUnitTest {
         assertEquals("Очередь", existing.generalStatus)
         assertEquals("Blocker", existing.priority)
         assertEquals("original notes", existing.notes)
-        assertEquals("PASSED", existing.runStatus)
         assertEquals(OffsetDateTime.parse("2026-06-28T10:15:30Z"), existing.updatedAt)
     }
 
@@ -153,7 +152,6 @@ class TestReportServiceUpsertBehaviorUnitTest {
         assertEquals("Неактуально", existing.generalStatus)
         assertEquals("Trivial", existing.priority)
         assertEquals("updated notes", existing.notes)
-        assertEquals("PASSED", existing.runStatus)
     }
 
     @Test
@@ -166,7 +164,7 @@ class TestReportServiceUpsertBehaviorUnitTest {
 
         assertEquals("Original category", existing.category)
         assertEquals("Original title", existing.shortTitle)
-        assertEquals("{\"steps\":[{\"number\":1,\"text\":\"original\",\"attachments\":[]}]}", existing.scenario)
+        assertEquals("original", existing.scenario.steps.single().text)
         assertEquals("changed", existing.notes)
     }
 
@@ -276,8 +274,7 @@ class TestReportServiceUpsertBehaviorUnitTest {
         readyDate = LocalDate.parse("2025-05-20")
         generalStatus = "Очередь"
         priority = "Blocker"
-        scenario = "{\"steps\":[{\"number\":1,\"text\":\"original\",\"attachments\":[]}]}"
+        scenario = scenario("original")
         notes = "original notes"
-        runStatus = "PASSED"
     }
 }

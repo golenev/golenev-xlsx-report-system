@@ -1,9 +1,7 @@
 package com.example.report.contract
 
-import org.hamcrest.Matchers.containsString
-import org.hamcrest.Matchers.equalTo
-import org.hamcrest.Matchers.hasSize
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -81,13 +79,16 @@ class TestReportApiContractTest : ContractTestSupport() {
                 jsonPath("$.items[0].testId", equalTo("CONTRACT-STRUCTURED"))
                 jsonPath("$.items[0].readyDate", equalTo("2026-06-25"))
                 jsonPath("$.items[0].scenario.steps[0].number", equalTo(1))
+                jsonPath("$.items[0].scenario.steps[0].stepNumber", equalTo(1))
                 jsonPath("$.items[0].scenario.steps[0].attachments[0].name", equalTo("text"))
                 jsonPath("$.items[0].scenario.steps[0].attachments[0].content", containsString("Каждый testId уникален"))
                 jsonPath("$.items[0].scenario.steps[0].attachments[0].source", equalTo("request.txt"))
                 jsonPath("$.items[0].scenario.steps[0].attachments[0].sizeBytes", equalTo(54))
                 jsonPath("$.items[0].scenario.steps[0].durationMs", equalTo(62001))
                 jsonPath("$.items[0].scenario.steps[0].subSteps[0].parameters[0].value", equalTo("2026-07-16"))
+                jsonPath("$.items[0].scenario.steps[0].subSteps[0].stepNumber", equalTo(2))
                 jsonPath("$.items[0].scenario.steps[0].subSteps[0].subSteps[0].text", equalTo("leaf"))
+                jsonPath("$.items[0].scenario.steps[0].subSteps[0].subSteps[0].stepNumber", equalTo(3))
             }
     }
 
@@ -258,17 +259,12 @@ class TestReportApiContractTest : ContractTestSupport() {
 
         XSSFWorkbook(ByteArrayInputStream(response.contentAsByteArray)).use { workbook ->
             val sheet = workbook.getSheet("Test Report")
-            val scenario = (1..sheet.lastRowNum).joinToString("") { rowIndex ->
-                sheet.getRow(rowIndex).getCell(7).stringCellValue
+            assertEquals("1. step", sheet.getRow(1).getCell(7).stringCellValue)
+            val attachments = workbook.getSheet("Attachments")
+            val content = (1..attachments.lastRowNum).joinToString("") { rowIndex ->
+                attachments.getRow(rowIndex).getCell(2).stringCellValue
             }
-
-            assertEquals("step\n   [log] $oversizedAttachment", scenario)
-            assertTrue(
-                sheet.mergedRegions.any { region ->
-                    region.firstRow == 1 && region.lastRow == 2 && region.firstColumn == 0 && region.lastColumn == 0
-                },
-                "Колонки тест-кейса должны визуально объединяться по высоте частей сценария",
-            )
+            assertEquals(oversizedAttachment, content)
         }
     }
 

@@ -6,6 +6,7 @@ import com.example.report.entity.RegressionEntity
 import com.example.report.entity.TestReportEntity
 import com.example.report.model.RegressionStatus
 import com.example.report.repository.RegressionRepository
+import com.example.report.repository.TestAttachmentRepository
 import com.example.report.repository.TestReportRepository
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -13,14 +14,15 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import java.time.LocalDate
-import java.util.Optional
+import java.util.*
 
 class RegressionServiceUnitTest {
 
     private val regressionRepository: RegressionRepository = Mockito.mock(RegressionRepository::class.java)
     private val testReportRepository: TestReportRepository = Mockito.mock(TestReportRepository::class.java)
     private val excelExportService: ExcelExportService = Mockito.mock(ExcelExportService::class.java)
-    private val service = RegressionService(regressionRepository, testReportRepository, excelExportService, fixedClock)
+    private val testAttachmentRepository: TestAttachmentRepository = Mockito.mock(TestAttachmentRepository::class.java)
+    private val service = RegressionService(regressionRepository, testReportRepository, testAttachmentRepository, excelExportService, fixedClock)
 
     /**
      * Позитивный unit-тест проверяет старт регресса на границе ввода: releaseName trim-нормализуется,
@@ -130,6 +132,8 @@ class RegressionServiceUnitTest {
     private fun test(testId: String) = TestReportEntity(testId = testId).apply {
         category = "API"
         shortTitle = "Title $testId"
-        scenario = "scenario $testId"
+        scenario = com.example.report.dto.ScenarioRequest(
+            listOf(com.example.report.dto.ScenarioStepRequest(number = 1, text = "scenario $testId", attachments = emptyList())),
+        )
     }
 }

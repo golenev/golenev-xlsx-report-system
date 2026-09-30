@@ -1,5 +1,7 @@
 package org.golenev.db.tables.testReportTable
 
+import org.golenev.db.jsonbColumn
+import org.golenev.restapi.endpoints.ScenarioRequest
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
@@ -16,13 +18,8 @@ object TestReportTable : Table("test_report") {
     val readyDate = date("ready_date").nullable()
     val generalStatus = text("general_status").nullable()
     val priority = text("priority")
-    val scenario = text("scenario").nullable()
+    val scenario = jsonbColumn<ScenarioRequest>("scenario").nullable()
     val notes = text("notes").nullable()
-    val run1Status = text("run_1_status").nullable()
-    val run2Status = text("run_2_status").nullable()
-    val run3Status = text("run_3_status").nullable()
-    val run4Status = text("run_4_status").nullable()
-    val run5Status = text("run_5_status").nullable()
     val updatedAt = timestampWithTimeZone("updated_at").nullable()
 
     override val primaryKey = PrimaryKey(id)
@@ -37,13 +34,8 @@ data class TestReportRow(
     val readyDate: LocalDate?,
     val generalStatus: String?,
     val priority: String,
-    val scenario: String?,
+    val scenario: ScenarioRequest?,
     val notes: String?,
-    val run1Status: String?,
-    val run2Status: String?,
-    val run3Status: String?,
-    val run4Status: String?,
-    val run5Status: String?,
     val updatedAt: OffsetDateTime?,
 )
 
@@ -59,10 +51,5 @@ fun mapToTestReport(row: ResultRow): TestReportRow =
         priority = row[TestReportTable.priority],
         scenario = row[TestReportTable.scenario],
         notes = row[TestReportTable.notes],
-        run1Status = row[TestReportTable.run1Status],
-        run2Status = row[TestReportTable.run2Status],
-        run3Status = row[TestReportTable.run3Status],
-        run4Status = row[TestReportTable.run4Status],
-        run5Status = row[TestReportTable.run5Status],
         updatedAt = row[TestReportTable.updatedAt],
     )
