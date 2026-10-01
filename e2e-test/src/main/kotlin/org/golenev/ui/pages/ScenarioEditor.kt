@@ -1,12 +1,20 @@
 package org.golenev.ui.pages
 
 import com.codeborne.selenide.Condition.*
-import com.codeborne.selenide.Selenide.*
+import com.codeborne.selenide.Selenide.`$`
+import com.codeborne.selenide.Selenide.`$$`
 import io.qameta.allure.Step
 import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.ui.allure.name
 import org.golenev.utils.typeOf
 
+/**
+ * Component Object ввода структурированного сценария и вложений внутри модального редактора.
+ *
+ * Создаётся полем TestCaseEditorModal и работает только с элементами редактора сценария.
+ * Параметры конструктора не нужны: действия не требуют проверок соседних компонентов.
+ * Создание объекта не открывает модалку; тест явно открывает её перед вводом сценария.
+ */
 class ScenarioEditor {
     private val scenarioRootAddButton = `$`("[data-testid='scenario-root-add']")
         .name("Кнопка добавления корневого шага.")

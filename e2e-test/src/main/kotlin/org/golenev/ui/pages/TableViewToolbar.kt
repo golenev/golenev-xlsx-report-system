@@ -2,10 +2,20 @@ package org.golenev.ui.pages
 
 import com.codeborne.selenide.CollectionCondition.size
 import com.codeborne.selenide.Condition.*
-import com.codeborne.selenide.Selenide.*
+import com.codeborne.selenide.Selenide.`$`
+import com.codeborne.selenide.Selenide.`$$`
 import io.qameta.allure.Step
 import org.golenev.ui.allure.name
 
+/**
+ * Component Object управления группировкой и активными фильтрами представления таблицы.
+ *
+ * Конструктор получает таблицу, поскольку результат действий toolbar наблюдается также
+ * в заголовках групп и кнопках фильтров колонок. Их локаторами и проверками владеет таблица.
+ * Передаётся компонент целиком: toolbar использует несколько его проверок.
+ *
+ * @param testCaseTable таблица, проверяющая наличие групп и сброс состояния фильтра колонки.
+ */
 class TableViewToolbar(private val testCaseTable: TestCaseTable) {
     private val activeFilterChips =
         `$$`("[data-testid='active-filter-chip']").name("Чипы активных фильтров таблицы")

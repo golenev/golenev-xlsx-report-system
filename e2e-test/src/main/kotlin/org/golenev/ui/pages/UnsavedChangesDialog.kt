@@ -1,10 +1,21 @@
 package org.golenev.ui.pages
 
 import com.codeborne.selenide.Condition.*
-import com.codeborne.selenide.Selenide.*
+import com.codeborne.selenide.Selenide.`$`
 import io.qameta.allure.Step
 import org.golenev.ui.allure.name
 
+/**
+ * Component Object предупреждения о несохранённых изменениях модального редактора.
+ *
+ * Конструктор получает две функции, поскольку пользователь может выбрать два разных исхода:
+ * продолжить редактирование с открытой модалкой или отказаться от изменений и закрыть её.
+ * Функции проверяют соответствующий результат внутри framework-слоя без доступа диалога
+ * к остальным действиям редактора. Ссылки на методы не выполняются при создании компонента.
+ *
+ * @param checkEditorVisible проверка видимости редактора при показе предупреждения и после продолжения.
+ * @param checkEditorClosed ожидание закрытия редактора после отказа от сохранения.
+ */
 class UnsavedChangesDialog(
     private val checkEditorVisible: () -> Unit,
     private val checkEditorClosed: () -> Unit,

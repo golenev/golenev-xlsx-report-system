@@ -1,12 +1,24 @@
 package org.golenev.ui.pages
 
 import com.codeborne.selenide.Condition.*
-import com.codeborne.selenide.Selenide.*
+import com.codeborne.selenide.Selenide.`$$`
+import com.codeborne.selenide.Selenide.actions
 import io.qameta.allure.Step
 import org.golenev.ui.allure.name
 import org.golenev.utils.typeOf
 import org.openqa.selenium.Keys
 
+/**
+ * Component Object черновика фильтра: вводит условия, применяет их или закрывает панель.
+ *
+ * Конструктор получает одну функцию проверки результата вместо полного объекта таблицы.
+ * Функция вызывается после применения и закрытия панели; аргумент — ключ выбранной колонки.
+ * Передача функции при создании компонента ничего не проверяет и не открывает.
+ * В MainPage функция делегирует проверку таблице: логическая зависимость от таблицы сохраняется,
+ * хотя прямой ссылки на неё и доступа ко всем её действиям у панели нет.
+ *
+ * @param checkFilterApplied проверка активного состояния кнопки фильтра для переданного ключа колонки.
+ */
 class ColumnFilterPanel(private val checkFilterApplied: (String) -> Unit) {
     private val filterSearchInputs = `$$`("[data-testid='table-filter-search']")
         .name("Поля поиска фильтров колонок.")

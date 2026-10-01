@@ -9,6 +9,15 @@ import org.golenev.utils.shouldBeVisibleForInput
 import org.golenev.utils.typeOf
 import org.openqa.selenium.Keys
 
+/**
+ * Component Object общего модального редактора создания и изменения тест-кейса.
+ *
+ * Владеет полями модалки и проверками её видимости, закрытия и режима работы.
+ * Создаёт дочерние ScenarioEditor, TestCaseEditorFooter и UnsavedChangesDialog через композицию.
+ * Футеру и диалогу передаются ссылки на необходимые проверки редактора, а не весь объект родителя.
+ * Ссылки на методы при создании детей не выполняются; их вызывают после соответствующего действия.
+ * Внешние зависимости конструктора не нужны: редактор сам владеет проверяемыми элементами.
+ */
 class TestCaseEditorModal {
     private val editorLocator = "[data-testid='test-case-editor-modal']"
     private val editor =

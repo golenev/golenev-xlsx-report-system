@@ -1,10 +1,20 @@
 package org.golenev.ui.pages
 
-import com.codeborne.selenide.Condition.*
-import com.codeborne.selenide.Selenide.*
+import com.codeborne.selenide.Condition.enabled
+import com.codeborne.selenide.Condition.text
+import com.codeborne.selenide.Selenide.`$`
 import io.qameta.allure.Step
 import org.golenev.ui.allure.name
 
+/**
+ * Component Object футера редактора: сохраняет данные и проверяет индикатор несохранённых изменений.
+ *
+ * Конструктор получает только проверку закрытия редактора, необходимую после сохранения.
+ * Ссылка на метод `::checkEditorClosed` передаётся без выполнения; футер вызывает её после клика.
+ * Это ограничивает доступ футера одной операцией родителя и оставляет локатор модалки в редакторе.
+ *
+ * @param checkEditorClosed ожидание исчезновения редактора после успешного сохранения.
+ */
 class TestCaseEditorFooter(private val checkEditorClosed: () -> Unit) {
     private val saveButton = `$`("[data-testid='save-test-case-button']").name("Кнопка сохранения модального редактора.")
     private val dirtyStatus = `$`(".test-case-modal-dirty").name("Статус несохранённых изменений модального редактора.")
