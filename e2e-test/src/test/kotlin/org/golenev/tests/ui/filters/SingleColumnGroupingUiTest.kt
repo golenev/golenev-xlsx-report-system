@@ -16,10 +16,10 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
     @DisplayName("Строки группируются по Category, а выбранная группа сворачивается")
     fun rowsCanBeGroupedByCategoryAndCollapsed() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и группируем тест-кейсы по Category") {
+        step("Открываем таблицу и группируем тест-кейсы по категории") {
             mainPage.open()
             mainPage.testCaseTable.groupBy("category")
         }
@@ -40,15 +40,15 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
     @DisplayName("Выбор новой колонки группировки заменяет предыдущую группировку")
     fun newGroupingReplacesPreviousGrouping() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и сначала группируем по Category") {
+        step("Открываем таблицу и сначала группируем по категории") {
             mainPage.open()
             mainPage.testCaseTable.groupBy("category")
             mainPage.testCaseTable.checkGroupVisible("category", fixture.categoryAlpha)
         }
-        step("Переключаем единственную группировку на Priority") {
+        step("Переключаем единственную группировку на приоритет") {
             mainPage.testCaseTable.groupBy("priority")
         }
         step("Проверяем новую группировку и отсутствие заголовков прежней") {
@@ -63,15 +63,16 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
     @DisplayName("Группировка применяется после фильтрации и не создаёт пустые группы")
     fun groupingUsesFilteredRowsOnly() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и оставляем фильтром одну Category") {
+        step("Открываем таблицу и оставляем фильтром одну категорию") {
             mainPage.open()
+            mainPage.testCaseTable.openColumnFilter("category")
             mainPage.testCaseTable.selectFilterValues("category", listOf(fixture.categoryAlpha))
             mainPage.testCaseTable.applyColumnFilter("category")
         }
-        step("Группируем отфильтрованные тест-кейсы по General Test Status") {
+        step("Группируем отфильтрованные тест-кейсы по статусу готовности") {
             mainPage.testCaseTable.groupBy("generalStatus")
         }
         step("Проверяем группы статусов только для прошедших фильтр тест-кейсов") {

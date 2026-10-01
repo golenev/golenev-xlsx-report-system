@@ -2,12 +2,12 @@ package org.golenev.tests.backend
 
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
-import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.endpoints.ReportServiceDao
 import org.golenev.restapi.endpoints.TestBatchRequest
 import org.golenev.utils.TestDataGenerator.generateTestCases
+import org.golenev.utils.shouldBe
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
@@ -24,7 +24,7 @@ class TestSendForceBatchApiTest {
 
     @AfterEach
     fun cleaDb() {
-        step("Удаление всех созданных тест кейсов из базы") {
+        step("Удаляем все созданные тест-кейсы") {
             TestReportDao.deleteReportsByDate(reportDay)
         }
     }
@@ -37,13 +37,13 @@ class TestSendForceBatchApiTest {
             TestReportDao.deleteReportsByDate(reportDay)
         }
 
-        batchRequest = step("Формируем batch-запрос с десятью тестами") {
+        batchRequest = step("Готовим десять тест-кейсов для добавления") {
             TestBatchRequest(
                 items = generateTestCases(10, readyDate = reportDay.toString()),
             )
         }
 
-        step("Отправляем batch на обновление тестов") {
+        step("Отправляем запрос на сохранение подготовленных тест-кейсов") {
             reportService.sendForceBatch(batchRequest)
         }
 
@@ -59,7 +59,7 @@ class TestSendForceBatchApiTest {
 
         val itemsById = report.items.associateBy { it.testId }
 
-        step("Проверяем все записи из batch-запроса") {
+        step("Проверяем сохранение всех подготовленных тест-кейсов") {
             batchRequest.items.forEach {
                 val testId = it.testId.shouldNotBeNull()
                 val reportItem = itemsById[testId].shouldNotBeNull()

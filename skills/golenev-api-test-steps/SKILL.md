@@ -56,7 +56,7 @@ fun sendBatch(request: TestBatchRequest, expectedStatus: Int = 200): Response =
 - После этого отдельно проверять error DTO: `status`, `error`, `message`, `missingField`, `path`.
 
 ```kotlin
-val response = step("Отправляем batch без обязательного поля $field") {
+val response = step("Отправляем запрос на добавление подготовленных тест-кейсов без поля «$field»") {
     reportService.sendBatch(
         request = TestBatchRequest(items = listOf(payload)),
         expectedStatus = 400,
@@ -64,7 +64,7 @@ val response = step("Отправляем batch без обязательног�
 }
 val error = response.`as`(ErrorResponse::class.java)
 
-step("Проверяем ошибку обязательного поля $field") {
+step("Проверяем сообщение об отсутствии обязательного поля «$field»") {
     response.statusCode.shouldBe(400, "response.statusCode не совпало с ожидаемым")
     error.missingField.shouldBe(field, "error.missingField не совпало с ожидаемым")
 }

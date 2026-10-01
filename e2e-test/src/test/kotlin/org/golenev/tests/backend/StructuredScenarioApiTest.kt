@@ -1,15 +1,10 @@
 package org.golenev.tests.backend
 
-import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
-import org.golenev.restapi.endpoints.ReportServiceDao
-import org.golenev.restapi.endpoints.ScenarioAttachmentRequest
-import org.golenev.restapi.endpoints.ScenarioRequest
-import org.golenev.restapi.endpoints.ScenarioStepRequest
-import org.golenev.restapi.endpoints.TestUpsertItem
-import org.golenev.restapi.endpoints.ErrorResponse
+import org.golenev.restapi.endpoints.*
 import org.golenev.utils.getRandomTestId
+import org.golenev.utils.shouldBe
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
@@ -39,15 +34,15 @@ class StructuredScenarioApiTest {
             ),
         )
 
-        step("Создаём тест-кейс со structured scenario") {
+        step("Добавляем тест-кейс со сценарием из отдельных шагов") {
             reportService.sendTest(validItem(testId, scenario))
         }
 
-        val actualScenario = step("Получаем созданный structured scenario") {
+        val actualScenario = step("Получаем сохранённый сценарий тест-кейса") {
             reportService.getReport().items.first { it.testId == testId }.scenario
         }
 
-        step("Проверяем, что шаги вернулись объектами без format") {
+        step("Проверяем сохранение текста и порядка отдельных шагов сценария") {
             val steps = actualScenario?.steps
             steps?.size.shouldBe(2, "steps?.size не совпало с ожидаемым")
             steps?.get(0)?.number.shouldBe(1, "steps?.get(0)?.number не совпало с ожидаемым")
@@ -63,7 +58,7 @@ class StructuredScenarioApiTest {
     @DisplayName("Обновляем тест-кейс со structured scenario и вложением у шага")
     fun updateTestWithStructuredScenarioAttachment() {
         val testId = nextTestId()
-        step("Создаём тест-кейс со structured scenario") {
+        step("Добавляем тест-кейс со сценарием из отдельных шагов") {
             reportService.sendTest(
                 validItem(
                     testId,
@@ -92,11 +87,11 @@ class StructuredScenarioApiTest {
             ),
         )
 
-        step("Обновляем тест-кейс structured scenario без поля format") {
+        step("Изменяем шаги и вложения сценария тест-кейса") {
             reportService.sendTest(validItem(testId, scenario))
         }
 
-        val actualScenario = step("Получаем обновлённый structured scenario") {
+        val actualScenario = step("Получаем изменённый сценарий тест-кейса") {
             reportService.getReport().items.first { it.testId == testId }.scenario
         }
 
@@ -124,7 +119,7 @@ class StructuredScenarioApiTest {
             ),
         )
 
-        step("Создаём тест-кейс со structured scenario и пустым шагом") {
+        step("Добавляем тест-кейс со сценарием, содержащим пустой шаг") {
             reportService.sendTest(validItem(testId, scenario))
         }
 
@@ -141,7 +136,7 @@ class StructuredScenarioApiTest {
     @DisplayName("String scenario не принимается API")
     fun stringScenarioIsRejected() {
         val testId = nextTestId()
-        val response = step("Отправляем test-case со scenario в виде строки") {
+        val response = step("Отправляем запрос на добавление тест-кейса с неразделённым на шаги сценарием") {
             reportService.sendTestBody(
                 request = mapOf(
                     "testId" to testId,
@@ -155,7 +150,7 @@ class StructuredScenarioApiTest {
 
         val errorResponse = response.`as`(ErrorResponse::class.java)
 
-        step("Проверяем, что API отклоняет scenario в виде строки") {
+        step("Проверяем отказ в добавлении тест-кейса с неразделённым на шаги сценарием") {
             response.statusCode.shouldBe(400, "response.statusCode не совпало с ожидаемым")
             errorResponse.status.shouldBe(400, "errorResponse.status не совпало с ожидаемым")
             errorResponse.error.shouldBe("Bad Request", "errorResponse.error не совпало с ожидаемым")

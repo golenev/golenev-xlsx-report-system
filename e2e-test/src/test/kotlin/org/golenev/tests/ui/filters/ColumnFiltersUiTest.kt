@@ -16,7 +16,7 @@ class ColumnFiltersUiTest : FilterUiTestBase() {
     @DisplayName("Каждая колонка таблицы предоставляет собственный фильтр")
     fun eachColumnProvidesFilter() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
         step("Открываем таблицу тест-кейсов") {
@@ -45,11 +45,12 @@ class ColumnFiltersUiTest : FilterUiTestBase() {
     @DisplayName("Текстовый фильтр Test ID оставляет только совпадающий тест-кейс")
     fun textFilterLeavesMatchingTestCase() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и применяем текстовый фильтр по Test ID") {
+        step("Открываем таблицу и применяем текстовый фильтр по идентификатору тест-кейса") {
             mainPage.open()
+            mainPage.testCaseTable.openColumnFilter("testId")
             mainPage.testCaseTable.setTextFilter("testId", fixture.secondId)
             mainPage.testCaseTable.applyColumnFilter("testId")
         }
@@ -65,11 +66,12 @@ class ColumnFiltersUiTest : FilterUiTestBase() {
     @DisplayName("Несколько значений Priority объединяются по правилу OR")
     fun severalPriorityValuesUseOrCondition() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и выбираем Critical и Blocker в фильтре Priority") {
+        step("Открываем таблицу и выбираем «Критический» и «Блокирующий» в фильтре приоритета") {
             mainPage.open()
+            mainPage.testCaseTable.openColumnFilter("priority")
             mainPage.testCaseTable.selectFilterValues("priority", listOf("Critical", "Blocker"))
             mainPage.testCaseTable.applyColumnFilter("priority")
         }
@@ -85,13 +87,15 @@ class ColumnFiltersUiTest : FilterUiTestBase() {
     @DisplayName("Фильтры разных колонок объединяются по правилу AND")
     fun filtersFromDifferentColumnsUseAndCondition() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и применяем фильтры Category и General Test Status") {
+        step("Открываем таблицу и применяем фильтры категории и статуса готовности") {
             mainPage.open()
+            mainPage.testCaseTable.openColumnFilter("category")
             mainPage.testCaseTable.selectFilterValues("category", listOf(fixture.categoryAlpha))
             mainPage.testCaseTable.applyColumnFilter("category")
+            mainPage.testCaseTable.openColumnFilter("generalStatus")
             mainPage.testCaseTable.selectFilterValues("generalStatus", listOf("Готово"))
             mainPage.testCaseTable.applyColumnFilter("generalStatus")
         }
@@ -107,11 +111,12 @@ class ColumnFiltersUiTest : FilterUiTestBase() {
     @DisplayName("Пустой результат фильтра объясняется и восстанавливается общим сбросом")
     fun emptyFilterResultCanBeReset() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
         step("Открываем таблицу и применяем фильтр без совпадений") {
             mainPage.open()
+            mainPage.testCaseTable.openColumnFilter("testId")
             mainPage.testCaseTable.setTextFilter("testId", "ABSENT-${fixture.token}")
             mainPage.testCaseTable.applyColumnFilter("testId")
         }

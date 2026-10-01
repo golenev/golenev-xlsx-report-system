@@ -1,11 +1,7 @@
 package org.golenev.tests.ui.filters
 
 import com.codeborne.selenide.Selenide
-import org.golenev.restapi.endpoints.ReportServiceDao
-import org.golenev.restapi.endpoints.ScenarioRequest
-import org.golenev.restapi.endpoints.ScenarioStepRequest
-import org.golenev.restapi.endpoints.TestBatchRequest
-import org.golenev.restapi.endpoints.TestUpsertItem
+import org.golenev.restapi.endpoints.*
 import org.golenev.ui.config.DriverConfig
 import org.golenev.utils.getRandomTestId
 import org.golenev.utils.step
@@ -20,17 +16,17 @@ abstract class FilterUiTestBase {
 
     @BeforeEach
     fun setUpFilterUiTest() {
-        step("Настраиваем драйвер Selenide") {
+        step("Готовим приложение к работе") {
             DriverConfig().setup()
         }
     }
 
     @AfterEach
     fun tearDownFilterUiTest() {
-        step("Закрываем веб-драйвер") {
+        step("Завершаем работу с приложением") {
             Selenide.closeWebDriver()
         }
-        step("Удаляем через API созданные для теста предварительные данные") {
+        step("Удаляем созданные для теста предварительные данные") {
             createdTestIds.forEach { testId -> reportService.deleteTest(testId) }
             createdTestIds.clear()
         }

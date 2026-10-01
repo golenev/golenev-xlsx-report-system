@@ -34,24 +34,24 @@ class RegressionSnapshotUiE2eTest {
             TestReportDao.truncate()
         }
 
-        step("Настраиваем драйвер Selenide") {
+        step("Готовим приложение к работе") {
             DriverConfig().setup()
         }
     }
 
     @AfterEach
     fun tearDown() {
-        step("Закрываем веб-драйвер") {
+        step("Завершаем работу с приложением") {
             Selenide.closeWebDriver()
         }
 
-        step("Удаляем созданный регресс из базы") {
+        step("Удаляем созданный запуск регрессионного тестирования") {
             if (::releaseName.isInitialized) {
                 RegressionDao.deleteByReleaseName(releaseName)
             }
         }
 
-        step("Удаляем созданные тест-кейсы из базы, если они остались после теста") {
+        step("Удаляем созданные тест-кейсы, если они остались после теста") {
             createdTestIds.forEach { testId -> TestReportDao.deleteByTestId(testId) }
         }
     }
@@ -63,7 +63,7 @@ class RegressionSnapshotUiE2eTest {
         val readyDate = step("Фиксируем текущую дату для готовности тестов") {
             LocalDate.now().toString()
         }
-        val testCases = step("Генерируем данные для двух тест-кейсов") {
+        val testCases = step("Готовим данные для двух тест-кейсов") {
             TestDataGenerator.generateTestCases(count = 2, readyDate = readyDate)
                 .mapIndexed { index, testCase ->
                     val testId = "UI-REG-${getRandomTestId()}-${index + 1}"
@@ -76,11 +76,11 @@ class RegressionSnapshotUiE2eTest {
         }
         createdTestIds += testCases.mapNotNull { it.testId }
 
-        val batchRequest = step("Готовим batch-запрос на создание двух тест-кейсов") {
+        val batchRequest = step("Готовим данные для добавления двух тест-кейсов") {
             TestBatchRequest(items = testCases)
         }
 
-        step("Создаём два тест-кейса через API с сохранением ручных полей") {
+        step("Создаём два тест-кейса с сохранением введённых пользователем данных") {
             reportService.sendForceBatch(batchRequest)
         }
 
@@ -96,7 +96,7 @@ class RegressionSnapshotUiE2eTest {
 
         releaseName = "ui-regression-${getRandomTestId()}"
 
-        step("Запускаем регресс через UI с уникальным именем релиза") {
+        step("Запускаем регрессионное тестирование с уникальным именем релиза") {
             mainPage.regressionWidget.startRegression(releaseName)
         }
 
@@ -104,33 +104,33 @@ class RegressionSnapshotUiE2eTest {
             .map { testCase -> testCase.testId.shouldNotBeNull() }
             .associateWith { RegressionRunStatus.entries.random(Random) }
 
-        step("Проставляем случайные результаты прогона для двух тест-кейсов") {
+        step("Указываем результаты тестирования для двух тест-кейсов") {
             expectedStatuses.forEach { (testId, status) ->
                 mainPage.testCaseTable.selectRegressionStatus(testId, status.name)
             }
         }
 
-        step("Завершаем регресс через UI") {
+        step("Завершаем регрессионное тестирование") {
             mainPage.regressionWidget.stopRegress()
             mainPage.regressionWidget.checkRegressionStopped()
         }
 
-        val regression = step("Проверяем появление записи в таблице regressions") {
+        val regression = step("Проверяем сохранение завершённого регрессионного тестирования") {
             RegressionDao.findByReleaseName(releaseName)
                 .shouldNotBeNull()
         }
 
-        step("Проверяем поля записи регресса") {
+        step("Проверяем данные завершённого регрессионного тестирования") {
             regression.status.shouldBe("COMPLETED", "regression.status не совпало с ожидаемым")
             regression.releaseName.shouldBe(releaseName, "regression.releaseName не совпало с ожидаемым")
             regression.regressionDate.toString().shouldBe(readyDate, "regression.regressionDate.toString() не совпало с ожидаемым")
         }
 
-        val payload = step("Проверяем, что снапшот записан в payload") {
+        val payload = step("Получаем сохранённые результаты регрессионного тестирования") {
             regression.payload.shouldNotBeNull()
         }
 
-        step("Проверяем поля снапшота регресса") {
+        step("Проверяем данные сохранённых результатов регрессионного тестирования") {
             payload.regressionDate.shouldBe(readyDate, "payload.regressionDate не совпало с ожидаемым")
             payload.status.shouldBe("COMPLETED", "payload.status не совпало с ожидаемым")
             payload.releaseName.shouldBe(releaseName, "payload.releaseName не совпало с ожидаемым")
@@ -149,14 +149,14 @@ class RegressionSnapshotUiE2eTest {
             )
         }
 
-        step("Проверяем, что в снапшоте есть все два тест-кейса") {
+        step("Проверяем, что в сохранённых результатах есть оба тест-кейса") {
             payloadTests.size.shouldBe(expectedTests.size, "payloadTests.size не совпало с ожидаемым")
             payloadById.keys.toSet().shouldBe(expectedTests.map { it.testId.shouldNotBeNull() }.toSet(), "payloadById.keys.toSet() не совпало с ожидаемым")
         }
 
         expectedTests.forEach { expected ->
             val expectedTestId = expected.testId.shouldNotBeNull()
-            step("Проверяем колонки снапшота для теста ${expected.testId}") {
+            step("Проверяем сохранённые результаты для теста ${expected.testId}") {
                 val actual = payloadById[expectedTestId].shouldNotBeNull()
                 actual.testId.shouldBe(expected.testId, "actual.testId не совпало с ожидаемым")
                 actual.category.shouldBe(expected.category, "actual.category не совпало с ожидаемым")

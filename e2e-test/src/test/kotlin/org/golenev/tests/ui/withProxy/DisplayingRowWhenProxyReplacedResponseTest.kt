@@ -31,7 +31,7 @@ class DisplayingRowWhenProxyReplacedResponseTest {
 
     @AfterEach
     fun tearDown() {
-        step("Закрываем драйвер и прокси") {
+        step("Завершаем работу с приложением") {
             Selenide.closeWebDriver()
         }
     }
@@ -46,14 +46,14 @@ class DisplayingRowWhenProxyReplacedResponseTest {
         val injectedScenario = "Просмотр тест-кейса из подменённого ответа"
         val injectedPriority = Priority.MEDIUM.value
 
-        val initialResponse = step("Открываем главную страницу и перехватываем первый ответ") {
+        val initialResponse = step("Открываем страницу и получаем исходный список тест-кейсов") {
             interceptResponseBody(selenideProxy, Paths.REPORTS.path) {
                 step("Открываем главную страницу") { mainPage.open() }
             }
         }
 
         val reportResponse = JsonUtils.parse(initialResponse, TestReportResponse::class.java)
-        val injectedTestCase = step("Готовим тестовый кейс для подмены ответа") {
+        val injectedTestCase = step("Готовим новый тест-кейс для отображения в списке") {
             TestReportItemDto(
                 testId = injectedTestId,
                 category = injectedCategory,
@@ -67,15 +67,15 @@ class DisplayingRowWhenProxyReplacedResponseTest {
                 updatedAt = null,
             )
         }
-        val modifiedResponse = step("Формируем подменённый ответ с новым кейсом") {
+        val modifiedResponse = step("Готовим обновлённый список с новым тест-кейсом") {
             reportResponse.copy(items = reportResponse.items + injectedTestCase)
         }
 
-        step("Проверяем, что тест-кейс отсутствует до подмены") { mainPage.testCaseTable.checkRowDisappeared(injectedTestId) }
+        step("Проверяем отсутствие нового тест-кейса в исходном списке") { mainPage.testCaseTable.checkRowDisappeared(injectedTestId) }
 
         replaceResponseBody(selenideProxy, Paths.REPORTS.path, JsonUtils.toJson(modifiedResponse)) {
-            step("Обновляем страницу после подмены ответа") { mainPage.refreshCurrentPage() }
-            step("Проверяем, что тест-кейс отображается после подмены") { mainPage.testCaseTable.checkRowVisible(injectedTestId) }
+            step("Обновляем страницу с новым списком тест-кейсов") { mainPage.refreshCurrentPage() }
+            step("Проверяем отображение нового тест-кейса в обновлённом списке") { mainPage.testCaseTable.checkRowVisible(injectedTestId) }
         }
     }
 

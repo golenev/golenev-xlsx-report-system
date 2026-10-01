@@ -3,10 +3,9 @@ package org.golenev.ui.pages
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.Selenide.element
-import com.codeborne.selenide.SelenideElement
 import com.codeborne.selenide.WebDriverRunner.url
-import org.golenev.ui.allure.name
 import io.qameta.allure.Step
+import org.golenev.ui.allure.name
 
 /**
  * Page Object главной страницы Test Report, который хранит действия уровня страницы и входные точки к вложенным компонентам.
@@ -22,7 +21,7 @@ class MainPage {
     /** Warning popup, который появляется при невозможности выполнить действие. */
     val warningPopup: WarningPopup by lazy { WarningPopup() }
 
-    private val headerTitle: SelenideElement =
+    private val headerTitle =
         element("h1").name("Заголовок страницы, по которому проверяется успешное открытие или обновление Test Report.")
 
     @Step("Переходим по базовому URL и дожидаемся отображения заголовка Test Report")
