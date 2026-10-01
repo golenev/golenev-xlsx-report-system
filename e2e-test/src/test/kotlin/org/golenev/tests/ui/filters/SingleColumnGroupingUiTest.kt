@@ -21,7 +21,7 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
         }
         step("Открываем таблицу и группируем тест-кейсы по категории") {
             mainPage.open()
-            mainPage.testCaseTable.groupBy("category")
+            mainPage.tableViewToolbar.groupBy("category")
         }
         step("Проверяем группы обеих категорий предварительных данных") {
             mainPage.testCaseTable.checkGroupVisible("category", fixture.categoryAlpha)
@@ -45,14 +45,14 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
         }
         step("Открываем таблицу и сначала группируем по категории") {
             mainPage.open()
-            mainPage.testCaseTable.groupBy("category")
+            mainPage.tableViewToolbar.groupBy("category")
             mainPage.testCaseTable.checkGroupVisible("category", fixture.categoryAlpha)
         }
         step("Переключаем единственную группировку на приоритет") {
-            mainPage.testCaseTable.groupBy("priority")
+            mainPage.tableViewToolbar.groupBy("priority")
         }
         step("Проверяем новую группировку и отсутствие заголовков прежней") {
-            mainPage.testCaseTable.checkGrouping("priority")
+            mainPage.tableViewToolbar.checkGrouping("priority")
             mainPage.testCaseTable.checkGroupVisible("priority", "Critical")
             mainPage.testCaseTable.checkGroupDisappeared("category", fixture.categoryAlpha)
         }
@@ -69,11 +69,11 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
         step("Открываем таблицу и оставляем фильтром одну категорию") {
             mainPage.open()
             mainPage.testCaseTable.openColumnFilter("category")
-            mainPage.testCaseTable.selectFilterValues("category", listOf(fixture.categoryAlpha))
-            mainPage.testCaseTable.applyColumnFilter("category")
+            mainPage.columnFilterPanel.selectFilterValues("category", listOf(fixture.categoryAlpha))
+            mainPage.columnFilterPanel.applyColumnFilter("category")
         }
         step("Группируем отфильтрованные тест-кейсы по статусу готовности") {
-            mainPage.testCaseTable.groupBy("generalStatus")
+            mainPage.tableViewToolbar.groupBy("generalStatus")
         }
         step("Проверяем группы статусов только для прошедших фильтр тест-кейсов") {
             mainPage.testCaseTable.checkGroupVisible("generalStatus", "Готово")

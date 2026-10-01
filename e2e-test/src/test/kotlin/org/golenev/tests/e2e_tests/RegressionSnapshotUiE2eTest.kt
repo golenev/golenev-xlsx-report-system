@@ -97,7 +97,7 @@ class RegressionSnapshotUiE2eTest {
         releaseName = "ui-regression-${getRandomTestId()}"
 
         step("Запускаем регрессионное тестирование с уникальным именем релиза") {
-            mainPage.regressionWidget.startRegression(releaseName)
+            mainPage.testCaseTable.regressionWidget.startRegression(releaseName)
         }
 
         val expectedStatuses = testCases
@@ -111,8 +111,8 @@ class RegressionSnapshotUiE2eTest {
         }
 
         step("Завершаем регрессионное тестирование") {
-            mainPage.regressionWidget.stopRegress()
-            mainPage.regressionWidget.checkRegressionStopped()
+            mainPage.testCaseTable.regressionWidget.stopRegress()
+            mainPage.testCaseTable.regressionWidget.checkRegressionStopped()
         }
 
         val regression = step("Проверяем сохранение завершённого регрессионного тестирования") {

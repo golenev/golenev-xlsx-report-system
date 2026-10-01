@@ -13,14 +13,19 @@ description: Build and maintain Selenide UI framework steps and UI/E2E tests for
 UI/E2E test
   -> mainPage
     -> MainPage
-      -> TestCaseTable / RegressionWidget / WarningPopup
-        -> private SelenideElement / ElementsCollection
+      -> AppHeader / TestCaseTable / TableViewToolbar / ColumnFilterPanel / WarningPopup
+      -> TestCaseEditorModal
+        -> ScenarioEditor / TestCaseEditorFooter / UnsavedChangesDialog
+      -> TestCaseTable.regressionWidget
+        -> RegressionWidget
 ```
 
 - Хранить бизнес-сценарий и его `step {}` в тесте.
 - Хранить локаторы, ожидания, клики и ввод в Page/Component Object.
 - Открывать дочерние компоненты через `MainPage`; не создавать их вручную в тестах.
 - Добавлять новый Component Object, если блок имеет собственное состояние и несколько действий.
+- Компоновать компоненты полями владельца: редактор и панель фильтра принадлежат странице, футер и предупреждение о несохранённых изменениях — редактору. Не хранить поля модалки в таблице.
+- Компонент с кнопкой открытия делегирует ожидание готовности открываемому компоненту. Передавать зависимости явно при композиции; не обращаться к глобальному `mainPage` из компонентов.
 
 ## Локаторы
 
@@ -85,7 +90,7 @@ private fun checkClosingWithWarningTemplate(
 ) {
     step("Пытаемся закрыть модальное окно $actionDescription") { closeAction() }
     step("Проверяем предупреждение") {
-        mainPage.testCaseTable.checkUnsavedChangesWarning()
+        mainPage.testCaseEditor.unsavedChangesDialog.checkUnsavedChangesWarning()
     }
 }
 ```

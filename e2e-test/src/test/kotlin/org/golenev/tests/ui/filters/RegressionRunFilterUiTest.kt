@@ -32,15 +32,15 @@ class RegressionRunFilterUiTest : FilterUiTestBase() {
         }
         step("Открываем таблицу и запускаем регрессионное тестирование") {
             mainPage.open()
-            mainPage.regressionWidget.startRegression(releaseName)
+            mainPage.testCaseTable.regressionWidget.startRegression(releaseName)
         }
         step("Устанавливаем первому тест-кейсу результат «Пройден» вне модального редактора") {
             mainPage.testCaseTable.selectRegressionStatus(fixture.firstId, "PASSED")
         }
         step("Применяем фильтр результатов регрессионного тестирования по значению «Пройден»") {
             mainPage.testCaseTable.openColumnFilter("regressionStatus")
-            mainPage.testCaseTable.selectFilterValues("regressionStatus", listOf("PASSED"))
-            mainPage.testCaseTable.applyColumnFilter("regressionStatus")
+            mainPage.columnFilterPanel.selectFilterValues("regressionStatus", listOf("PASSED"))
+            mainPage.columnFilterPanel.applyColumnFilter("regressionStatus")
         }
         step("Проверяем доступность изменения результата регрессионного тестирования в отфильтрованной строке") {
             mainPage.testCaseTable.checkRegressionStatusEditable(fixture.firstId)
@@ -49,11 +49,11 @@ class RegressionRunFilterUiTest : FilterUiTestBase() {
         }
         step("Повторно применяем фильтр и проверяем переход строки из отфильтрованного состояния") {
             mainPage.testCaseTable.openColumnFilter("regressionStatus")
-            mainPage.testCaseTable.applyColumnFilter("regressionStatus")
+            mainPage.columnFilterPanel.applyColumnFilter("regressionStatus")
             mainPage.testCaseTable.checkRowDisappeared(fixture.firstId)
         }
         step("Отменяем регрессионное тестирование после проверки") {
-            mainPage.regressionWidget.cancelRegression()
+            mainPage.testCaseTable.regressionWidget.cancelRegression()
         }
     }
 }

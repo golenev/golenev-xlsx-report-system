@@ -8,7 +8,7 @@ import org.golenev.ui.allure.name
 import org.golenev.utils.typeOf
 
 /**
- * Component Object глобального виджета управления regression run в шапке страницы.
+ * Component Object глобального виджета управления regression run в заголовке таблицы.
  */
 class RegressionWidget {
     private val regressionStartButton =

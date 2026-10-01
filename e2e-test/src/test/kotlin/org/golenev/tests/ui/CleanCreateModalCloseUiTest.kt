@@ -35,7 +35,7 @@ class CleanCreateModalCloseUiTest {
     @DisplayName("Модальное окно без изменений закрывается клавишей Esc")
     fun shouldCloseCleanCreateModalByEscape() {
         checkClosingWithoutWarningTemplate("клавишей Esc") {
-            mainPage.testCaseTable.closeEditorByEscape()
+            mainPage.testCaseEditor.closeEditorByEscape()
         }
     }
 
@@ -44,7 +44,7 @@ class CleanCreateModalCloseUiTest {
     @DisplayName("Модальное окно без изменений закрывается крестиком")
     fun shouldCloseCleanCreateModalByCloseButton() {
         checkClosingWithoutWarningTemplate("крестиком") {
-            mainPage.testCaseTable.closeEditorByCloseButton()
+            mainPage.testCaseEditor.closeEditorByCloseButton()
         }
     }
 
@@ -53,7 +53,7 @@ class CleanCreateModalCloseUiTest {
     @DisplayName("Модальное окно без изменений закрывается нажатием вне модального окна")
     fun shouldCloseCleanCreateModalByBackdropClick() {
         checkClosingWithoutWarningTemplate("нажатием вне модального окна") {
-            mainPage.testCaseTable.closeEditorByBackdropClick()
+            mainPage.testCaseEditor.closeEditorByBackdropClick()
         }
     }
 
@@ -65,16 +65,16 @@ class CleanCreateModalCloseUiTest {
             mainPage.open()
         }
         step("Открываем модальное окно создания тест-кейса") {
-            mainPage.testCaseTable.openCreateEditor()
+            mainPage.header.openCreateEditor()
         }
         step("Проверяем отсутствие изменений") {
-            mainPage.testCaseTable.checkDirtyStatus("Нет изменений")
+            mainPage.testCaseEditor.footer.checkDirtyStatus("Нет изменений")
         }
         step("Закрываем модальное окно $actionDescription") {
             closeAction()
         }
         step("Проверяем, что модальное окно закрылось без предупреждения") {
-            mainPage.testCaseTable.checkEditorClosed()
+            mainPage.testCaseEditor.checkEditorClosed()
         }
     }
 }
