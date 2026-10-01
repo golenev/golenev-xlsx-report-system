@@ -1,6 +1,5 @@
 package org.golenev.restapi.config
 
-import io.qameta.allure.Step
 import io.restassured.RestAssured
 import io.restassured.http.Method
 import io.restassured.response.Response
@@ -16,7 +15,6 @@ open class RequestExecutor<T : Any>(val path: String) : BaseSpecification() {
         return response
     }
 
-    @Step("POST запрос к {url}")
     protected fun postRequest(url: String, requestSpecification: RequestSpecification, expectedStatus: Int = 200): Response {
         val response: Response = prepareForRequest(requestSpecification)
             .request(Method.POST, baseUri + url)
@@ -25,7 +23,6 @@ open class RequestExecutor<T : Any>(val path: String) : BaseSpecification() {
         return response
     }
 
-    @Step("DELETE запрос к {url}")
     protected fun deleteRequest(url: String, requestSpecification: RequestSpecification, expectedStatus: Int = 200): Response {
         val response: Response = prepareForRequest(requestSpecification)
             .request(Method.DELETE, baseUri + url)

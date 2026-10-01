@@ -21,14 +21,14 @@ class DirtyCreateModalCloseWarningUiTest {
 
     @BeforeEach
     fun setUp() {
-        step("Настраиваем драйвер Selenide") {
+        step("Готовим приложение к работе") {
             DriverConfig().setup()
         }
     }
 
     @AfterEach
     fun tearDown() {
-        step("Закрываем веб-драйвер") {
+        step("Завершаем работу с приложением") {
             Selenide.closeWebDriver()
         }
     }
@@ -88,7 +88,7 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Нажимаем Продолжить редактирование") {
             mainPage.testCaseTable.continueEditing()
         }
-        step("Продолжаем редактировать Category / Feature") {
+        step("Продолжаем редактировать категорию") {
             mainPage.testCaseTable.fillCategory(category)
         }
         step("Проверяем, что редактирование после предупреждения работает") {
@@ -107,7 +107,7 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Нажимаем Продолжить редактирование") {
             mainPage.testCaseTable.continueEditing()
         }
-        step("Продолжаем редактировать Category / Feature") {
+        step("Продолжаем редактировать категорию") {
             mainPage.testCaseTable.fillCategory(category)
         }
         step("Проверяем, что редактирование после предупреждения работает") {
@@ -126,7 +126,7 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Нажимаем Продолжить редактирование") {
             mainPage.testCaseTable.continueEditing()
         }
-        step("Продолжаем редактировать Category / Feature") {
+        step("Продолжаем редактировать категорию") {
             mainPage.testCaseTable.fillCategory(category)
         }
         step("Проверяем, что редактирование после предупреждения работает") {
@@ -148,7 +148,7 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Проверяем исходное отсутствие изменений") {
             mainPage.testCaseTable.checkDirtyStatus("Нет изменений")
         }
-        step("Вносим изменение в Test ID") {
+        step("Вносим изменение в идентификатор тест-кейса") {
             mainPage.testCaseTable.fillTestId(testId)
         }
         step("Проверяем появление признака несохранённых изменений") {

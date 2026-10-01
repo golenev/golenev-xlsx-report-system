@@ -3,22 +3,21 @@ package org.golenev.ui.pages
 import com.codeborne.selenide.Condition.disappear
 import com.codeborne.selenide.Condition.exactText
 import com.codeborne.selenide.Selenide.`$`
-import com.codeborne.selenide.SelenideElement
-import org.golenev.ui.allure.name
 import io.qameta.allure.Step
+import org.golenev.ui.allure.name
 
 /**
  * Component Object warning popup, который отображает пользователю блокирующие предупреждения.
  */
 class WarningPopup {
 
-    private val message: SelenideElement = `$`(".popup-message").name("Текст warning popup.")
+    private val message = `$`(".popup-message").name("Текст warning popup.")
 
-    private val title: SelenideElement = `$`(".popup-title").name("Заголовок warning popup.")
+    private val title = `$`(".popup-title").name("Заголовок warning popup.")
 
-    private val closeButton: SelenideElement = `$`(".popup-actions .secondary-btn").name("Кнопка закрытия warning popup.")
+    private val closeButton = `$`(".popup-actions .secondary-btn").name("Кнопка закрытия warning popup.")
 
-    private val card: SelenideElement = `$`(".popup-card").name("Карточка warning popup.")
+    private val card = `$`(".popup-card").name("Карточка warning popup.")
 
     @Step("Проверяем текст сообщения и заголовка warning popup о незаполненных статусах")
     fun checkDefaultRegressionWarning() {

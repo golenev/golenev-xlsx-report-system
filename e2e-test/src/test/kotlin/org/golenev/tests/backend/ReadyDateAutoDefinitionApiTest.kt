@@ -1,16 +1,10 @@
 package org.golenev.tests.backend
 
-import org.golenev.utils.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
-import org.golenev.restapi.endpoints.GeneralTestStatus
-import org.golenev.restapi.endpoints.ReportServiceDao
-import org.golenev.restapi.endpoints.TestBatchRequest
-import org.golenev.restapi.endpoints.TestUpsertItem
-import org.golenev.restapi.endpoints.ScenarioAttachmentRequest
-import org.golenev.restapi.endpoints.ScenarioRequest
-import org.golenev.restapi.endpoints.ScenarioStepRequest
+import org.golenev.restapi.endpoints.*
+import org.golenev.utils.shouldBe
 import org.golenev.utils.step
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
@@ -37,7 +31,7 @@ class ReadyDateAutoDefinitionApiTest {
             TestReportDao.deleteReportsByDate(today)
         }
 
-        val creationRequest = step("Формируем batch-запрос без readyDate") {
+        val creationRequest = step("Готовим тест-кейс без даты готовности") {
             TestBatchRequest(
                 items = listOf(
                     TestUpsertItem(
@@ -73,21 +67,21 @@ class ReadyDateAutoDefinitionApiTest {
             )
         }
 
-        step("Отправляем batch на создание записи") {
+        step("Отправляем запрос на добавление подготовленного тест-кейса") {
             reportService.sendBatch(creationRequest)
         }
 
-        val createdItem = step("Получаем созданную запись и проверяем readyDate") {
+        val createdItem = step("Получаем созданную запись и проверяем дату готовности") {
             val report = reportService.getReport()
             report.items.first { it.testId == "123" }
         }
 
-        step("Готовая дата установлена на сегодняшнее число") {
+        step("Проверяем, что дата готовности установлена на сегодня") {
             createdItem.readyDate.shouldBe(today, "createdItem.readyDate не совпало с ожидаемым")
         }
 
         val updateRequest =
-            step("Формируем batch-запрос с попыткой изменить readyDate для уже имеющейся записи") {
+            step("Готовим изменения существующего тест-кейса с новой датой готовности") {
                 TestBatchRequest(
                     items = listOf(
                         TestUpsertItem(
@@ -101,7 +95,7 @@ class ReadyDateAutoDefinitionApiTest {
                 )
             }
 
-        step("Отправляем batch на обновление записи") {
+        step("Отправляем запрос на изменение подготовленного тест-кейса") {
             reportService.sendBatch(updateRequest)
         }
 
@@ -110,7 +104,7 @@ class ReadyDateAutoDefinitionApiTest {
             report.items.first { it.testId == "123" }
         }
 
-        step("Готовая дата осталась прежней, остальные поля обновлены") {
+        step("Проверяем, что дата готовности сохранилась, а остальные данные изменились") {
             updatedItem.readyDate.shouldBe(createdItem.readyDate, "updatedItem.readyDate не совпало с ожидаемым")
             updatedItem.scenario shouldNotBe createdItem.scenario
             updatedItem.generalStatus.shouldBe(GeneralTestStatus.DONE.value, "updatedItem.generalStatus не совпало с ожидаемым")

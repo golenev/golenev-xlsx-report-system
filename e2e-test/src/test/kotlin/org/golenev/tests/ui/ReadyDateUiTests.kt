@@ -24,7 +24,7 @@ class ReadyDateUiTests {
 
     @BeforeEach
     fun setUp() {
-        step("Настраиваем драйвер Selenide") {
+        step("Готовим приложение к работе") {
             DriverConfig().setup()
         }
     }
@@ -55,17 +55,17 @@ class ReadyDateUiTests {
 
         step("Открываем главную страницу") { mainPage.open() }
         step("Открываем модальный редактор создания тест-кейса") { mainPage.testCaseTable.openCreateEditor() }
-        step("Проверяем, что Ready Date в модальном редакторе заполнена сегодняшней датой") { mainPage.testCaseTable.checkEditorReadyDate(today) }
-        step("Заполняем поле Test ID значением $randomTestId") { mainPage.testCaseTable.fillTestId(randomTestId) }
-        step("Заполняем поле Category / Feature значением $category") { mainPage.testCaseTable.fillCategory(category) }
-        step("Заполняем поле Short Title значением $shortTitle") { mainPage.testCaseTable.fillShortTitle(shortTitle) }
-        step("Заполняем поле YouTrack Issue Link значением $issueLink") { mainPage.testCaseTable.fillIssueLink(issueLink) }
-        step("Выбираем значение General Test Status: $generalStatus") { mainPage.testCaseTable.selectGeneralStatus(generalStatus) }
-        step("Выбираем значение Priority: $priority") { mainPage.testCaseTable.selectPriority(priority) }
-        step("Заполняем поле Detailed Scenario значением $detailedScenario") { mainPage.testCaseTable.fillDetailedScenario(detailedScenario) }
-        step("Сохраняем новый тест-кейс без изменения Ready Date") { mainPage.testCaseTable.saveNewTestCase() }
+        step("Проверяем, что дата готовности в модальном редакторе заполнена сегодняшней датой") { mainPage.testCaseTable.checkEditorReadyDate(today) }
+        step("Указываем идентификатор тест-кейса $randomTestId") { mainPage.testCaseTable.fillTestId(randomTestId) }
+        step("Указываем категорию $category") { mainPage.testCaseTable.fillCategory(category) }
+        step("Указываем название $shortTitle") { mainPage.testCaseTable.fillShortTitle(shortTitle) }
+        step("Указываем ссылку на задачу $issueLink") { mainPage.testCaseTable.fillIssueLink(issueLink) }
+        step("Выбираем статус готовности: $generalStatus") { mainPage.testCaseTable.selectGeneralStatus(generalStatus) }
+        step("Выбираем приоритет: $priority") { mainPage.testCaseTable.selectPriority(priority) }
+        step("Указываем сценарий $detailedScenario") { mainPage.testCaseTable.fillDetailedScenario(detailedScenario) }
+        step("Сохраняем новый тест-кейс без изменения даты готовности") { mainPage.testCaseTable.saveNewTestCase() }
         step("Проверяем, что тест-кейс появился в таблице") { mainPage.testCaseTable.checkRowVisible(randomTestId) }
-        step("Проверяем, что Ready Date всё ещё заполнена сегодняшней датой") { mainPage.testCaseTable.checkReadyDate(randomTestId, today) }
+        step("Проверяем, что дата готовности всё ещё заполнена сегодняшней датой") { mainPage.testCaseTable.checkReadyDate(randomTestId, today) }
     }
 
 }

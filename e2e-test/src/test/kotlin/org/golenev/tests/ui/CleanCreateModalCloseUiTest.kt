@@ -18,14 +18,14 @@ class CleanCreateModalCloseUiTest {
 
     @BeforeEach
     fun setUp() {
-        step("Настраиваем драйвер Selenide") {
+        step("Готовим приложение к работе") {
             DriverConfig().setup()
         }
     }
 
     @AfterEach
     fun tearDown() {
-        step("Закрываем веб-драйвер") {
+        step("Завершаем работу с приложением") {
             Selenide.closeWebDriver()
         }
     }

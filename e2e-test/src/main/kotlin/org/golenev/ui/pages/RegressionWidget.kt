@@ -3,7 +3,6 @@ package org.golenev.ui.pages
 import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.Selenide.element
-import com.codeborne.selenide.SelenideElement
 import io.qameta.allure.Step
 import org.golenev.ui.allure.name
 import org.golenev.utils.typeOf
@@ -12,20 +11,20 @@ import org.golenev.utils.typeOf
  * Component Object глобального виджета управления regression run в шапке страницы.
  */
 class RegressionWidget {
-    private val regressionStartButton: SelenideElement =
+    private val regressionStartButton =
         `$`("[data-testid='regression-start-button']")
             .name("Кнопка открытия формы запуска regression run.")
 
-    private val regressionReleaseInput: SelenideElement =
-        element("input.release-input").name("Поле ввода release name для нового regression run.")
+    private val regressionReleaseInput =
+        element(".release-input").name("Поле ввода release name для нового regression run.")
 
-    private val regressionSaveButton: SelenideElement =
-        element("div.regression-start-form button.success-btn").name("Кнопка сохранения формы запуска regression run.")
+    private val regressionSaveButton =
+        element(".regression-start-form .success-btn").name("Кнопка сохранения формы запуска regression run.")
 
-    private val regressionCancelButton: SelenideElement =
+    private val regressionCancelButton =
         `$`(".regression-actions .secondary-btn").name("Кнопка отмены текущего regression run.")
 
-    private val regressionStopButton: SelenideElement =
+    private val regressionStopButton =
         `$`(".regression-actions .danger-btn").name("Кнопка остановки текущего regression run.")
 
     @Step("Дожидаемся доступности кнопки запуска regression run, нажимаем её и проверяем видимость поля release name")

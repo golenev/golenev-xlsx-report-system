@@ -28,14 +28,14 @@ class ApiDeletionRefreshUiTest {
             TestReportDao.truncate()
         }
 
-        step("Настраиваем драйвер Selenide") {
+        step("Готовим приложение к работе") {
             DriverConfig().setup()
         }
     }
 
     @AfterEach
     fun tearDown() {
-        step("Закрываем веб-драйвер") {
+        step("Завершаем работу с приложением") {
             Selenide.closeWebDriver()
         }
 
@@ -48,10 +48,10 @@ class ApiDeletionRefreshUiTest {
     @AllureId("303")
     @DisplayName("После API-удаления и refresh UI показывает актуальное количество строк")
     fun shouldShowActualRowsAfterApiDeletionAndRefresh() {
-        val readyDate = step("Фиксируем текущую дату для генерации тест-кейсов") {
+        val readyDate = step("Фиксируем текущую дату для подготовки тест-кейсов") {
             LocalDate.now().toString()
         }
-        val testCases = step("Генерируем данные для трёх тест-кейсов") {
+        val testCases = step("Готовим данные для трёх тест-кейсов") {
             TestDataGenerator.generateTestCases(count = 3, readyDate = readyDate)
                 .mapIndexed { index, testCase ->
                     val testId = "UI-API-DEL-${getRandomTestId()}-${index + 1}"
@@ -61,7 +61,7 @@ class ApiDeletionRefreshUiTest {
                     )
                 }
         }
-        step("Создаём три тест-кейса через API") {
+        step("Создаём три тест-кейса") {
             reportService.sendForceBatch(TestBatchRequest(items = testCases))
         }
 
@@ -77,7 +77,7 @@ class ApiDeletionRefreshUiTest {
         val deletedTestId = testCases[1].testId.orEmpty()
         val remainingTestIds = testCases.mapNotNull { it.testId }.filterNot { it == deletedTestId }
 
-        step("Удаляем через API один выбранный тест-кейс: $deletedTestId") {
+        step("Удаляем один выбранный тест-кейс: $deletedTestId") {
             reportService.deleteTest(deletedTestId)
         }
 
@@ -88,7 +88,7 @@ class ApiDeletionRefreshUiTest {
             remainingTestIds.forEach { testId -> mainPage.testCaseTable.checkRowVisible(testId) }
         }
 
-        step("Удаляем через API оставшиеся тест-кейсы") {
+        step("Удаляем оставшиеся тест-кейсы") {
             remainingTestIds.forEach { testId -> reportService.deleteTest(testId) }
         }
 

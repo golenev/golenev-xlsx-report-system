@@ -2,7 +2,6 @@ package org.golenev.tests.e2e_tests
 
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.WebDriverRunner.getSelenideProxy
-import org.golenev.utils.shouldBe
 import io.qameta.allure.AllureId
 import org.golenev.db.tables.testReportTable.TestReportDao
 import org.golenev.restapi.config.Paths
@@ -11,10 +10,7 @@ import org.golenev.restapi.endpoints.TestUpsertItem
 import org.golenev.ui.config.DriverConfig
 import org.golenev.ui.config.interceptRequestBody
 import org.golenev.ui.pages.mainPage
-import org.golenev.utils.JsonUtils
-import org.golenev.utils.TestDataGenerator
-import org.golenev.utils.getRandomTestId
-import org.golenev.utils.step
+import org.golenev.utils.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -29,18 +25,18 @@ class CreateAndDeleteTestCasesUiE2eTest {
 
     @BeforeEach
     fun setUp() {
-        step("Настраиваем драйвер Selenide") {
+        step("Готовим приложение к работе") {
             DriverConfig().setup()
         }
     }
 
     @AfterEach
     fun tearDown() {
-        step("Закрываем веб-драйвер") {
+        step("Завершаем работу с приложением") {
             Selenide.closeWebDriver()
         }
 
-        step("Удаляем тест-кейсы из базы, если они остались после теста") {
+        step("Удаляем тест-кейсы, если они остались после теста") {
             createdTestIds.forEach { testId -> TestReportDao.deleteByTestId(testId) }
         }
     }
@@ -49,10 +45,10 @@ class CreateAndDeleteTestCasesUiE2eTest {
     @AllureId("302")
     @DisplayName("Создаём кейс через модальный редактор, удаляем через API и проверяем отсутствие")
     fun shouldCreateCaseViaModalAndDeleteItViaApi() {
-        val readyDate = step("Фиксируем текущую дату для генерации тест-кейсов") {
+        val readyDate = step("Фиксируем текущую дату для подготовки тест-кейсов") {
             LocalDate.now().toString()
         }
-        val testCase = step("Генерируем данные для тест-кейса") {
+        val testCase = step("Готовим данные для тест-кейса") {
             val testId = "UI-E2E-${getRandomTestId()}"
             TestDataGenerator.generateTestCases(count = 1, readyDate = readyDate)
                 .single()
@@ -84,7 +80,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
         }
         val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
 
-        step("Проверяем тело запроса создания тест-кейса $testId") {
+        step("Проверяем данные, отправленные для добавления тест-кейса $testId") {
             actualCreateRequest.testId.shouldBe(testCase.testId, "actualCreateRequest.testId не совпало с ожидаемым")
             actualCreateRequest.category.shouldBe(testCase.category, "actualCreateRequest.category не совпало с ожидаемым")
             actualCreateRequest.shortTitle.shouldBe(testCase.shortTitle, "actualCreateRequest.shortTitle не совпало с ожидаемым")
@@ -98,26 +94,27 @@ class CreateAndDeleteTestCasesUiE2eTest {
             actualCreateRequest.runDate.shouldBe(testCase.runDate, "actualCreateRequest.runDate не совпало с ожидаемым")
         }
 
-        step("Проверяем, что тест-кейс $testId появился на UI") {
+        step("Проверяем, что тест-кейс $testId появился в таблице") {
             mainPage.testCaseTable.checkRowVisible(testId)
         }
 
-        step("Редактируем Category тест-кейса $testId через модальный редактор") {
-            mainPage.testCaseTable.updateCategory(testId, "${testCase.category}-edited")
+        step("Изменяем категорию тест-кейса $testId через модальный редактор") {
+            mainPage.testCaseTable.openEditor(testId)
+            mainPage.testCaseTable.updateCategory( "${testCase.category}-edited")
             mainPage.testCaseTable.saveChanges()
         }
 
-        step("Удаляем тест-кейс $testId через API и обновляем UI") {
+        step("Удаляем тест-кейс $testId и обновляем страницу") {
             reportService.deleteTest(testId)
             mainPage.refreshCurrentPage()
             mainPage.testCaseTable.checkRowDisappeared(testId)
         }
 
-        val remainingItems = step("Проверяем отсутствие тест-кейса $testId в базе данных") {
+        val remainingItems = step("Проверяем отсутствие тест-кейса $testId в списке тест-кейсов") {
             TestReportDao.countByTestId(testId)
         }
 
-        step("Подтверждаем, что тест-кейс $testId отсутствует в базе") {
+        step("Подтверждаем, что тест-кейс $testId отсутствует в списке тест-кейсов") {
             remainingItems.shouldBe(0, "remainingItems не совпало с ожидаемым")
         }
     }

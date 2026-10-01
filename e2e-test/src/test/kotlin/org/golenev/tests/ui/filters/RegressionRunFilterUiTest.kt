@@ -17,7 +17,7 @@ class RegressionRunFilterUiTest : FilterUiTestBase() {
 
     @AfterEach
     fun cleanRegressionData() {
-        step("Удаляем созданный regression run из базы") {
+        step("Удаляем созданный запуск регрессионного тестирования") {
             RegressionDao.deleteByReleaseName(releaseName)
         }
     }
@@ -27,21 +27,22 @@ class RegressionRunFilterUiTest : FilterUiTestBase() {
     @DisplayName("Фильтр Regress Run сохраняет внешнее редактирование и пересчитывается после применения")
     fun regressionFilterKeepsInlineEditingAvailableUntilReapply() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и запускаем regression run") {
+        step("Открываем таблицу и запускаем регрессионное тестирование") {
             mainPage.open()
             mainPage.regressionWidget.startRegression(releaseName)
         }
-        step("Устанавливаем первому тест-кейсу результат PASSED вне модального редактора") {
+        step("Устанавливаем первому тест-кейсу результат «Пройден» вне модального редактора") {
             mainPage.testCaseTable.selectRegressionStatus(fixture.firstId, "PASSED")
         }
-        step("Применяем фильтр Regress Run по значению PASSED") {
+        step("Применяем фильтр результатов регрессионного тестирования по значению «Пройден»") {
+            mainPage.testCaseTable.openColumnFilter("regressionStatus")
             mainPage.testCaseTable.selectFilterValues("regressionStatus", listOf("PASSED"))
             mainPage.testCaseTable.applyColumnFilter("regressionStatus")
         }
-        step("Проверяем доступность изменения Regress Run в отфильтрованной строке") {
+        step("Проверяем доступность изменения результата регрессионного тестирования в отфильтрованной строке") {
             mainPage.testCaseTable.checkRegressionStatusEditable(fixture.firstId)
             mainPage.testCaseTable.selectRegressionStatus(fixture.firstId, "FAILED")
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)
@@ -51,7 +52,7 @@ class RegressionRunFilterUiTest : FilterUiTestBase() {
             mainPage.testCaseTable.applyColumnFilter("regressionStatus")
             mainPage.testCaseTable.checkRowDisappeared(fixture.firstId)
         }
-        step("Отменяем regression run после проверки") {
+        step("Отменяем регрессионное тестирование после проверки") {
             mainPage.regressionWidget.cancelRegression()
         }
     }

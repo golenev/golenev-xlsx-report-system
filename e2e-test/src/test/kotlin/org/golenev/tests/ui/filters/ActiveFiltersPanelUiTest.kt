@@ -16,17 +16,19 @@ class ActiveFiltersPanelUiTest : FilterUiTestBase() {
     @DisplayName("Применённые фильтры отображаются отдельными человекочитаемыми чипами")
     fun appliedFiltersAreShownAsChips() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
         step("Открываем таблицу и применяем два фильтра") {
             mainPage.open()
+            mainPage.testCaseTable.openColumnFilter("category")
             mainPage.testCaseTable.selectFilterValues("category", listOf(fixture.categoryAlpha))
             mainPage.testCaseTable.applyColumnFilter("category")
+            mainPage.testCaseTable.openColumnFilter("generalStatus")
             mainPage.testCaseTable.selectFilterValues("generalStatus", listOf("Готово"))
             mainPage.testCaseTable.applyColumnFilter("generalStatus")
         }
-        step("Проверяем два чипа с понятными описаниями активных фильтров") {
+        step("Проверяем два обозначения с понятными описаниями активных фильтров") {
             mainPage.testCaseTable.checkActiveFiltersCount(2)
             mainPage.testCaseTable.checkActiveFilter("category", fixture.categoryAlpha)
             mainPage.testCaseTable.checkActiveFilter("generalStatus", "Готово")
@@ -38,25 +40,31 @@ class ActiveFiltersPanelUiTest : FilterUiTestBase() {
     @DisplayName("Удаление одного чипа сохраняет остальные активные фильтры")
     fun oneFilterCanBeRemovedWithoutResettingOthers() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
         step("Открываем таблицу и ограничиваем строки категорией и статусом") {
-            mainPage.open()
-            mainPage.testCaseTable.selectFilterValues("category", listOf(fixture.categoryAlpha))
-            mainPage.testCaseTable.applyColumnFilter("category")
-            mainPage.testCaseTable.selectFilterValues("generalStatus", listOf("Готово"))
-            mainPage.testCaseTable.applyColumnFilter("generalStatus")
+            with(mainPage) {
+                open()
+                testCaseTable.openColumnFilter("category")
+                testCaseTable.selectFilterValues("category", listOf(fixture.categoryAlpha))
+                testCaseTable.applyColumnFilter("category")
+                testCaseTable.openColumnFilter("generalStatus")
+                testCaseTable.selectFilterValues("generalStatus", listOf("Готово"))
+                testCaseTable.applyColumnFilter("generalStatus")
+            }
         }
         step("Убираем только фильтр статуса") {
             mainPage.testCaseTable.removeActiveFilter("generalStatus")
         }
         step("Проверяем сохранение фильтра категории и возврат второго тест-кейса этой категории") {
-            mainPage.testCaseTable.checkActiveFiltersCount(1)
-            mainPage.testCaseTable.checkActiveFilter("category", fixture.categoryAlpha)
-            mainPage.testCaseTable.checkRowVisible(fixture.firstId)
-            mainPage.testCaseTable.checkRowVisible(fixture.secondId)
-            mainPage.testCaseTable.checkRowDisappeared(fixture.thirdId)
+            with(mainPage) {
+                testCaseTable.checkActiveFiltersCount(1)
+                testCaseTable.checkActiveFilter("category", fixture.categoryAlpha)
+                testCaseTable.checkRowVisible(fixture.firstId)
+                testCaseTable.checkRowVisible(fixture.secondId)
+                testCaseTable.checkRowDisappeared(fixture.thirdId)
+            }
         }
     }
 
@@ -65,13 +73,15 @@ class ActiveFiltersPanelUiTest : FilterUiTestBase() {
     @DisplayName("Общий сброс удаляет все фильтры и возвращает полный набор строк")
     fun allFiltersCanBeClearedTogether() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
         step("Открываем таблицу и применяем два фильтра") {
             mainPage.open()
+            mainPage.testCaseTable.openColumnFilter("category")
             mainPage.testCaseTable.selectFilterValues("category", listOf(fixture.categoryAlpha))
             mainPage.testCaseTable.applyColumnFilter("category")
+            mainPage.testCaseTable.openColumnFilter("priority")
             mainPage.testCaseTable.selectFilterValues("priority", listOf("Critical"))
             mainPage.testCaseTable.applyColumnFilter("priority")
         }

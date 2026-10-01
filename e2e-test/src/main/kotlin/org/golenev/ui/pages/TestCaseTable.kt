@@ -3,9 +3,7 @@ package org.golenev.ui.pages
 import com.codeborne.selenide.CollectionCondition.size
 import com.codeborne.selenide.CollectionCondition.sizeGreaterThan
 import com.codeborne.selenide.Condition.*
-import com.codeborne.selenide.ElementsCollection
 import com.codeborne.selenide.Selenide.*
-import com.codeborne.selenide.SelenideElement
 import io.qameta.allure.Step
 import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.ui.allure.name
@@ -21,46 +19,62 @@ import org.openqa.selenium.Keys
  * тест-кейса выполняются только внутри модального окна `test-case-editor-modal`.
  */
 class TestCaseTable {
-    private val tableLocator = "[data-testid='test-report-table']"
     private val editorLocator = "[data-testid='test-case-editor-modal']"
 
-    private val addRowButton: SelenideElement =
-        `$`("button[data-role='button'][data-action='add-row']")
+    private val addRowButton =
+        `$`("[data-action='add-row']")
             .name("Кнопка Add Row, которая открывает модальный редактор нового тест-кейса.")
 
-    private val editor: SelenideElement =
+    private val editor =
         `$`(editorLocator).name("Модальный редактор создания или изменения тест-кейса.")
 
-    private val testIdInput = `$`("$editorLocator [data-testid='test-id-input']").name("Поле Test ID в модальном редакторе.")
-    private val categoryInput = modalFieldByLabel("Category / Feature", "textarea").name("Поле Category / Feature в модальном редакторе.")
-    private val shortTitleInput = modalFieldByLabel("Short Title", "textarea").name("Поле Short Title в модальном редакторе.")
-    private val issueLinkInput = `$`("$editorLocator [data-testid='youtrack-link']").name("Поле YouTrack Issue Link в модальном редакторе.")
-    private val generalStatusSelect = `$`("$editorLocator select[data-testid='status-dropdown']").name("Select General Test Status в модальном редакторе.")
-    private val prioritySelect = `$`("$editorLocator select[data-testid='priority-select']").name("Select Priority в модальном редакторе.")
-    private val notesTextarea = `$`("$editorLocator [data-testid='notes-input']").name("Поле Notes в модальном редакторе.")
+    private val testIdInput = `$`("[data-testid='test-id-input']").name("Поле Test ID в модальном редакторе.")
+    private val categoryInput = `$`("[data-testid='category-input']").name("Поле Category / Feature в модальном редакторе.")
+    private val shortTitleInput = `$`("[data-testid='short-title-input']").name("Поле Short Title в модальном редакторе.")
+    private val issueLinkInput = `$`("[data-testid='youtrack-link']").name("Поле YouTrack Issue Link в модальном редакторе.")
+    private val generalStatusSelect = `$`("$editorLocator [data-testid='status-dropdown']").name("Select General Test Status в модальном редакторе.")
+    private val prioritySelect = `$`("$editorLocator [data-testid='priority-select']").name("Select Priority в модальном редакторе.")
+    private val notesTextarea = `$`("[data-testid='notes-input']").name("Поле Notes в модальном редакторе.")
     private val saveButton = `$`("$editorLocator [data-testid='save-test-case-button']").name("Кнопка сохранения модального редактора.")
-    private val readyDateInput = modalFieldByLabel("Ready Date", "input").name("Поле Ready Date в модальном редакторе.")
-    private val dirtyStatus = `$`("$editorLocator .test-case-modal-dirty").name("Статус несохранённых изменений модального редактора.")
-    private val closeButton = `$`("$editorLocator .test-case-modal-close").name("Крестик закрытия модального редактора.")
-    private val backdrop = `$`("$editorLocator .test-case-modal-backdrop").name("Область вне модального окна.")
-    private val unsavedChangesDialog = `$`("$editorLocator [role='alertdialog']").name("Предупреждение о несохранённых изменениях.")
-    private val discardUnsavedChangesButton = `$`("$editorLocator .unsaved-discard").name("Кнопка Не сохранять в предупреждении.")
-    private val continueEditingButton = `$`("$editorLocator [role='alertdialog'] .secondary-btn").name("Кнопка Продолжить редактирование в предупреждении.")
+    private val readyDateInput = `$`("[data-testid='ready-date-input']").name("Поле Ready Date в модальном редакторе.")
+    private val dirtyStatus = `$`(".test-case-modal-dirty").name("Статус несохранённых изменений модального редактора.")
+    private val closeButton = `$`(".test-case-modal-close").name("Крестик закрытия модального редактора.")
+    private val backdrop = `$`(".test-case-modal-backdrop").name("Область вне модального окна.")
+    private val unsavedChangesDialog = `$`(".unsaved-confirm").name("Предупреждение о несохранённых изменениях.")
+    private val discardUnsavedChangesButton = `$`(".unsaved-discard").name("Кнопка Не сохранять в предупреждении.")
+    private val continueEditingButton = `$`(".unsaved-confirm .secondary-btn").name("Кнопка Продолжить редактирование в предупреждении.")
 
-    private val savedRows: ElementsCollection =
-        `$$`("$tableLocator [data-testid='test-case-row']").name("Сохранённые строки тест-кейсов")
+    private val savedRows =
+        `$$`("[data-testid='test-case-row']").name("Сохранённые строки тест-кейсов")
 
-    private val activeFilterChips: ElementsCollection =
+    private val activeFilterChips =
         `$$`("[data-testid='active-filter-chip']").name("Чипы активных фильтров таблицы")
 
-    private val clearAllFiltersButton: SelenideElement =
+    private val clearAllFiltersButton =
         `$`("[data-action='clear-all-filters']").name("Кнопка сброса всех активных фильтров.")
 
-    private val groupingSelect: SelenideElement =
+    private val groupingSelect =
         `$`("[data-testid='table-group-select']").name("Select группировки строк таблицы.")
 
-    private val emptyFilterResult: SelenideElement =
+    private val emptyFilterResult =
         `$`("[data-testid='table-empty-result']").name("Сообщение об отсутствии строк по заданным фильтрам.")
+
+    private val scenarioRootAddButton = `$`("[data-testid='scenario-root-add']")
+        .name("Кнопка добавления корневого шага.")
+    private val scenarioSteps = `$$`("[data-testid='scenario-editor-step']")
+        .name("Шаги detailed scenario в модальном редакторе.")
+    private val filterButtons = `$$`("[data-testid='table-filter-button']")
+        .name("Кнопки фильтров колонок таблицы.")
+    private val filterSearchInputs = `$$`("[data-testid='table-filter-search']")
+        .name("Поля поиска фильтров колонок.")
+    private val filterOptions = `$$`("[data-testid='table-filter-option']")
+        .name("Значения фильтров колонок.")
+    private val applyFilterButtons = `$$`("[data-action='apply-filter']")
+        .name("Кнопки применения фильтров колонок.")
+    private val filterPanels = `$$`("[data-testid='table-filter-panel']")
+        .name("Панели фильтров колонок таблицы.")
+    private val groupRows = `$$`("[data-testid='table-group-row']")
+        .name("Группы строк таблицы.")
 
     @Step("Прокручиваем таблицу к строке с Test ID {testId} и проверяем её отображение")
     operator fun get(testId: String): TestCaseTable = apply { checkRowVisible(testId) }
@@ -101,7 +115,7 @@ class TestCaseTable {
 
     @Step("Вводим простой Detailed Scenario в первый корневой шаг модального редактора")
     fun fillDetailedScenario(scenario: String) {
-        scenarioStepInput(0)
+        scenarioSteps.findBy(attribute("data-scenario-path", "0")).`$`("[data-testid='scenario-step-input']")
             .shouldBe(visible.because("поле первого шага должно быть видимым для ввода сценария"))
             .typeOf(scenario)
     }
@@ -110,14 +124,12 @@ class TestCaseTable {
     fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) {
         steps.forEachIndexed { index, step ->
             if (index > 0) {
-                `$`("$editorLocator [data-testid='scenario-root-add']")
-                    .name("Кнопка добавления корневого шага.")
-                    .click()
+                scenarioRootAddButton.click()
             }
-            scenarioStep(index)
+            scenarioSteps.findBy(attribute("data-scenario-path", index.toString()))
                 .name("Блок шага ${step.number} detailed scenario.")
                 .shouldBe(visible.because("блок шага ${step.number} должен быть видимым в модальном редакторе"))
-            scenarioStepInput(index)
+            scenarioSteps.findBy(attribute("data-scenario-path", index.toString())).`$`("[data-testid='scenario-step-input']")
                 .name("Поле текста шага ${step.number} detailed scenario.")
                 .shouldBe(visible.because("поле текста шага ${step.number} должно быть видимым"))
                 .typeOf(step.text)
@@ -147,30 +159,29 @@ class TestCaseTable {
 
     @Step("В строке с Test ID {testId} выбираем Regress Run {status}")
     fun selectRegressionStatus(testId: String, status: String) {
-        val rowLocator = savedRowLocator(testId)
-        `$`(rowLocator).name("Строка тест-кейса $testId").shouldBe(visible)
-        `$`("$rowLocator [data-testid='test-case-cell'][data-name='Regress Run'] [data-testid='regress-run-button']")
+        val row = savedRows.findBy(attribute("data-test-case-id", testId)).name("Строка тест-кейса $testId")
+        row.shouldBe(visible)
+        row.`$`("[data-testid='regress-run-button']")
             .name("Select Regress Run в строке тест-кейса.")
             .shouldBe(enabled.because("select Regress Run должен быть доступен во время регресса"))
             .selectOption(status)
     }
 
-    @Step("Открываем модальный редактор тест-кейса {testId} и устанавливаем Category / Feature {newValue}")
-    fun updateCategory(testId: String, newValue: String) {
-        openEditor(testId)
+    @Step("Устанавливаем Category / Feature {newValue} в открытом модальном редакторе")
+    fun updateCategory(newValue: String) {
         categoryInput.shouldBeVisibleForInput("Category").setValue(newValue)
     }
 
     @Step("Прокручиваем к строке с Test ID {testId} и проверяем её видимость")
     fun checkRowVisible(testId: String) {
-        `$`(savedRowLocator(testId)).name("Строка тест-кейса $testId")
+        savedRows.findBy(attribute("data-test-case-id", testId)).name("Строка тест-кейса $testId")
             .scrollIntoView(CENTER)
             .shouldBe(visible.because("строка тест-кейса должна отображаться в таблице"))
     }
 
     @Step("Проверяем исчезновение строки с Test ID {testId}")
     fun checkRowDisappeared(testId: String) {
-        `$`(savedRowLocator(testId)).name("Строка тест-кейса $testId")
+        savedRows.findBy(attribute("data-test-case-id", testId)).name("Строка тест-кейса $testId")
             .shouldBe(disappear.because("строка тест-кейса должна исчезнуть"))
     }
 
@@ -182,7 +193,7 @@ class TestCaseTable {
     @Step("Проверяем наличие фильтра в каждой колонке таблицы: {columnKeys}")
     fun checkColumnFilterButtons(columnKeys: List<String>) {
         columnKeys.forEach { columnKey ->
-            filterButton(columnKey)
+            filterButtons.findBy(attribute("data-name", columnKey)).name("Кнопка фильтра колонки $columnKey.")
                 .shouldBe(visible.because("кнопка фильтра должна отображаться в колонке $columnKey"))
                 .shouldHave(attribute("data-state", "inactive"))
         }
@@ -190,14 +201,14 @@ class TestCaseTable {
 
     @Step("Открываем фильтр колонки {columnKey}")
     fun openColumnFilter(columnKey: String) {
-        filterButton(columnKey).shouldBe(enabled).click()
-        filterPanel(columnKey).shouldBe(visible.because("панель фильтра колонки $columnKey должна открыться"))
+        filterButtons.findBy(attribute("data-name", columnKey)).name("Кнопка фильтра колонки $columnKey.").shouldBe(enabled).click()
+        filterPanels.findBy(attribute("data-name", columnKey))
+            .name("Панель фильтра колонки $columnKey.").shouldBe(visible.because("панель фильтра колонки $columnKey должна открыться"))
     }
 
     @Step("Задаём текстовый фильтр колонки {columnKey}: {query}")
     fun setTextFilter(columnKey: String, query: String) {
-        openColumnFilter(columnKey)
-        filterPanel(columnKey).`$`("[data-testid='table-filter-search']")
+        filterSearchInputs.findBy(attribute("data-name", columnKey))
             .name("Поле текстового фильтра колонки $columnKey.")
             .shouldBe(visible)
             .typeOf(query)
@@ -205,10 +216,9 @@ class TestCaseTable {
 
     @Step("Выбираем значения фильтра колонки {columnKey}: {values}")
     fun selectFilterValues(columnKey: String, values: List<String>) {
-        openColumnFilter(columnKey)
         values.forEach { value ->
-            filterPanel(columnKey)
-                .`$`("[data-testid='table-filter-option'][data-value='$value'] input")
+            filterOptions.filterBy(attribute("data-name", columnKey))
+                .findBy(attribute("data-value", value)).`$`("input")
                 .name("Значение $value фильтра колонки $columnKey.")
                 .shouldBe(enabled.because("значение фильтра должно быть доступно для выбора"))
                 .click()
@@ -217,18 +227,21 @@ class TestCaseTable {
 
     @Step("Применяем фильтр колонки {columnKey}")
     fun applyColumnFilter(columnKey: String) {
-        filterPanel(columnKey).`$`("[data-action='apply-filter']")
+        applyFilterButtons.findBy(attribute("data-name", columnKey))
             .name("Кнопка применения фильтра колонки $columnKey.")
             .shouldBe(enabled)
             .click()
-        filterPanel(columnKey).shouldBe(disappear.because("после применения панель фильтра должна закрыться"))
-        filterButton(columnKey).shouldHave(attribute("data-state", "active"))
+        filterPanels.findBy(attribute("data-name", columnKey))
+            .name("Панель фильтра колонки $columnKey.").shouldBe(disappear.because("после применения панель фильтра должна закрыться"))
+        filterButtons.findBy(attribute("data-name", columnKey))
+            .name("Кнопка фильтра колонки $columnKey.").shouldHave(attribute("data-state", "active"))
     }
 
     @Step("Закрываем фильтр колонки {columnKey} без применения")
     fun closeColumnFilterWithoutApplying(columnKey: String) {
         actions().sendKeys(Keys.ESCAPE).perform()
-        filterPanel(columnKey).shouldBe(disappear.because("панель фильтра должна закрыться без применения черновика"))
+        filterPanels.findBy(attribute("data-name", columnKey))
+            .name("Панель фильтра колонки $columnKey.").shouldBe(disappear.because("панель фильтра должна закрыться без применения черновика"))
     }
 
     @Step("Проверяем активный фильтр колонки {columnKey} с описанием {expectedDescription}")
@@ -250,7 +263,8 @@ class TestCaseTable {
             .name("Чип активного фильтра колонки $columnKey.")
             .shouldBe(enabled)
             .click()
-        filterButton(columnKey).shouldHave(attribute("data-state", "inactive"))
+        filterButtons.findBy(attribute("data-name", columnKey))
+            .name("Кнопка фильтра колонки $columnKey.").shouldHave(attribute("data-state", "inactive"))
     }
 
     @Step("Сбрасываем все активные фильтры")
@@ -274,43 +288,47 @@ class TestCaseTable {
 
     @Step("Проверяем группу {groupValue} для колонки {columnKey}")
     fun checkGroupVisible(columnKey: String, groupValue: String) {
-        groupRow(columnKey, groupValue)
+        groupRows.filterBy(attribute("data-name", columnKey)).findBy(attribute("data-value", groupValue))
+            .name("Группа $groupValue колонки $columnKey.")
             .shouldBe(visible.because("группа $groupValue должна отображаться после группировки"))
             .shouldHave(attribute("data-state", "expanded"))
     }
 
     @Step("Проверяем отсутствие группы {groupValue} для колонки {columnKey}")
     fun checkGroupDisappeared(columnKey: String, groupValue: String) {
-        groupRow(columnKey, groupValue)
+        groupRows.filterBy(attribute("data-name", columnKey)).findBy(attribute("data-value", groupValue))
+            .name("Группа $groupValue колонки $columnKey.")
             .shouldBe(disappear.because("группа $groupValue не должна отображаться"))
     }
 
     @Step("Сворачиваем группу {groupValue} колонки {columnKey}")
     fun collapseGroup(columnKey: String, groupValue: String) {
-        groupRow(columnKey, groupValue).`$`("[data-testid='table-group-toggle']")
+        groupRows.filterBy(attribute("data-name", columnKey)).findBy(attribute("data-value", groupValue))
+            .name("Группа $groupValue колонки $columnKey.").`$`("[data-testid='table-group-toggle']")
             .name("Кнопка сворачивания группы $groupValue.")
             .shouldBe(enabled)
             .click()
-        groupRow(columnKey, groupValue).shouldHave(attribute("data-state", "collapsed"))
+        groupRows.filterBy(attribute("data-name", columnKey)).findBy(attribute("data-value", groupValue))
+            .name("Группа $groupValue колонки $columnKey.").shouldHave(attribute("data-state", "collapsed"))
     }
 
     @Step("Проверяем, что группировка выбрана по колонке {columnKey}")
     fun checkGrouping(columnKey: String) {
         groupingSelect.shouldHave(value(columnKey))
-        `$$`("[data-testid='table-group-row']")
+        groupRows
             .shouldHave(sizeGreaterThan(0).because("после выбора группировки должны отображаться заголовки групп"))
     }
 
     @Step("Проверяем, что группировка не выбрана")
     fun checkGroupingInactive() {
         groupingSelect.shouldHave(exactValue(""))
-        `$$`("[data-testid='table-group-row']")
+        groupRows
             .shouldHave(size(0).because("без группировки заголовки групп не должны отображаться"))
     }
 
     @Step("Проверяем доступность редактирования Regress Run для тест-кейса {testId}")
     fun checkRegressionStatusEditable(testId: String) {
-        `$`("${savedRowLocator(testId)} [data-testid='regress-run-button']")
+        savedRows.findBy(attribute("data-test-case-id", testId)).`$`("[data-testid='regress-run-button']")
             .name("Select Regress Run в строке тест-кейса $testId.")
             .shouldBe(enabled.because("фильтрация не должна блокировать редактирование Regress Run"))
     }
@@ -383,19 +401,14 @@ class TestCaseTable {
 
     @Step("Проверяем Ready Date {expectedDate} в строке с Test ID {testId}")
     fun checkReadyDate(testId: String, expectedDate: String) {
-        `$`("${savedRowLocator(testId)} [data-testid='test-case-cell'][data-name='Ready Date']")
+        savedRows.findBy(attribute("data-test-case-id", testId)).`$`("[data-name='Ready Date']")
             .name("Ячейка Ready Date в строке тест-кейса.")
             .shouldHave(text(expectedDate).because("Ready Date должна содержать ожидаемую дату"))
     }
 
-    @Step("Открываем редактор тест-кейса {testId} и фокусируем Category / Feature")
-    fun focusOnCategory(testId: String) {
-        openEditor(testId)
-        categoryInput.shouldBe(visible).click()
-    }
-
-    private fun openEditor(testId: String) {
-        `$`("${savedRowLocator(testId)} [data-testid='scenario-edit']")
+    @Step("Открываем модальный редактор тест-кейса {testId}")
+    fun openEditor(testId: String) {
+        savedRows.findBy(attribute("data-test-case-id", testId)).`$`("[data-testid='scenario-edit']")
             .name("Кнопка изменения тест-кейса $testId.")
             .shouldBe(visible.because("кнопка изменения должна быть видимой в строке"))
             .click()
@@ -405,8 +418,8 @@ class TestCaseTable {
 
     @Step("Раскрываем шаг {stepIndex}, добавляем вложение и вводим его содержимое")
     private fun fillScenarioStepAttachment(stepIndex: Int, attachmentName: String, attachmentContent: String) {
-        val step = scenarioStep(stepIndex)
-        step.`$`("[data-testid='scenario-step-toggle'], .scenario-step-toggle .scenario-chevron")
+        val step = scenarioSteps.findBy(attribute("data-scenario-path", stepIndex.toString()))
+        step.`$`("[data-testid='scenario-step-toggle']")
             .name("Кнопка раскрытия шага.")
             .click()
         step.`$`("[data-testid='scenario-attachment-add-button']").name("Кнопка добавления вложения.").shouldBe(visible).click()
@@ -416,7 +429,7 @@ class TestCaseTable {
             .shouldBe(visible.because("имя вложения должно редактироваться в заголовке"))
             .typeOf(attachmentName)
             .shouldHave(value(attachmentName).because("имя вложения должно сохраняться до общего сохранения"))
-        attachmentEditor.`$`("[data-testid='scenario-attachment-toggle'], .scenario-attachment-summary .scenario-chevron")
+        attachmentEditor.`$`("[data-testid='scenario-attachment-toggle']")
             .name("Кнопка раскрытия вложения.")
             .click()
         attachmentEditor.`$`("[data-testid='scenario-attachment-content']")
@@ -425,28 +438,4 @@ class TestCaseTable {
             .typeOf(attachmentContent)
             .shouldHave(value(attachmentContent).because("содержимое вложения должно сохраняться до общего сохранения"))
     }
-
-    private fun scenarioStep(index: Int): SelenideElement =
-        `$`("$editorLocator [data-testid='scenario-editor-step'][data-scenario-path='$index']")
-
-    private fun scenarioStepInput(index: Int): SelenideElement =
-        scenarioStep(index).`$`("[data-testid='scenario-step-input']")
-
-    private fun modalFieldByLabel(label: String, element: String): SelenideElement =
-        `$x`("//*[@data-testid='test-case-editor-modal']//label[.//span[normalize-space()='$label']]//$element")
-
-    private fun savedRowLocator(testId: String): String =
-        "$tableLocator [data-testid='test-case-row'][data-test-case-id='$testId']"
-
-    private fun filterButton(columnKey: String): SelenideElement =
-        `$`("[data-testid='table-filter-button'][data-name='$columnKey']")
-            .name("Кнопка фильтра колонки $columnKey.")
-
-    private fun filterPanel(columnKey: String): SelenideElement =
-        `$`("[data-testid='table-filter-panel'][data-name='$columnKey']")
-            .name("Панель фильтра колонки $columnKey.")
-
-    private fun groupRow(columnKey: String, groupValue: String): SelenideElement =
-        `$`("[data-testid='table-group-row'][data-name='$columnKey'][data-value='$groupValue']")
-            .name("Группа $groupValue колонки $columnKey.")
 }

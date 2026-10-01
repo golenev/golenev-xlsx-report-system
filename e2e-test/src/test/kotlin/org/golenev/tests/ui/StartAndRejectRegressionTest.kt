@@ -34,11 +34,11 @@ class StartAndRejectRegressionTest {
     fun tearDown() {
         Selenide.closeWebDriver()
 
-        step("Удаляем созданный тест-кейс из базы") {
+        step("Удаляем созданный тест-кейс") {
             TestReportDao.deleteByTestId(createdTestId)
         }
 
-        step("Удаляем созданный регресс из базы") {
+        step("Удаляем созданный запуск регрессионного тестирования") {
             RegressionDao.deleteByReleaseName(createdReleaseName)
         }
     }
@@ -48,9 +48,9 @@ class StartAndRejectRegressionTest {
     @DisplayName("Запускаем и пытаемся завершить регресс через UI, получая ошибку отсутствия статуса прогона у тестов с проверкой записи в БД")
     fun startAndStopRegressionViaUi() {
         val regressionDate =
-            step("Определяем дату запуска регресса") { LocalDate.now() }
+            step("Определяем дату запуска регрессионного тестирования") { LocalDate.now() }
 
-        val batchRequest = step("Готовим batch-запрос для создания теста") {
+        val batchRequest = step("Готовим данные для добавления тест-кейса") {
             TestBatchRequest(
                 items = listOf(
                     TestUpsertItem(
@@ -75,45 +75,45 @@ class StartAndRejectRegressionTest {
             )
         }
 
-        step("Создаём запись через API") {
+        step("Добавляем подготовленный тест-кейс") {
             reportService.sendBatch(batchRequest)
         }
 
         step("Открываем главную страницу") { mainPage.open() }
 
-        step("Запускаем регресс через UI") {
+        step("Запускаем регрессионное тестирование") {
             mainPage.regressionWidget.startRegression(createdReleaseName)
         }
 
-        val regression = step("Проверяем создание записи о регрессе в базе") {
+        val regression = step("Проверяем сохранение начатого регрессионного тестирования") {
             RegressionDao.findByReleaseName(createdReleaseName)
                 .shouldNotBeNull()
         }
 
-        step("Убеждаемся в корректности полей регресса") {
+        step("Убеждаемся в корректности полей регрессионного тестирования") {
             regression.status.shouldBe("RUNNING", "regression.status не совпало с ожидаемым")
             regression.regressionDate.shouldBe(regressionDate, "regression.regressionDate не совпало с ожидаемым")
             regression.payload?.tests.shouldBe(null, "regression.payload?.tests не совпало с ожидаемым")
             regression.payload?.status.shouldBe(null, "regression.payload?.status не совпало с ожидаемым")
         }
 
-        step("Отменяем регресс через UI") {
+        step("Отменяем регрессионное тестирование") {
             mainPage.regressionWidget.stopRegress()
         }
 
-        step("Убеждаемся, что появился popup warning с предупреждением и необходимости заполнения результатов прогона") {
+        step("Проверяем предупреждение о необходимости заполнить результаты тестирования") {
             mainPage.warningPopup.checkDefaultRegressionWarning()
         }
 
-        step("Закрываем popup warning") {
+        step("Закрываем предупреждение") {
             mainPage.warningPopup.close()
         }
 
-        step("Отменяем регресс через UI") {
+        step("Отменяем регрессионное тестирование") {
             mainPage.regressionWidget.cancelRegression()
         }
 
-        step("Проверяем, что запись о регрессе удалена из БД") {
+        step("Проверяем, что отменённый запуск регрессионного тестирования больше не сохранён") {
             RegressionDao.findByReleaseName(createdReleaseName)
                 .shouldBe(null, "RegressionDao.findByReleaseName(createdReleaseName) не совпало с ожидаемым")
         }

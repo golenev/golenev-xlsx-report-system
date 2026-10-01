@@ -16,18 +16,20 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
     @DisplayName("Применённые фильтры и группировка восстанавливаются после обновления страницы")
     fun appliedViewStateIsRestoredAfterRefresh() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
         step("Открываем таблицу, применяем фильтры и группировку") {
             mainPage.open()
+            mainPage.testCaseTable.openColumnFilter("category")
             mainPage.testCaseTable.selectFilterValues("category", listOf(fixture.categoryAlpha))
             mainPage.testCaseTable.applyColumnFilter("category")
+            mainPage.testCaseTable.openColumnFilter("priority")
             mainPage.testCaseTable.selectFilterValues("priority", listOf("Critical", "Blocker"))
             mainPage.testCaseTable.applyColumnFilter("priority")
             mainPage.testCaseTable.groupBy("category")
         }
-        step("Проверяем фиксацию представления таблицы в URL") {
+        step("Проверяем, что ссылка на таблицу сохраняет выбранные фильтры и группировку") {
             mainPage.checkUrlParameters(
                 listOf(
                     "filter.category=${encodeQueryValue(fixture.categoryAlpha)}",
@@ -37,7 +39,7 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
                 ),
             )
         }
-        step("Обновляем страницу и проверяем восстановление бизнес-состояния таблицы") {
+        step("Обновляем страницу и проверяем восстановление выбранных фильтров и группировки") {
             mainPage.refreshCurrentPage()
             mainPage.testCaseTable.checkActiveFiltersCount(2)
             mainPage.testCaseTable.checkGrouping("category")
@@ -53,7 +55,7 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
     @DisplayName("Прямая ссылка поддерживает кириллицу и несколько значений одного фильтра")
     fun directUrlSupportsCyrillicAndRepeatedValues() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
         val query = listOf(
@@ -80,7 +82,7 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
     @DisplayName("Неизвестные параметры URL игнорируются без нарушения работы таблицы")
     fun invalidUrlParametersAreIgnored() {
         val fixture = filterFixture()
-        step("Создаём предварительные тестовые данные через API ручку batch-загрузки") {
+        step("Добавляем подготовленные тест-кейсы") {
             createPreliminaryTestDataViaApi(fixture)
         }
         step("Открываем прямую ссылку с неизвестными фильтром, условием и группировкой") {
