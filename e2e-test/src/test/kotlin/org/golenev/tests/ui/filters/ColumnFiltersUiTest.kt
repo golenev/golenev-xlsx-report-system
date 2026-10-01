@@ -51,8 +51,8 @@ class ColumnFiltersUiTest : FilterUiTestBase() {
         step("Открываем таблицу и применяем текстовый фильтр по идентификатору тест-кейса") {
             mainPage.open()
             mainPage.testCaseTable.openColumnFilter("testId")
-            mainPage.testCaseTable.setTextFilter("testId", fixture.secondId)
-            mainPage.testCaseTable.applyColumnFilter("testId")
+            mainPage.columnFilterPanel.setTextFilter("testId", fixture.secondId)
+            mainPage.columnFilterPanel.applyColumnFilter("testId")
         }
         step("Проверяем маршрут тест-кейсов через отфильтрованное состояние таблицы") {
             mainPage.testCaseTable.checkRowVisible(fixture.secondId)
@@ -72,8 +72,8 @@ class ColumnFiltersUiTest : FilterUiTestBase() {
         step("Открываем таблицу и выбираем «Критический» и «Блокирующий» в фильтре приоритета") {
             mainPage.open()
             mainPage.testCaseTable.openColumnFilter("priority")
-            mainPage.testCaseTable.selectFilterValues("priority", listOf("Critical", "Blocker"))
-            mainPage.testCaseTable.applyColumnFilter("priority")
+            mainPage.columnFilterPanel.selectFilterValues("priority", listOf("Critical", "Blocker"))
+            mainPage.columnFilterPanel.applyColumnFilter("priority")
         }
         step("Проверяем, что отображаются тест-кейсы любого из выбранных приоритетов") {
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)
@@ -93,11 +93,11 @@ class ColumnFiltersUiTest : FilterUiTestBase() {
         step("Открываем таблицу и применяем фильтры категории и статуса готовности") {
             mainPage.open()
             mainPage.testCaseTable.openColumnFilter("category")
-            mainPage.testCaseTable.selectFilterValues("category", listOf(fixture.categoryAlpha))
-            mainPage.testCaseTable.applyColumnFilter("category")
+            mainPage.columnFilterPanel.selectFilterValues("category", listOf(fixture.categoryAlpha))
+            mainPage.columnFilterPanel.applyColumnFilter("category")
             mainPage.testCaseTable.openColumnFilter("generalStatus")
-            mainPage.testCaseTable.selectFilterValues("generalStatus", listOf("Готово"))
-            mainPage.testCaseTable.applyColumnFilter("generalStatus")
+            mainPage.columnFilterPanel.selectFilterValues("generalStatus", listOf("Готово"))
+            mainPage.columnFilterPanel.applyColumnFilter("generalStatus")
         }
         step("Проверяем, что остаётся тест-кейс, одновременно соответствующий обоим фильтрам") {
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)
@@ -117,14 +117,14 @@ class ColumnFiltersUiTest : FilterUiTestBase() {
         step("Открываем таблицу и применяем фильтр без совпадений") {
             mainPage.open()
             mainPage.testCaseTable.openColumnFilter("testId")
-            mainPage.testCaseTable.setTextFilter("testId", "ABSENT-${fixture.token}")
-            mainPage.testCaseTable.applyColumnFilter("testId")
+            mainPage.columnFilterPanel.setTextFilter("testId", "ABSENT-${fixture.token}")
+            mainPage.columnFilterPanel.applyColumnFilter("testId")
         }
         step("Проверяем понятное пустое состояние таблицы") {
             mainPage.testCaseTable.checkEmptyFilterResult()
         }
         step("Сбрасываем фильтры и проверяем возврат предварительно созданных тест-кейсов") {
-            mainPage.testCaseTable.clearAllFilters()
+            mainPage.tableViewToolbar.clearAllFilters()
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)
             mainPage.testCaseTable.checkRowVisible(fixture.secondId)
             mainPage.testCaseTable.checkRowVisible(fixture.thirdId)

@@ -38,10 +38,10 @@ class DirtyCreateModalCloseWarningUiTest {
     @DisplayName("Изменения отклоняются после предупреждения, вызванного клавишей Esc")
     fun shouldWarnWhenClosingDirtyCreateModalByEscape() {
         checkClosingWithWarningTemplate("клавишей Esc") {
-            mainPage.testCaseTable.closeEditorByEscape()
+            mainPage.testCaseEditor.closeEditorByEscape()
         }
         step("Нажимаем Не сохранять") {
-            mainPage.testCaseTable.discardUnsavedChanges()
+            mainPage.testCaseEditor.unsavedChangesDialog.discardUnsavedChanges()
         }
         step("Проверяем, что несохранённый тест-кейс не появился в таблице") {
             mainPage.testCaseTable.checkRowDisappeared(testId)
@@ -53,10 +53,10 @@ class DirtyCreateModalCloseWarningUiTest {
     @DisplayName("Изменения отклоняются после предупреждения, вызванного крестиком")
     fun shouldWarnWhenClosingDirtyCreateModalByCloseButton() {
         checkClosingWithWarningTemplate("крестиком") {
-            mainPage.testCaseTable.closeEditorByCloseButton()
+            mainPage.testCaseEditor.closeEditorByCloseButton()
         }
         step("Нажимаем Не сохранять") {
-            mainPage.testCaseTable.discardUnsavedChanges()
+            mainPage.testCaseEditor.unsavedChangesDialog.discardUnsavedChanges()
         }
         step("Проверяем, что несохранённый тест-кейс не появился в таблице") {
             mainPage.testCaseTable.checkRowDisappeared(testId)
@@ -68,10 +68,10 @@ class DirtyCreateModalCloseWarningUiTest {
     @DisplayName("Изменения отклоняются после предупреждения, вызванного нажатием вне модалки")
     fun shouldWarnWhenClosingDirtyCreateModalByBackdropClick() {
         checkClosingWithWarningTemplate("нажатием вне модального окна") {
-            mainPage.testCaseTable.closeEditorByBackdropClick()
+            mainPage.testCaseEditor.closeEditorByBackdropClick()
         }
         step("Нажимаем Не сохранять") {
-            mainPage.testCaseTable.discardUnsavedChanges()
+            mainPage.testCaseEditor.unsavedChangesDialog.discardUnsavedChanges()
         }
         step("Проверяем, что несохранённый тест-кейс не появился в таблице") {
             mainPage.testCaseTable.checkRowDisappeared(testId)
@@ -83,17 +83,17 @@ class DirtyCreateModalCloseWarningUiTest {
     @DisplayName("Редактирование продолжается после предупреждения, вызванного клавишей Esc")
     fun shouldContinueEditingAfterWarningByEscape() {
         checkClosingWithWarningTemplate("клавишей Esc") {
-            mainPage.testCaseTable.closeEditorByEscape()
+            mainPage.testCaseEditor.closeEditorByEscape()
         }
         step("Нажимаем Продолжить редактирование") {
-            mainPage.testCaseTable.continueEditing()
+            mainPage.testCaseEditor.unsavedChangesDialog.continueEditing()
         }
         step("Продолжаем редактировать категорию") {
-            mainPage.testCaseTable.fillCategory(category)
+            mainPage.testCaseEditor.fillCategory(category)
         }
         step("Проверяем, что редактирование после предупреждения работает") {
-            mainPage.testCaseTable.checkCategoryValue(category)
-            mainPage.testCaseTable.checkDirtyStatus("Есть несохранённые изменения")
+            mainPage.testCaseEditor.checkCategoryValue(category)
+            mainPage.testCaseEditor.footer.checkDirtyStatus("Есть несохранённые изменения")
         }
     }
 
@@ -102,17 +102,17 @@ class DirtyCreateModalCloseWarningUiTest {
     @DisplayName("Редактирование продолжается после предупреждения, вызванного крестиком")
     fun shouldContinueEditingAfterWarningByCloseButton() {
         checkClosingWithWarningTemplate("крестиком") {
-            mainPage.testCaseTable.closeEditorByCloseButton()
+            mainPage.testCaseEditor.closeEditorByCloseButton()
         }
         step("Нажимаем Продолжить редактирование") {
-            mainPage.testCaseTable.continueEditing()
+            mainPage.testCaseEditor.unsavedChangesDialog.continueEditing()
         }
         step("Продолжаем редактировать категорию") {
-            mainPage.testCaseTable.fillCategory(category)
+            mainPage.testCaseEditor.fillCategory(category)
         }
         step("Проверяем, что редактирование после предупреждения работает") {
-            mainPage.testCaseTable.checkCategoryValue(category)
-            mainPage.testCaseTable.checkDirtyStatus("Есть несохранённые изменения")
+            mainPage.testCaseEditor.checkCategoryValue(category)
+            mainPage.testCaseEditor.footer.checkDirtyStatus("Есть несохранённые изменения")
         }
     }
 
@@ -121,17 +121,17 @@ class DirtyCreateModalCloseWarningUiTest {
     @DisplayName("Редактирование продолжается после предупреждения, вызванного нажатием вне модалки")
     fun shouldContinueEditingAfterWarningByBackdropClick() {
         checkClosingWithWarningTemplate("нажатием вне модального окна") {
-            mainPage.testCaseTable.closeEditorByBackdropClick()
+            mainPage.testCaseEditor.closeEditorByBackdropClick()
         }
         step("Нажимаем Продолжить редактирование") {
-            mainPage.testCaseTable.continueEditing()
+            mainPage.testCaseEditor.unsavedChangesDialog.continueEditing()
         }
         step("Продолжаем редактировать категорию") {
-            mainPage.testCaseTable.fillCategory(category)
+            mainPage.testCaseEditor.fillCategory(category)
         }
         step("Проверяем, что редактирование после предупреждения работает") {
-            mainPage.testCaseTable.checkCategoryValue(category)
-            mainPage.testCaseTable.checkDirtyStatus("Есть несохранённые изменения")
+            mainPage.testCaseEditor.checkCategoryValue(category)
+            mainPage.testCaseEditor.footer.checkDirtyStatus("Есть несохранённые изменения")
         }
     }
 
@@ -143,22 +143,22 @@ class DirtyCreateModalCloseWarningUiTest {
             mainPage.open()
         }
         step("Открываем модальное окно создания тест-кейса") {
-            mainPage.testCaseTable.openCreateEditor()
+            mainPage.header.openCreateEditor()
         }
         step("Проверяем исходное отсутствие изменений") {
-            mainPage.testCaseTable.checkDirtyStatus("Нет изменений")
+            mainPage.testCaseEditor.footer.checkDirtyStatus("Нет изменений")
         }
         step("Вносим изменение в идентификатор тест-кейса") {
-            mainPage.testCaseTable.fillTestId(testId)
+            mainPage.testCaseEditor.fillTestId(testId)
         }
         step("Проверяем появление признака несохранённых изменений") {
-            mainPage.testCaseTable.checkDirtyStatus("Есть несохранённые изменения")
+            mainPage.testCaseEditor.footer.checkDirtyStatus("Есть несохранённые изменения")
         }
         step("Пытаемся закрыть модальное окно $actionDescription") {
             closeAction()
         }
         step("Проверяем предупреждение и сохранение модального окна открытым") {
-            mainPage.testCaseTable.checkUnsavedChangesWarning()
+            mainPage.testCaseEditor.unsavedChangesDialog.checkUnsavedChangesWarning()
         }
 
     }

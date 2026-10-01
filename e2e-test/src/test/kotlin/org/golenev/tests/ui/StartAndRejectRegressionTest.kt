@@ -82,7 +82,7 @@ class StartAndRejectRegressionTest {
         step("Открываем главную страницу") { mainPage.open() }
 
         step("Запускаем регрессионное тестирование") {
-            mainPage.regressionWidget.startRegression(createdReleaseName)
+            mainPage.testCaseTable.regressionWidget.startRegression(createdReleaseName)
         }
 
         val regression = step("Проверяем сохранение начатого регрессионного тестирования") {
@@ -98,7 +98,7 @@ class StartAndRejectRegressionTest {
         }
 
         step("Отменяем регрессионное тестирование") {
-            mainPage.regressionWidget.stopRegress()
+            mainPage.testCaseTable.regressionWidget.stopRegress()
         }
 
         step("Проверяем предупреждение о необходимости заполнить результаты тестирования") {
@@ -110,7 +110,7 @@ class StartAndRejectRegressionTest {
         }
 
         step("Отменяем регрессионное тестирование") {
-            mainPage.regressionWidget.cancelRegression()
+            mainPage.testCaseTable.regressionWidget.cancelRegression()
         }
 
         step("Проверяем, что отменённый запуск регрессионного тестирования больше не сохранён") {

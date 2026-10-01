@@ -22,12 +22,12 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
         step("Открываем таблицу, применяем фильтры и группировку") {
             mainPage.open()
             mainPage.testCaseTable.openColumnFilter("category")
-            mainPage.testCaseTable.selectFilterValues("category", listOf(fixture.categoryAlpha))
-            mainPage.testCaseTable.applyColumnFilter("category")
+            mainPage.columnFilterPanel.selectFilterValues("category", listOf(fixture.categoryAlpha))
+            mainPage.columnFilterPanel.applyColumnFilter("category")
             mainPage.testCaseTable.openColumnFilter("priority")
-            mainPage.testCaseTable.selectFilterValues("priority", listOf("Critical", "Blocker"))
-            mainPage.testCaseTable.applyColumnFilter("priority")
-            mainPage.testCaseTable.groupBy("category")
+            mainPage.columnFilterPanel.selectFilterValues("priority", listOf("Critical", "Blocker"))
+            mainPage.columnFilterPanel.applyColumnFilter("priority")
+            mainPage.tableViewToolbar.groupBy("category")
         }
         step("Проверяем, что ссылка на таблицу сохраняет выбранные фильтры и группировку") {
             mainPage.checkUrlParameters(
@@ -41,8 +41,8 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
         }
         step("Обновляем страницу и проверяем восстановление выбранных фильтров и группировки") {
             mainPage.refreshCurrentPage()
-            mainPage.testCaseTable.checkActiveFiltersCount(2)
-            mainPage.testCaseTable.checkGrouping("category")
+            mainPage.tableViewToolbar.checkActiveFiltersCount(2)
+            mainPage.tableViewToolbar.checkGrouping("category")
             mainPage.testCaseTable.checkGroupVisible("category", fixture.categoryAlpha)
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)
             mainPage.testCaseTable.checkRowVisible(fixture.secondId)
@@ -68,9 +68,9 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
             mainPage.openWithQuery(query)
         }
         step("Проверяем восстановленное по ссылке представление предварительных тест-кейсов") {
-            mainPage.testCaseTable.checkActiveFiltersCount(2)
-            mainPage.testCaseTable.checkActiveFilter("category", fixture.categoryAlpha)
-            mainPage.testCaseTable.checkGrouping("category")
+            mainPage.tableViewToolbar.checkActiveFiltersCount(2)
+            mainPage.tableViewToolbar.checkActiveFilter("category", fixture.categoryAlpha)
+            mainPage.tableViewToolbar.checkGrouping("category")
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)
             mainPage.testCaseTable.checkRowVisible(fixture.secondId)
             mainPage.testCaseTable.checkRowDisappeared(fixture.thirdId)
@@ -89,8 +89,8 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
             mainPage.openWithQuery("filter.unknown=value&filter.testId.mode=wrong&groupBy=unknown")
         }
         step("Проверяем исходное представление и доступность предварительных тест-кейсов") {
-            mainPage.testCaseTable.checkActiveFiltersCount(0)
-            mainPage.testCaseTable.checkGroupingInactive()
+            mainPage.tableViewToolbar.checkActiveFiltersCount(0)
+            mainPage.tableViewToolbar.checkGroupingInactive()
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)
             mainPage.testCaseTable.checkRowVisible(fixture.secondId)
             mainPage.testCaseTable.checkRowVisible(fixture.thirdId)

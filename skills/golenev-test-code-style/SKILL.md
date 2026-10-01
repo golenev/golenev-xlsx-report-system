@@ -59,11 +59,11 @@ description: Enforce the Kotlin/JUnit conventions of the golenev-xlsx-report-sys
 @DisplayName("Редактирование продолжается после предупреждения, вызванного клавишей Esc")
 fun shouldContinueEditingAfterWarningByEscape() {
     checkClosingWithWarningTemplate("клавишей Esc") {
-        mainPage.testCaseTable.closeEditorByEscape()
+        mainPage.testCaseEditor.closeEditorByEscape()
     }
 
     step("Нажимаем Продолжить редактирование") {
-        mainPage.testCaseTable.continueEditing()
+        mainPage.testCaseEditor.unsavedChangesDialog.continueEditing()
     }
 }
 ```

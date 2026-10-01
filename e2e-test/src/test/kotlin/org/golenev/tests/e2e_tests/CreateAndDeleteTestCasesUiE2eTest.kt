@@ -65,18 +65,18 @@ class CreateAndDeleteTestCasesUiE2eTest {
         }
 
         step("Создаём тест-кейс через модальный редактор") {
-            mainPage.testCaseTable.openCreateEditor()
-            mainPage.testCaseTable.fillTestId(testId)
-            mainPage.testCaseTable.fillCategory(testCase.category.orEmpty())
-            mainPage.testCaseTable.fillShortTitle(testCase.shortTitle.orEmpty())
-            mainPage.testCaseTable.fillIssueLink(testCase.issueLink.orEmpty())
-            mainPage.testCaseTable.selectGeneralStatus(testCase.generalStatus.orEmpty())
-            mainPage.testCaseTable.selectPriority(testCase.priority.orEmpty())
-            mainPage.testCaseTable.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
+            mainPage.header.openCreateEditor()
+            mainPage.testCaseEditor.fillTestId(testId)
+            mainPage.testCaseEditor.fillCategory(testCase.category.orEmpty())
+            mainPage.testCaseEditor.fillShortTitle(testCase.shortTitle.orEmpty())
+            mainPage.testCaseEditor.fillIssueLink(testCase.issueLink.orEmpty())
+            mainPage.testCaseEditor.selectGeneralStatus(testCase.generalStatus.orEmpty())
+            mainPage.testCaseEditor.selectPriority(testCase.priority.orEmpty())
+            mainPage.testCaseEditor.scenarioEditor.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
         }
 
         val createRequestBody = interceptRequestBody(getSelenideProxy(), Paths.REPORTS.path) {
-            mainPage.testCaseTable.saveNewTestCase()
+            mainPage.testCaseEditor.footer.saveNewTestCase()
         }
         val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
 
@@ -100,8 +100,8 @@ class CreateAndDeleteTestCasesUiE2eTest {
 
         step("Изменяем категорию тест-кейса $testId через модальный редактор") {
             mainPage.testCaseTable.openEditor(testId)
-            mainPage.testCaseTable.updateCategory( "${testCase.category}-edited")
-            mainPage.testCaseTable.saveChanges()
+            mainPage.testCaseEditor.updateCategory( "${testCase.category}-edited")
+            mainPage.testCaseEditor.footer.saveChanges()
         }
 
         step("Удаляем тест-кейс $testId и обновляем страницу") {
