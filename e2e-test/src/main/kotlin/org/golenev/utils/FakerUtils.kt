@@ -5,7 +5,7 @@ import java.util.*
 import kotlin.random.Random
 
 
-private val faker: Faker by lazy {  Faker(Locale("ru")) }
+private val faker: Faker =  Faker(Locale("ru"))
 
     fun getRandomLong(): Long {
         return faker.number().numberBetween(1000000000L, 1999999999L)

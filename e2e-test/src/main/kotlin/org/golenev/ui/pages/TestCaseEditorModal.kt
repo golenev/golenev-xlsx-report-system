@@ -1,7 +1,8 @@
 package org.golenev.ui.pages
 
 import com.codeborne.selenide.Condition.*
-import com.codeborne.selenide.Selenide.*
+import com.codeborne.selenide.Selenide.`$`
+import com.codeborne.selenide.Selenide.actions
 import io.qameta.allure.Step
 import org.golenev.ui.allure.name
 import org.golenev.utils.shouldBeVisibleForInput
@@ -23,9 +24,9 @@ class TestCaseEditorModal {
     private val closeButton = `$`(".test-case-modal-close").name("Крестик закрытия модального редактора.")
     private val backdrop = `$`(".test-case-modal-backdrop").name("Область вне модального окна.")
 
-    val scenarioEditor by lazy { ScenarioEditor() }
-    val footer by lazy { TestCaseEditorFooter(::checkEditorClosed) }
-    val unsavedChangesDialog by lazy { UnsavedChangesDialog(::checkVisible, ::checkEditorClosed) }
+    val scenarioEditor = ScenarioEditor()
+    val footer = TestCaseEditorFooter(::checkEditorClosed)
+    val unsavedChangesDialog = UnsavedChangesDialog(::checkVisible, ::checkEditorClosed)
 
     @Step("Проверяем видимость модального редактора")
     fun checkVisible() {

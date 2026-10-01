@@ -9,16 +9,16 @@ import io.qameta.allure.Step
  */
 class MainPage {
 
-    val testCaseEditor: TestCaseEditorModal by lazy { TestCaseEditorModal() }
-    val header: AppHeader by lazy { AppHeader(testCaseEditor) }
-    val columnFilterPanel: ColumnFilterPanel by lazy { ColumnFilterPanel { testCaseTable.checkColumnFilterActive(it) } }
+    val testCaseEditor: TestCaseEditorModal = TestCaseEditorModal()
+    val header: AppHeader = AppHeader(testCaseEditor)
+    val columnFilterPanel: ColumnFilterPanel = ColumnFilterPanel { testCaseTable.checkColumnFilterActive(it) }
 
     /** Таблица тест-кейсов на главной странице. */
-    val testCaseTable: TestCaseTable by lazy { TestCaseTable(testCaseEditor, columnFilterPanel) }
-    val tableViewToolbar: TableViewToolbar by lazy { TableViewToolbar(testCaseTable) }
+    val testCaseTable: TestCaseTable = TestCaseTable(testCaseEditor, columnFilterPanel)
+    val tableViewToolbar: TableViewToolbar = TableViewToolbar(testCaseTable)
 
     /** Warning popup, который появляется при невозможности выполнить действие. */
-    val warningPopup: WarningPopup by lazy { WarningPopup() }
+    val warningPopup: WarningPopup = WarningPopup()
 
     @Step("Переходим по базовому URL и дожидаемся отображения заголовка Test Report")
     fun open() {

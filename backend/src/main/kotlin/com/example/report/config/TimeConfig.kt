@@ -6,14 +6,14 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.time.Clock
 import java.time.ZoneId
-import java.util.TimeZone
+import java.util.*
 
 @Configuration
 class TimeConfig(
     @Value("\${app.time-zone:Europe/Moscow}")
     private val timeZone: String,
 ) {
-    private val zoneId: ZoneId by lazy { ZoneId.of(timeZone) }
+    private val zoneId: ZoneId = ZoneId.of(timeZone)
 
     @PostConstruct
     fun setDefaultTimeZone() {

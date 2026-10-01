@@ -3,7 +3,8 @@ package org.golenev.ui.pages
 import com.codeborne.selenide.CollectionCondition.size
 import com.codeborne.selenide.CollectionCondition.sizeGreaterThan
 import com.codeborne.selenide.Condition.*
-import com.codeborne.selenide.Selenide.*
+import com.codeborne.selenide.Selenide.`$`
+import com.codeborne.selenide.Selenide.`$$`
 import io.qameta.allure.Step
 import org.golenev.ui.allure.name
 import org.golenev.utils.CENTER
@@ -28,7 +29,7 @@ class TestCaseTable(
         .name("Группы строк таблицы.")
 
     /** Глобальный виджет управления regression run в заголовке таблицы. */
-    val regressionWidget by lazy { RegressionWidget() }
+    val regressionWidget = RegressionWidget()
 
     @Step("Проверяем активное состояние фильтра колонки {columnKey}")
     fun checkColumnFilterActive(columnKey: String) {

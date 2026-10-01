@@ -13,7 +13,7 @@ enum class DbType {
 
 object DbFactory {
 
-    private val databases by lazy { mutableMapOf<DbType, Database>() }
+    private val databases = mutableMapOf<DbType, Database>()
 
     fun <T> transaction(dbType: DbType, statement: Transaction.() -> T): T {
         val database = databases.getOrPut(dbType) {
