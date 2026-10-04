@@ -21,9 +21,7 @@ class DirtyCreateModalCloseWarningUiTest {
 
     @BeforeEach
     fun setUp() {
-        step("Готовим приложение к работе") {
-            DriverConfig().setup()
-        }
+        DriverConfig().setup()
     }
 
     @AfterEach
@@ -43,7 +41,8 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Нажимаем Не сохранять") {
             mainPage.testCaseEditor.unsavedChangesDialog.discardUnsavedChanges()
         }
-        step("Проверяем, что несохранённый тест-кейс не появился в таблице") {
+        step("Проверяем закрытие редактора") { mainPage.testCaseEditor.checkEditorClosed() }
+        step("Проверяем отсутствие строки тест-кейса") {
             mainPage.testCaseTable.checkRowDisappeared(testId)
         }
     }
@@ -58,7 +57,8 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Нажимаем Не сохранять") {
             mainPage.testCaseEditor.unsavedChangesDialog.discardUnsavedChanges()
         }
-        step("Проверяем, что несохранённый тест-кейс не появился в таблице") {
+        step("Проверяем закрытие редактора") { mainPage.testCaseEditor.checkEditorClosed() }
+        step("Проверяем отсутствие строки тест-кейса") {
             mainPage.testCaseTable.checkRowDisappeared(testId)
         }
     }
@@ -73,7 +73,8 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Нажимаем Не сохранять") {
             mainPage.testCaseEditor.unsavedChangesDialog.discardUnsavedChanges()
         }
-        step("Проверяем, что несохранённый тест-кейс не появился в таблице") {
+        step("Проверяем закрытие редактора") { mainPage.testCaseEditor.checkEditorClosed() }
+        step("Проверяем отсутствие строки тест-кейса") {
             mainPage.testCaseTable.checkRowDisappeared(testId)
         }
     }
@@ -88,6 +89,8 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Нажимаем Продолжить редактирование") {
             mainPage.testCaseEditor.unsavedChangesDialog.continueEditing()
         }
+        step("Проверяем закрытие предупреждения") { mainPage.testCaseEditor.unsavedChangesDialog.checkClosed() }
+        step("Проверяем возвращение к редактору") { mainPage.testCaseEditor.checkVisible() }
         step("Продолжаем редактировать категорию") {
             mainPage.testCaseEditor.fillCategory(category)
         }
@@ -107,6 +110,8 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Нажимаем Продолжить редактирование") {
             mainPage.testCaseEditor.unsavedChangesDialog.continueEditing()
         }
+        step("Проверяем закрытие предупреждения") { mainPage.testCaseEditor.unsavedChangesDialog.checkClosed() }
+        step("Проверяем возвращение к редактору") { mainPage.testCaseEditor.checkVisible() }
         step("Продолжаем редактировать категорию") {
             mainPage.testCaseEditor.fillCategory(category)
         }
@@ -126,6 +131,8 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Нажимаем Продолжить редактирование") {
             mainPage.testCaseEditor.unsavedChangesDialog.continueEditing()
         }
+        step("Проверяем закрытие предупреждения") { mainPage.testCaseEditor.unsavedChangesDialog.checkClosed() }
+        step("Проверяем возвращение к редактору") { mainPage.testCaseEditor.checkVisible() }
         step("Продолжаем редактировать категорию") {
             mainPage.testCaseEditor.fillCategory(category)
         }
@@ -142,9 +149,12 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Открываем главную страницу") {
             mainPage.open()
         }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
         step("Открываем модальное окно создания тест-кейса") {
             mainPage.header.openCreateEditor()
         }
+        step("Проверяем открытие редактора создания") { mainPage.testCaseEditor.checkVisible() }
+        step("Проверяем готовность режима создания") { mainPage.testCaseEditor.checkCreateModeReady() }
         step("Проверяем исходное отсутствие изменений") {
             mainPage.testCaseEditor.footer.checkDirtyStatus("Нет изменений")
         }
@@ -157,6 +167,7 @@ class DirtyCreateModalCloseWarningUiTest {
         step("Пытаемся закрыть модальное окно $actionDescription") {
             closeAction()
         }
+        step("Проверяем сохранение редактора открытым") { mainPage.testCaseEditor.checkVisible() }
         step("Проверяем предупреждение и сохранение модального окна открытым") {
             mainPage.testCaseEditor.unsavedChangesDialog.checkUnsavedChangesWarning()
         }

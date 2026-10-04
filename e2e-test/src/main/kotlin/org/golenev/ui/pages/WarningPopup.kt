@@ -3,7 +3,6 @@ package org.golenev.ui.pages
 import com.codeborne.selenide.Condition.disappear
 import com.codeborne.selenide.Condition.exactText
 import com.codeborne.selenide.Selenide.`$`
-import io.qameta.allure.Step
 import org.golenev.ui.allure.name
 
 /**
@@ -19,15 +18,31 @@ class WarningPopup {
 
     private val card = `$`(".popup-card").name("Карточка warning popup.")
 
-    @Step("Проверяем текст сообщения и заголовка warning popup о незаполненных статусах")
+    /**
+     * Проверяем текст сообщения и заголовка warning popup о незаполненных статусах
+     */
     fun checkDefaultRegressionWarning() {
         message.shouldHave(exactText("Перед остановкой регресса заполните результаты для всех тест-кейсов.").because("попап должен объяснять, почему нельзя остановить регресс без заполненных статусов"))
+    }
+
+    /**
+     * Нажимаем кнопку закрытия warning popup и дожидаемся исчезновения карточки
+     */
+    fun close() {
+        closeButton.click()
+    }
+
+    /**
+     * Проверяем заголовок предупреждения о незаполненных статусах
+     */
+    fun checkDefaultRegressionWarningTitle() {
         title.shouldHave(exactText("Не все статусы заполнены").because("заголовок попапа должен указывать на незаполненные статусы"))
     }
 
-    @Step("Нажимаем кнопку закрытия warning popup и дожидаемся исчезновения карточки")
-    fun close() {
-        closeButton.click()
+    /**
+     * Проверяем закрытие warning popup
+     */
+    fun checkClosed() {
         card.shouldBe(disappear.because("попап должен закрыться после нажатия кнопки закрытия"))
     }
 }

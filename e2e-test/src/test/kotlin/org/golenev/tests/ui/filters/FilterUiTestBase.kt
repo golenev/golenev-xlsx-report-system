@@ -16,9 +16,7 @@ abstract class FilterUiTestBase {
 
     @BeforeEach
     fun setUpFilterUiTest() {
-        step("Готовим приложение к работе") {
-            DriverConfig().setup()
-        }
+        DriverConfig().setup()
     }
 
     @AfterEach

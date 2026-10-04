@@ -2,65 +2,68 @@ package org.golenev.ui.pages
 
 import com.codeborne.selenide.Selenide
 import com.codeborne.selenide.WebDriverRunner.url
-import io.qameta.allure.Step
 
 /**
  * Page Object главной страницы Test Report, который хранит действия уровня страницы и входные точки к вложенным компонентам.
  *
- * Собирает компоненты обычными полями и передаёт зависимости через их конструкторы.
- * Полный компонент передаётся для нескольких связанных проверок, функция — для отдельной проверки
- * результата действия. Это два используемых способа связи, а не различие в жизненном цикле компонентов.
- * Функции не выполняются при передаче: проверка применения фильтра обращается к таблице только
- * после действия пользователя, когда все поля страницы уже инициализированы.
- * Бизнес-последовательность остаётся в тесте, ожидания готовности и результата — в компонентах.
+ * Собирает независимые компоненты обычными полями. Компоненты не получают соседние
+ * Page Object или функции проверки результата. Открытие, действие и проверки разных элементов
+ * тест вызывает явно в отдельных шагах; локаторы и Selenide-ожидания остаются в компонентах.
  */
 class MainPage {
 
     /** Общий редактор создания и изменения тест-кейса; владеет футером, сценарием и диалогом несохранённых изменений. */
     val testCaseEditor: TestCaseEditorModal = TestCaseEditorModal()
 
-    /** Шапка с заголовком и кнопкой Add Row; готовность открытого редактора проверяет через [testCaseEditor]. */
-    val header: AppHeader = AppHeader(testCaseEditor)
+    /** Шапка с заголовком и кнопкой Add Row; готовность редактора тест проверяет отдельно. */
+    val header: AppHeader = AppHeader()
 
     /**
      * Панель черновика фильтра выбранной колонки.
-     * После применения вызывает проверку активной кнопки в [testCaseTable]; callback не выполняется при инициализации поля.
+     * После применения тест отдельно проверяет закрытие панели и активность кнопки в [testCaseTable].
      */
-    val columnFilterPanel: ColumnFilterPanel = ColumnFilterPanel { testCaseTable.checkColumnFilterActive(it) }
+    val columnFilterPanel: ColumnFilterPanel = ColumnFilterPanel()
 
     /** Таблица тест-кейсов на главной странице. */
-    val testCaseTable: TestCaseTable = TestCaseTable(testCaseEditor, columnFilterPanel)
+    val testCaseTable: TestCaseTable = TestCaseTable()
 
-    /** Управление группировкой и активными фильтрами; проверки результата в строках и заголовках делегирует [testCaseTable]. */
-    val tableViewToolbar: TableViewToolbar = TableViewToolbar(testCaseTable)
+    /** Управление группировкой и активными фильтрами; проверки результата в [testCaseTable] явно вызывает тест. */
+    val tableViewToolbar: TableViewToolbar = TableViewToolbar()
 
     /** Warning popup, который появляется при невозможности выполнить действие. */
     val warningPopup: WarningPopup = WarningPopup()
 
-    @Step("Переходим по базовому URL и дожидаемся отображения заголовка Test Report")
+    /**
+     * Переходим по базовому URL и дожидаемся отображения заголовка Test Report
+     */
     fun open() {
         Selenide.open("/")
-        checkTitle()
     }
 
-    @Step("Переходим на главную страницу с параметрами представления таблицы: {query}")
+    /**
+     * Переходим на главную страницу с параметрами представления таблицы: {query}
+     */
     fun openWithQuery(query: String) {
         Selenide.open("/?${query.removePrefix("?")}")
-        checkTitle()
     }
 
-    @Step("Обновляем страницу браузера и дожидаемся отображения заголовка Test Report")
+    /**
+     * Обновляем страницу браузера и дожидаемся отображения заголовка Test Report
+     */
     fun refreshCurrentPage() {
         Selenide.refresh()
-        checkTitle()
     }
 
-    @Step("Проверяем текст заголовка страницы Test Report")
+    /**
+     * Проверяем текст заголовка страницы Test Report
+     */
     fun checkTitle() {
         header.checkTitle()
     }
 
-    @Step("Проверяем параметры URL представления таблицы: {expectedParameters}")
+    /**
+     * Проверяем параметры URL представления таблицы: {expectedParameters}
+     */
     fun checkUrlParameters(expectedParameters: List<String>) {
         val currentUrl = url()
         expectedParameters.forEach { parameter ->
@@ -70,7 +73,9 @@ class MainPage {
         }
     }
 
-    @Step("Проверяем отсутствие параметров в URL представления таблицы: {unexpectedParameters}")
+    /**
+     * Проверяем отсутствие параметров в URL представления таблицы: {unexpectedParameters}
+     */
     fun checkUrlDoesNotContain(unexpectedParameters: List<String>) {
         val currentUrl = url()
         unexpectedParameters.forEach { parameter ->

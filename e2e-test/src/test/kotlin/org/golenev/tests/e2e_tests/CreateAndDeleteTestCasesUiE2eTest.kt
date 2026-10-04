@@ -25,9 +25,7 @@ class CreateAndDeleteTestCasesUiE2eTest {
 
     @BeforeEach
     fun setUp() {
-        step("Готовим приложение к работе") {
-            DriverConfig().setup()
-        }
+        DriverConfig().setup()
     }
 
     @AfterEach
@@ -45,10 +43,8 @@ class CreateAndDeleteTestCasesUiE2eTest {
     @AllureId("302")
     @DisplayName("Создаём кейс через модальный редактор, удаляем через API и проверяем отсутствие")
     fun shouldCreateCaseViaModalAndDeleteItViaApi() {
-        val readyDate = step("Фиксируем текущую дату для подготовки тест-кейсов") {
-            LocalDate.now().toString()
-        }
-        val testCase = step("Готовим данные для тест-кейса") {
+        val readyDate = LocalDate.now().toString()
+        val testCase = run {
             val testId = "UI-E2E-${getRandomTestId()}"
             TestDataGenerator.generateTestCases(count = 1, readyDate = readyDate)
                 .single()
@@ -63,24 +59,43 @@ class CreateAndDeleteTestCasesUiE2eTest {
         step("Открываем главную страницу") {
             mainPage.open()
         }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
 
-        step("Создаём тест-кейс через модальный редактор") {
+        step("Открываем модальное окно создания тест-кейса") {
             mainPage.header.openCreateEditor()
+        }
+        step("Проверяем открытие редактора создания") { mainPage.testCaseEditor.checkVisible() }
+        step("Проверяем готовность режима создания") { mainPage.testCaseEditor.checkCreateModeReady() }
+        step("Заполняем тест-кейс $testId за сегодня: категория ${testCase.category}, статус «${testCase.generalStatus}», приоритет «${testCase.priority}», сценарий из ${testCase.scenario?.steps.orEmpty().size} шагов") {
             mainPage.testCaseEditor.fillTestId(testId)
             mainPage.testCaseEditor.fillCategory(testCase.category.orEmpty())
             mainPage.testCaseEditor.fillShortTitle(testCase.shortTitle.orEmpty())
             mainPage.testCaseEditor.fillIssueLink(testCase.issueLink.orEmpty())
             mainPage.testCaseEditor.selectGeneralStatus(testCase.generalStatus.orEmpty())
             mainPage.testCaseEditor.selectPriority(testCase.priority.orEmpty())
-            mainPage.testCaseEditor.scenarioEditor.fillDetailedScenarioSteps(testCase.scenario?.steps.orEmpty())
+        }
+        (testCase.scenario?.steps.orEmpty()).forEachIndexed { index, scenarioStep ->
+            if (index > 0) {
+                step("Добавляем корневой шаг сценария") { mainPage.testCaseEditor.scenarioEditor.addRootStep() }
+            }
+            step("Проверяем шаг ${scenarioStep.number} сценария") { mainPage.testCaseEditor.scenarioEditor.checkStepVisible(index, scenarioStep.number) }
+            step("Заполняем текст шага ${scenarioStep.number}") { mainPage.testCaseEditor.scenarioEditor.fillStepText(index, scenarioStep.text) }
+            scenarioStep.attachments.firstOrNull { it.content.isNotBlank() }?.let { attachment ->
+                step("Раскрываем шаг сценария") { mainPage.testCaseEditor.scenarioEditor.expandStep(index) }
+                step("Добавляем вложение шага") { mainPage.testCaseEditor.scenarioEditor.addStepAttachment(index) }
+                step("Указываем имя вложения") { mainPage.testCaseEditor.scenarioEditor.fillAttachmentName(index, attachment.name) }
+                step("Раскрываем вложение") { mainPage.testCaseEditor.scenarioEditor.expandAttachment(index) }
+                step("Заполняем содержимое вложения") { mainPage.testCaseEditor.scenarioEditor.fillAttachmentContent(index, attachment.content.trim()) }
+            }
         }
 
         val createRequestBody = interceptRequestBody(getSelenideProxy(), Paths.REPORTS.path) {
-            mainPage.testCaseEditor.footer.saveNewTestCase()
+            step("Сохраняем тест-кейс $testId с датой готовности за сегодня") { mainPage.testCaseEditor.footer.saveNewTestCase() }
+            step("Проверяем закрытие редактора") { mainPage.testCaseEditor.checkEditorClosed() }
         }
         val actualCreateRequest = JsonUtils.parse(createRequestBody, TestUpsertItem::class.java)
 
-        step("Проверяем данные, отправленные для добавления тест-кейса $testId") {
+        step("Проверяем сохранение тест-кейса $testId за сегодня: идентификатор, категория, название, задача, статус, приоритет, шаги сценария и вложения совпадают с введёнными") {
             actualCreateRequest.testId.shouldBe(testCase.testId, "actualCreateRequest.testId не совпало с ожидаемым")
             actualCreateRequest.category.shouldBe(testCase.category, "actualCreateRequest.category не совпало с ожидаемым")
             actualCreateRequest.shortTitle.shouldBe(testCase.shortTitle, "actualCreateRequest.shortTitle не совпало с ожидаемым")
@@ -98,15 +113,23 @@ class CreateAndDeleteTestCasesUiE2eTest {
             mainPage.testCaseTable.checkRowVisible(testId)
         }
 
-        step("Изменяем категорию тест-кейса $testId через модальный редактор") {
+        step("Открываем модальное окно изменения тест-кейса") {
             mainPage.testCaseTable.openEditor(testId)
+        }
+        step("Проверяем открытие редактора изменения") { mainPage.testCaseEditor.checkVisible() }
+        step("Проверяем выбранный тест-кейс и режим изменения") { mainPage.testCaseEditor.checkEditModeReady(testId) }
+        step("Изменяем категорию тест-кейса $testId через модальный редактор") {
             mainPage.testCaseEditor.updateCategory( "${testCase.category}-edited")
             mainPage.testCaseEditor.footer.saveChanges()
         }
+        step("Проверяем закрытие редактора") { mainPage.testCaseEditor.checkEditorClosed() }
 
         step("Удаляем тест-кейс $testId и обновляем страницу") {
             reportService.deleteTest(testId)
             mainPage.refreshCurrentPage()
+        }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
+        step("Проверяем отсутствие строки тест-кейса") {
             mainPage.testCaseTable.checkRowDisappeared(testId)
         }
 

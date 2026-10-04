@@ -24,9 +24,7 @@ class ReadyDateUiTests {
 
     @BeforeEach
     fun setUp() {
-        step("Готовим приложение к работе") {
-            DriverConfig().setup()
-        }
+        DriverConfig().setup()
     }
 
     @AfterEach
@@ -51,10 +49,13 @@ class ReadyDateUiTests {
         val priority = Priority.MEDIUM.value
         val detailedScenario = "Проверка автоматического заполнения Ready Date"
 
-        val today = step("Определяем сегодняшнюю дату") { LocalDate.now().toString() }
+        val today = LocalDate.now().toString()
 
         step("Открываем главную страницу") { mainPage.open() }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
         step("Открываем модальный редактор создания тест-кейса") { mainPage.header.openCreateEditor() }
+        step("Проверяем открытие редактора создания") { mainPage.testCaseEditor.checkVisible() }
+        step("Проверяем готовность режима создания") { mainPage.testCaseEditor.checkCreateModeReady() }
         step("Проверяем, что дата готовности в модальном редакторе заполнена сегодняшней датой") { mainPage.testCaseEditor.checkEditorReadyDate(today) }
         step("Указываем идентификатор тест-кейса $randomTestId") { mainPage.testCaseEditor.fillTestId(randomTestId) }
         step("Указываем категорию $category") { mainPage.testCaseEditor.fillCategory(category) }
@@ -64,6 +65,7 @@ class ReadyDateUiTests {
         step("Выбираем приоритет: $priority") { mainPage.testCaseEditor.selectPriority(priority) }
         step("Указываем сценарий $detailedScenario") { mainPage.testCaseEditor.scenarioEditor.fillDetailedScenario(detailedScenario) }
         step("Сохраняем новый тест-кейс без изменения даты готовности") { mainPage.testCaseEditor.footer.saveNewTestCase() }
+        step("Проверяем закрытие редактора") { mainPage.testCaseEditor.checkEditorClosed() }
         step("Проверяем, что тест-кейс появился в таблице") { mainPage.testCaseTable.checkRowVisible(randomTestId) }
         step("Проверяем, что дата готовности всё ещё заполнена сегодняшней датой") { mainPage.testCaseTable.checkReadyDate(randomTestId, today) }
     }

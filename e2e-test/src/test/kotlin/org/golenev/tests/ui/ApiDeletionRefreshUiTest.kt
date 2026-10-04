@@ -28,9 +28,7 @@ class ApiDeletionRefreshUiTest {
             TestReportDao.truncate()
         }
 
-        step("Готовим приложение к работе") {
-            DriverConfig().setup()
-        }
+        DriverConfig().setup()
     }
 
     @AfterEach
@@ -48,26 +46,23 @@ class ApiDeletionRefreshUiTest {
     @AllureId("303")
     @DisplayName("После API-удаления и refresh UI показывает актуальное количество строк")
     fun shouldShowActualRowsAfterApiDeletionAndRefresh() {
-        val readyDate = step("Фиксируем текущую дату для подготовки тест-кейсов") {
-            LocalDate.now().toString()
-        }
-        val testCases = step("Готовим данные для трёх тест-кейсов") {
-            TestDataGenerator.generateTestCases(count = 3, readyDate = readyDate)
-                .mapIndexed { index, testCase ->
-                    val testId = "UI-API-DEL-${getRandomTestId()}-${index + 1}"
-                    testCase.copy(
-                        testId = testId,
-                        issueLink = "https://youtrack.test/issue/$testId",
-                    )
-                }
-        }
-        step("Создаём три тест-кейса") {
+        val readyDate = LocalDate.now().toString()
+        val testCases = TestDataGenerator.generateTestCases(count = 3, readyDate = readyDate)
+            .mapIndexed { index, testCase ->
+                val testId = "UI-API-DEL-${getRandomTestId()}-${index + 1}"
+                testCase.copy(
+                    testId = testId,
+                    issueLink = "https://youtrack.test/issue/$testId",
+                )
+            }
+        step("Создаём три тест-кейса за сегодня в категории «E2E_FOR_AUTOTEST», со статусом «Готово» и приоритетом «Medium» за сегодня в категории «E2E_FOR_AUTOTEST», со статусом «Готово» и приоритетом «Medium»") {
             reportService.sendForceBatch(TestBatchRequest(items = testCases))
         }
 
         step("Открываем главную страницу") {
             mainPage.open()
         }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
 
         step("Проверяем, что в таблице отображаются ровно три строки") {
             mainPage.testCaseTable.checkSavedRowsCount(3)
@@ -81,21 +76,27 @@ class ApiDeletionRefreshUiTest {
             reportService.deleteTest(deletedTestId)
         }
 
-        step("Обновляем страницу и проверяем, что удалился именно $deletedTestId, а в таблице осталось две строки") {
+        step("Обновляем главную страницу") {
             mainPage.refreshCurrentPage()
+        }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
+        step("Обновляем страницу и проверяем, что удалился именно $deletedTestId, а в таблице осталось две строки") {
             mainPage.testCaseTable.checkSavedRowsCount(2)
             mainPage.testCaseTable.checkRowDisappeared(deletedTestId)
-            remainingTestIds.forEach { testId -> mainPage.testCaseTable.checkRowVisible(testId) }
         }
+        remainingTestIds.forEach { testId -> mainPage.testCaseTable.checkRowVisible(testId) }
 
         step("Удаляем оставшиеся тест-кейсы") {
             remainingTestIds.forEach { testId -> reportService.deleteTest(testId) }
         }
 
-        step("Снова обновляем страницу и проверяем, что таблица пустая") {
+        step("Обновляем главную страницу") {
             mainPage.refreshCurrentPage()
-            mainPage.testCaseTable.checkSavedRowsCount(0)
-            remainingTestIds.forEach { testId -> mainPage.testCaseTable.checkRowDisappeared(testId) }
         }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
+        step("Снова обновляем страницу и проверяем, что таблица пустая") {
+            mainPage.testCaseTable.checkSavedRowsCount(0)
+        }
+        remainingTestIds.forEach { testId -> mainPage.testCaseTable.checkRowDisappeared(testId) }
     }
 }

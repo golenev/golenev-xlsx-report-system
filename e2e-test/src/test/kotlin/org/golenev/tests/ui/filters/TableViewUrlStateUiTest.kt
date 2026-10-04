@@ -16,17 +16,39 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
     @DisplayName("Применённые фильтры и группировка восстанавливаются после обновления страницы")
     fun appliedViewStateIsRestoredAfterRefresh() {
         val fixture = filterFixture()
-        step("Добавляем подготовленные тест-кейсы") {
+        step("Добавляем три тест-кейса: два в категории ${fixture.categoryAlpha} со статусами «Готово» и «Бэклог», один в категории ${fixture.categoryBeta} со статусом «Готово»; приоритеты «Critical», «Blocker» и «Medium»") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу, применяем фильтры и группировку") {
+        step("Открываем главную страницу") {
             mainPage.open()
+        }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
+        step("Проверяем загрузку подготовленной строки таблицы") { mainPage.testCaseTable.checkRowVisible(fixture.firstId) }
+        step("Открываем фильтр колонки") {
             mainPage.testCaseTable.openColumnFilter("category")
-            mainPage.columnFilterPanel.selectFilterValues("category", listOf(fixture.categoryAlpha))
+        }
+        step("Проверяем открытие фильтра колонки") { mainPage.columnFilterPanel.checkOpened("category") }
+        listOf(fixture.categoryAlpha).forEach { filterValue ->
+            step("Выбираем значение фильтра $filterValue") { mainPage.columnFilterPanel.selectFilterValue("category", filterValue) }
+        }
+        step("Применяем фильтр колонки") {
             mainPage.columnFilterPanel.applyColumnFilter("category")
+        }
+        step("Проверяем закрытие панели фильтра") { mainPage.columnFilterPanel.checkClosed("category") }
+        step("Проверяем применение фильтра колонки") { mainPage.testCaseTable.checkColumnFilterActive("category") }
+        step("Открываем фильтр колонки") {
             mainPage.testCaseTable.openColumnFilter("priority")
-            mainPage.columnFilterPanel.selectFilterValues("priority", listOf("Critical", "Blocker"))
+        }
+        step("Проверяем открытие фильтра колонки") { mainPage.columnFilterPanel.checkOpened("priority") }
+        listOf("Critical", "Blocker").forEach { filterValue ->
+            step("Выбираем значение фильтра $filterValue") { mainPage.columnFilterPanel.selectFilterValue("priority", filterValue) }
+        }
+        step("Применяем фильтр колонки") {
             mainPage.columnFilterPanel.applyColumnFilter("priority")
+        }
+        step("Проверяем закрытие панели фильтра") { mainPage.columnFilterPanel.checkClosed("priority") }
+        step("Проверяем применение фильтра колонки") { mainPage.testCaseTable.checkColumnFilterActive("priority") }
+        step("Открываем таблицу, применяем фильтры и группировку") {
             mainPage.tableViewToolbar.groupBy("category")
         }
         step("Проверяем, что ссылка на таблицу сохраняет выбранные фильтры и группировку") {
@@ -39,10 +61,16 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
                 ),
             )
         }
-        step("Обновляем страницу и проверяем восстановление выбранных фильтров и группировки") {
+        step("Обновляем главную страницу") {
             mainPage.refreshCurrentPage()
+        }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
+        step("Обновляем страницу и проверяем восстановление выбранных фильтров и группировки") {
             mainPage.tableViewToolbar.checkActiveFiltersCount(2)
             mainPage.tableViewToolbar.checkGrouping("category")
+        }
+        step("Проверяем наличие заголовков групп") { mainPage.testCaseTable.checkGroupsPresent() }
+        step("Обновляем страницу и проверяем восстановление выбранных фильтров и группировки") {
             mainPage.testCaseTable.checkGroupVisible("category", fixture.categoryAlpha)
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)
             mainPage.testCaseTable.checkRowVisible(fixture.secondId)
@@ -55,7 +83,7 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
     @DisplayName("Прямая ссылка поддерживает кириллицу и несколько значений одного фильтра")
     fun directUrlSupportsCyrillicAndRepeatedValues() {
         val fixture = filterFixture()
-        step("Добавляем подготовленные тест-кейсы") {
+        step("Добавляем три тест-кейса: два в категории ${fixture.categoryAlpha} со статусами «Готово» и «Бэклог», один в категории ${fixture.categoryBeta} со статусом «Готово»; приоритеты «Critical», «Blocker» и «Medium»") {
             createPreliminaryTestDataViaApi(fixture)
         }
         val query = listOf(
@@ -67,10 +95,14 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
         step("Открываем прямую ссылку с кириллическим и многозначным состоянием фильтров") {
             mainPage.openWithQuery(query)
         }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
         step("Проверяем восстановленное по ссылке представление предварительных тест-кейсов") {
             mainPage.tableViewToolbar.checkActiveFiltersCount(2)
             mainPage.tableViewToolbar.checkActiveFilter("category", fixture.categoryAlpha)
             mainPage.tableViewToolbar.checkGrouping("category")
+        }
+        step("Проверяем наличие заголовков групп") { mainPage.testCaseTable.checkGroupsPresent() }
+        step("Проверяем восстановленное по ссылке представление предварительных тест-кейсов") {
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)
             mainPage.testCaseTable.checkRowVisible(fixture.secondId)
             mainPage.testCaseTable.checkRowDisappeared(fixture.thirdId)
@@ -82,15 +114,19 @@ class TableViewUrlStateUiTest : FilterUiTestBase() {
     @DisplayName("Неизвестные параметры URL игнорируются без нарушения работы таблицы")
     fun invalidUrlParametersAreIgnored() {
         val fixture = filterFixture()
-        step("Добавляем подготовленные тест-кейсы") {
+        step("Добавляем три тест-кейса: два в категории ${fixture.categoryAlpha} со статусами «Готово» и «Бэклог», один в категории ${fixture.categoryBeta} со статусом «Готово»; приоритеты «Critical», «Blocker» и «Medium»") {
             createPreliminaryTestDataViaApi(fixture)
         }
         step("Открываем прямую ссылку с неизвестными фильтром, условием и группировкой") {
             mainPage.openWithQuery("filter.unknown=value&filter.testId.mode=wrong&groupBy=unknown")
         }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
         step("Проверяем исходное представление и доступность предварительных тест-кейсов") {
             mainPage.tableViewToolbar.checkActiveFiltersCount(0)
             mainPage.tableViewToolbar.checkGroupingInactive()
+        }
+        step("Проверяем отсутствие заголовков групп") { mainPage.testCaseTable.checkGroupsAbsent() }
+        step("Проверяем исходное представление и доступность предварительных тест-кейсов") {
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)
             mainPage.testCaseTable.checkRowVisible(fixture.secondId)
             mainPage.testCaseTable.checkRowVisible(fixture.thirdId)
