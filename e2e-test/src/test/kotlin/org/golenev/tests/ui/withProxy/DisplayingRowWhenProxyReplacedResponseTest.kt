@@ -26,6 +26,7 @@ class DisplayingRowWhenProxyReplacedResponseTest {
     fun setUpProxy() {
         DriverConfig().setup()
         mainPage.open()
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
         selenideProxy = getSelenideProxy()
     }
 
@@ -46,35 +47,31 @@ class DisplayingRowWhenProxyReplacedResponseTest {
         val injectedScenario = "Просмотр тест-кейса из подменённого ответа"
         val injectedPriority = Priority.MEDIUM.value
 
-        val initialResponse = step("Открываем страницу и получаем исходный список тест-кейсов") {
-            interceptResponseBody(selenideProxy, Paths.REPORTS.path) {
-                step("Открываем главную страницу") { mainPage.open() }
-            }
+        val initialResponse = interceptResponseBody(selenideProxy, Paths.REPORTS.path) {
+            step("Открываем главную страницу") { mainPage.open() }
+            step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
         }
 
         val reportResponse = JsonUtils.parse(initialResponse, TestReportResponse::class.java)
-        val injectedTestCase = step("Готовим новый тест-кейс для отображения в списке") {
-            TestReportItemDto(
-                testId = injectedTestId,
-                category = injectedCategory,
-                shortTitle = injectedShortTitle,
-                issueLink = "https://youtrack.test/issue/INJECT-1",
-                readyDate = null,
-                generalStatus = GeneralTestStatus.DONE.value,
-                priority = injectedPriority,
-                scenario = ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = injectedScenario, attachments = emptyList()))),
-                notes = "Добавлено через прокси",
-                updatedAt = null,
-            )
-        }
-        val modifiedResponse = step("Готовим обновлённый список с новым тест-кейсом") {
-            reportResponse.copy(items = reportResponse.items + injectedTestCase)
-        }
+        val injectedTestCase = TestReportItemDto(
+            testId = injectedTestId,
+            category = injectedCategory,
+            shortTitle = injectedShortTitle,
+            issueLink = "https://youtrack.test/issue/INJECT-1",
+            readyDate = null,
+            generalStatus = GeneralTestStatus.DONE.value,
+            priority = injectedPriority,
+            scenario = ScenarioRequest(steps = listOf(ScenarioStepRequest(number = 1, text = injectedScenario, attachments = emptyList()))),
+            notes = "Добавлено через прокси",
+            updatedAt = null,
+        )
+        val modifiedResponse = reportResponse.copy(items = reportResponse.items + injectedTestCase)
 
         step("Проверяем отсутствие нового тест-кейса в исходном списке") { mainPage.testCaseTable.checkRowDisappeared(injectedTestId) }
 
         replaceResponseBody(selenideProxy, Paths.REPORTS.path, JsonUtils.toJson(modifiedResponse)) {
-            step("Обновляем страницу с новым списком тест-кейсов") { mainPage.refreshCurrentPage() }
+            step("Обновляем список, добавляя тест-кейс $injectedTestId категории «$injectedCategory», с названием «$injectedShortTitle» и приоритетом «$injectedPriority»") { mainPage.refreshCurrentPage() }
+            step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
             step("Проверяем отображение нового тест-кейса в обновлённом списке") { mainPage.testCaseTable.checkRowVisible(injectedTestId) }
         }
     }

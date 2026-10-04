@@ -3,17 +3,18 @@ package org.golenev.ui.pages
 import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.Selenide.`$$`
-import io.qameta.allure.Step
-import org.golenev.restapi.endpoints.ScenarioStepRequest
 import org.golenev.ui.allure.name
 import org.golenev.utils.typeOf
 
 /**
  * Component Object ввода структурированного сценария и вложений внутри модального редактора.
  *
- * Создаётся полем TestCaseEditorModal и работает только с элементами редактора сценария.
- * Параметры конструктора не нужны: действия не требуют проверок соседних компонентов.
- * Создание объекта не открывает модалку; тест явно открывает её перед вводом сценария.
+ * Заполняем шаги и вложения structured scenario в модальном редакторе
+ * Раскрываем шаг {stepIndex}, добавляем вложение и вводим его содержимое
+ *
+ * Составной маршрут выполняется в тесте. Каждый метод компонента работает с одним элементом:
+ * кнопкой добавления, блоком шага, полем текста, toggle или полем вложения.
+ * Элементы выбранного шага ищутся в объявленной коллекции по его пути; модалка скрыто не открывается.
  */
 class ScenarioEditor {
     private val scenarioRootAddButton = `$`("[data-testid='scenario-root-add']")
@@ -21,50 +22,90 @@ class ScenarioEditor {
     private val scenarioSteps = `$$`("[data-testid='scenario-editor-step']")
         .name("Шаги detailed scenario в модальном редакторе.")
 
-    @Step("Вводим простой Detailed Scenario в первый корневой шаг модального редактора")
+    /**
+     * Вводим простой Detailed Scenario в первый корневой шаг модального редактора
+     */
     fun fillDetailedScenario(scenario: String) {
         scenarioSteps.findBy(attribute("data-scenario-path", "0")).`$`("[data-testid='scenario-step-input']")
             .shouldBe(visible.because("поле первого шага должно быть видимым для ввода сценария"))
             .typeOf(scenario)
     }
 
-    @Step("Заполняем шаги и вложения structured scenario в модальном редакторе")
-    fun fillDetailedScenarioSteps(steps: List<ScenarioStepRequest>) {
-        steps.forEachIndexed { index, step ->
-            if (index > 0) {
-                scenarioRootAddButton.click()
-            }
-            scenarioSteps.findBy(attribute("data-scenario-path", index.toString()))
-                .name("Блок шага ${step.number} detailed scenario.")
-                .shouldBe(visible.because("блок шага ${step.number} должен быть видимым в модальном редакторе"))
-            scenarioSteps.findBy(attribute("data-scenario-path", index.toString())).`$`("[data-testid='scenario-step-input']")
-                .name("Поле текста шага ${step.number} detailed scenario.")
-                .shouldBe(visible.because("поле текста шага ${step.number} должно быть видимым"))
-                .typeOf(step.text)
-
-            step.attachments.firstOrNull { it.content.isNotBlank() }?.let { attachment ->
-                fillScenarioStepAttachment(index, attachment.name, attachment.content.trim())
-            }
-        }
+    /**
+     * Добавляем корневой шаг сценария
+     */
+    fun addRootStep() {
+        scenarioRootAddButton.shouldBe(enabled.because("добавление корневого шага должно быть доступно")).click()
     }
 
-    @Step("Раскрываем шаг {stepIndex}, добавляем вложение и вводим его содержимое")
-    private fun fillScenarioStepAttachment(stepIndex: Int, attachmentName: String, attachmentContent: String) {
-        val step = scenarioSteps.findBy(attribute("data-scenario-path", stepIndex.toString()))
-        step.`$`("[data-testid='scenario-step-toggle']")
-            .name("Кнопка раскрытия шага.")
+    /**
+     * Проверяем отображение шага {stepNumber} сценария
+     */
+    fun checkStepVisible(stepIndex: Int, stepNumber: Int?) {
+        scenarioSteps.findBy(attribute("data-scenario-path", stepIndex.toString()))
+            .name("Блок шага $stepNumber detailed scenario.")
+            .shouldBe(visible.because("блок шага $stepNumber должен быть видимым в модальном редакторе"))
+    }
+
+    /**
+     * Вводим текст шага {stepIndex} сценария
+     */
+    fun fillStepText(stepIndex: Int, text: String) {
+        scenarioSteps.findBy(attribute("data-scenario-path", stepIndex.toString())).`$`("[data-testid='scenario-step-input']")
+            .name("Поле текста шага detailed scenario.")
+            .shouldBe(visible.because("поле текста шага должно быть видимым"))
+            .typeOf(text)
+    }
+
+    /**
+     * Раскрываем шаг {stepIndex}
+     */
+    fun expandStep(stepIndex: Int) {
+        scenarioSteps.findBy(attribute("data-scenario-path", stepIndex.toString())).`$`("[data-testid='scenario-step-toggle']")
+            .name("Раскрываем шаг {stepIndex}")
+            .shouldBe(visible.because("элемент шага должен быть видимым перед действием"))
             .click()
-        step.`$`("[data-testid='scenario-attachment-add-button']").name("Кнопка добавления вложения.").shouldBe(visible).click()
-        val attachmentEditor = step.`$`("[data-testid='scenario-editor-attachment']").name("Редактор вложения шага.")
-        attachmentEditor.`$`(".scenario-attachment-heading")
+    }
+
+    /**
+     * Добавляем вложение шага {stepIndex}
+     */
+    fun addStepAttachment(stepIndex: Int) {
+        scenarioSteps.findBy(attribute("data-scenario-path", stepIndex.toString())).`$`("[data-testid='scenario-attachment-add-button']")
+            .name("Добавляем вложение шага {stepIndex}")
+            .shouldBe(visible.because("элемент шага должен быть видимым перед действием"))
+            .click()
+    }
+
+    /**
+     * Вводим имя вложения шага {stepIndex}
+     */
+    fun fillAttachmentName(stepIndex: Int, attachmentName: String) {
+        scenarioSteps.findBy(attribute("data-scenario-path", stepIndex.toString()))
+            .`$`("[data-testid='scenario-editor-attachment'] .scenario-attachment-heading")
             .name("Поле имени вложения.")
             .shouldBe(visible.because("имя вложения должно редактироваться в заголовке"))
             .typeOf(attachmentName)
             .shouldHave(value(attachmentName).because("имя вложения должно сохраняться до общего сохранения"))
-        attachmentEditor.`$`("[data-testid='scenario-attachment-toggle']")
+    }
+
+    /**
+     * Раскрываем вложение шага {stepIndex}
+     */
+    fun expandAttachment(stepIndex: Int) {
+        scenarioSteps.findBy(attribute("data-scenario-path", stepIndex.toString()))
+            .`$`("[data-testid='scenario-editor-attachment'] [data-testid='scenario-attachment-toggle']")
             .name("Кнопка раскрытия вложения.")
+            .shouldBe(visible.because("кнопка раскрытия вложения должна быть видимой"))
             .click()
-        attachmentEditor.`$`("[data-testid='scenario-attachment-content']")
+    }
+
+    /**
+     * Вводим содержимое вложения шага {stepIndex}
+     */
+    fun fillAttachmentContent(stepIndex: Int, attachmentContent: String) {
+        scenarioSteps.findBy(attribute("data-scenario-path", stepIndex.toString()))
+            .`$`("[data-testid='scenario-editor-attachment'] [data-testid='scenario-attachment-content']")
             .name("Поле содержимого вложения.")
             .shouldBe(visible.because("поле содержимого должно быть видимым после раскрытия вложения"))
             .typeOf(attachmentContent)

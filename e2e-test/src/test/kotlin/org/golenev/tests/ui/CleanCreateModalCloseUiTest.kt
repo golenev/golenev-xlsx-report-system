@@ -18,9 +18,7 @@ class CleanCreateModalCloseUiTest {
 
     @BeforeEach
     fun setUp() {
-        step("Готовим приложение к работе") {
-            DriverConfig().setup()
-        }
+        DriverConfig().setup()
     }
 
     @AfterEach
@@ -64,9 +62,12 @@ class CleanCreateModalCloseUiTest {
         step("Открываем главную страницу") {
             mainPage.open()
         }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
         step("Открываем модальное окно создания тест-кейса") {
             mainPage.header.openCreateEditor()
         }
+        step("Проверяем открытие редактора создания") { mainPage.testCaseEditor.checkVisible() }
+        step("Проверяем готовность режима создания") { mainPage.testCaseEditor.checkCreateModeReady() }
         step("Проверяем отсутствие изменений") {
             mainPage.testCaseEditor.footer.checkDirtyStatus("Нет изменений")
         }

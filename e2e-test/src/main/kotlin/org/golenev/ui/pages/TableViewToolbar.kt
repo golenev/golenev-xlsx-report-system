@@ -4,19 +4,16 @@ import com.codeborne.selenide.CollectionCondition.size
 import com.codeborne.selenide.Condition.*
 import com.codeborne.selenide.Selenide.`$`
 import com.codeborne.selenide.Selenide.`$$`
-import io.qameta.allure.Step
 import org.golenev.ui.allure.name
 
 /**
  * Component Object управления группировкой и активными фильтрами представления таблицы.
  *
- * Конструктор получает таблицу, поскольку результат действий toolbar наблюдается также
- * в заголовках групп и кнопках фильтров колонок. Их локаторами и проверками владеет таблица.
- * Передаётся компонент целиком: toolbar использует несколько его проверок.
- *
- * @param testCaseTable таблица, проверяющая наличие групп и сброс состояния фильтра колонки.
+ * Методы отдельно работают с выбранным чипом, кнопкой общего сброса или select группировки.
+ * Количество чипов, состояние кнопок колонок и наличие групп тест проверяет отдельными шагами.
+ * Зависимость от таблицы в конструкторе не требуется.
  */
-class TableViewToolbar(private val testCaseTable: TestCaseTable) {
+class TableViewToolbar {
     private val activeFilterChips =
         `$$`("[data-testid='active-filter-chip']").name("Чипы активных фильтров таблицы")
     private val clearAllFiltersButton =
@@ -24,7 +21,9 @@ class TableViewToolbar(private val testCaseTable: TestCaseTable) {
     private val groupingSelect =
         `$`("[data-testid='table-group-select']").name("Select группировки строк таблицы.")
 
-    @Step("Проверяем активный фильтр колонки {columnKey} с описанием {expectedDescription}")
+    /**
+     * Проверяем активный фильтр колонки {columnKey} с описанием {expectedDescription}
+     */
     fun checkActiveFilter(columnKey: String, expectedDescription: String) {
         activeFilterChips.findBy(attribute("data-name", columnKey))
             .name("Чип активного фильтра колонки $columnKey.")
@@ -32,41 +31,49 @@ class TableViewToolbar(private val testCaseTable: TestCaseTable) {
             .shouldHave(text(expectedDescription))
     }
 
-    @Step("Проверяем количество активных фильтров: {expectedCount}")
+    /**
+     * Проверяем количество активных фильтров: {expectedCount}
+     */
     fun checkActiveFiltersCount(expectedCount: Int) {
         activeFilterChips.shouldHave(size(expectedCount).because("количество чипов должно совпадать с количеством активных фильтров"))
     }
 
-    @Step("Удаляем активный фильтр колонки {columnKey}")
+    /**
+     * Удаляем активный фильтр колонки {columnKey}
+     */
     fun removeActiveFilter(columnKey: String) {
         activeFilterChips.findBy(attribute("data-name", columnKey))
             .name("Чип активного фильтра колонки $columnKey.")
             .shouldBe(enabled)
             .click()
-        testCaseTable.checkColumnFilterInactive(columnKey)
     }
 
-    @Step("Сбрасываем все активные фильтры")
+    /**
+     * Сбрасываем все активные фильтры
+     */
     fun clearAllFilters() {
         clearAllFiltersButton.shouldBe(enabled).click()
-        activeFilterChips.shouldHave(size(0).because("после общего сброса активных фильтров не должно остаться"))
     }
 
-    @Step("Группируем строки таблицы по колонке {columnKey}")
+    /**
+     * Группируем строки таблицы по колонке {columnKey}
+     */
     fun groupBy(columnKey: String) {
         groupingSelect.shouldBe(visible).selectOptionByValue(columnKey)
         groupingSelect.shouldHave(value(columnKey))
     }
 
-    @Step("Проверяем, что группировка выбрана по колонке {columnKey}")
+    /**
+     * Проверяем, что группировка выбрана по колонке {columnKey}
+     */
     fun checkGrouping(columnKey: String) {
         groupingSelect.shouldHave(value(columnKey))
-        testCaseTable.checkGroupsPresent()
     }
 
-    @Step("Проверяем, что группировка не выбрана")
+    /**
+     * Проверяем, что группировка не выбрана
+     */
     fun checkGroupingInactive() {
         groupingSelect.shouldHave(exactValue(""))
-        testCaseTable.checkGroupsAbsent()
     }
 }

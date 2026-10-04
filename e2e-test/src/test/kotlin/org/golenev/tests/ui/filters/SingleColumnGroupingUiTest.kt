@@ -16,11 +16,14 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
     @DisplayName("Строки группируются по Category, а выбранная группа сворачивается")
     fun rowsCanBeGroupedByCategoryAndCollapsed() {
         val fixture = filterFixture()
-        step("Добавляем подготовленные тест-кейсы") {
+        step("Добавляем три тест-кейса: два в категории ${fixture.categoryAlpha} со статусами «Готово» и «Бэклог», один в категории ${fixture.categoryBeta} со статусом «Готово»; приоритеты «Critical», «Blocker» и «Medium»") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и группируем тест-кейсы по категории") {
+        step("Открываем главную страницу") {
             mainPage.open()
+        }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
+        step("Открываем таблицу и группируем тест-кейсы по категории") {
             mainPage.tableViewToolbar.groupBy("category")
         }
         step("Проверяем группы обеих категорий предварительных данных") {
@@ -29,6 +32,9 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
         }
         step("Сворачиваем первую категорию и проверяем скрытие только её тест-кейсов") {
             mainPage.testCaseTable.collapseGroup("category", fixture.categoryAlpha)
+        }
+        step("Проверяем свёрнутое состояние группы") { mainPage.testCaseTable.checkGroupCollapsed("category", fixture.categoryAlpha) }
+        step("Сворачиваем первую категорию и проверяем скрытие только её тест-кейсов") {
             mainPage.testCaseTable.checkRowDisappeared(fixture.firstId)
             mainPage.testCaseTable.checkRowDisappeared(fixture.secondId)
             mainPage.testCaseTable.checkRowVisible(fixture.thirdId)
@@ -40,11 +46,14 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
     @DisplayName("Выбор новой колонки группировки заменяет предыдущую группировку")
     fun newGroupingReplacesPreviousGrouping() {
         val fixture = filterFixture()
-        step("Добавляем подготовленные тест-кейсы") {
+        step("Добавляем три тест-кейса: два в категории ${fixture.categoryAlpha} со статусами «Готово» и «Бэклог», один в категории ${fixture.categoryBeta} со статусом «Готово»; приоритеты «Critical», «Blocker» и «Medium»") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и сначала группируем по категории") {
+        step("Открываем главную страницу") {
             mainPage.open()
+        }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
+        step("Открываем таблицу и сначала группируем по категории") {
             mainPage.tableViewToolbar.groupBy("category")
             mainPage.testCaseTable.checkGroupVisible("category", fixture.categoryAlpha)
         }
@@ -53,6 +62,9 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
         }
         step("Проверяем новую группировку и отсутствие заголовков прежней") {
             mainPage.tableViewToolbar.checkGrouping("priority")
+        }
+        step("Проверяем наличие заголовков групп") { mainPage.testCaseTable.checkGroupsPresent() }
+        step("Проверяем новую группировку и отсутствие заголовков прежней") {
             mainPage.testCaseTable.checkGroupVisible("priority", "Critical")
             mainPage.testCaseTable.checkGroupDisappeared("category", fixture.categoryAlpha)
         }
@@ -63,15 +75,26 @@ class SingleColumnGroupingUiTest : FilterUiTestBase() {
     @DisplayName("Группировка применяется после фильтрации и не создаёт пустые группы")
     fun groupingUsesFilteredRowsOnly() {
         val fixture = filterFixture()
-        step("Добавляем подготовленные тест-кейсы") {
+        step("Добавляем три тест-кейса: два в категории ${fixture.categoryAlpha} со статусами «Готово» и «Бэклог», один в категории ${fixture.categoryBeta} со статусом «Готово»; приоритеты «Critical», «Blocker» и «Medium»") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и оставляем фильтром одну категорию") {
+        step("Открываем главную страницу") {
             mainPage.open()
+        }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
+        step("Проверяем загрузку подготовленной строки таблицы") { mainPage.testCaseTable.checkRowVisible(fixture.firstId) }
+        step("Открываем фильтр колонки") {
             mainPage.testCaseTable.openColumnFilter("category")
-            mainPage.columnFilterPanel.selectFilterValues("category", listOf(fixture.categoryAlpha))
+        }
+        step("Проверяем открытие фильтра колонки") { mainPage.columnFilterPanel.checkOpened("category") }
+        listOf(fixture.categoryAlpha).forEach { filterValue ->
+            step("Выбираем значение фильтра $filterValue") { mainPage.columnFilterPanel.selectFilterValue("category", filterValue) }
+        }
+        step("Применяем фильтр колонки") {
             mainPage.columnFilterPanel.applyColumnFilter("category")
         }
+        step("Проверяем закрытие панели фильтра") { mainPage.columnFilterPanel.checkClosed("category") }
+        step("Проверяем применение фильтра колонки") { mainPage.testCaseTable.checkColumnFilterActive("category") }
         step("Группируем отфильтрованные тест-кейсы по статусу готовности") {
             mainPage.tableViewToolbar.groupBy("generalStatus")
         }

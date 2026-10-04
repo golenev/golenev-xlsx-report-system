@@ -16,18 +16,38 @@ class ActiveFiltersPanelUiTest : FilterUiTestBase() {
     @DisplayName("Применённые фильтры отображаются отдельными человекочитаемыми чипами")
     fun appliedFiltersAreShownAsChips() {
         val fixture = filterFixture()
-        step("Добавляем подготовленные тест-кейсы") {
+        step("Добавляем три тест-кейса: два в категории ${fixture.categoryAlpha} со статусами «Готово» и «Бэклог», один в категории ${fixture.categoryBeta} со статусом «Готово»; приоритеты «Critical», «Blocker» и «Medium»") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и применяем два фильтра") {
+        step("Открываем главную страницу") {
             mainPage.open()
+        }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
+        step("Проверяем загрузку подготовленной строки таблицы") { mainPage.testCaseTable.checkRowVisible(fixture.firstId) }
+        step("Открываем фильтр колонки") {
             mainPage.testCaseTable.openColumnFilter("category")
-            mainPage.columnFilterPanel.selectFilterValues("category", listOf(fixture.categoryAlpha))
+        }
+        step("Проверяем открытие фильтра колонки") { mainPage.columnFilterPanel.checkOpened("category") }
+        listOf(fixture.categoryAlpha).forEach { filterValue ->
+            step("Выбираем значение фильтра $filterValue") { mainPage.columnFilterPanel.selectFilterValue("category", filterValue) }
+        }
+        step("Применяем фильтр колонки") {
             mainPage.columnFilterPanel.applyColumnFilter("category")
+        }
+        step("Проверяем закрытие панели фильтра") { mainPage.columnFilterPanel.checkClosed("category") }
+        step("Проверяем применение фильтра колонки") { mainPage.testCaseTable.checkColumnFilterActive("category") }
+        step("Открываем фильтр колонки") {
             mainPage.testCaseTable.openColumnFilter("generalStatus")
-            mainPage.columnFilterPanel.selectFilterValues("generalStatus", listOf("Готово"))
+        }
+        step("Проверяем открытие фильтра колонки") { mainPage.columnFilterPanel.checkOpened("generalStatus") }
+        listOf("Готово").forEach { filterValue ->
+            step("Выбираем значение фильтра $filterValue") { mainPage.columnFilterPanel.selectFilterValue("generalStatus", filterValue) }
+        }
+        step("Применяем фильтр колонки") {
             mainPage.columnFilterPanel.applyColumnFilter("generalStatus")
         }
+        step("Проверяем закрытие панели фильтра") { mainPage.columnFilterPanel.checkClosed("generalStatus") }
+        step("Проверяем применение фильтра колонки") { mainPage.testCaseTable.checkColumnFilterActive("generalStatus") }
         step("Проверяем два обозначения с понятными описаниями активных фильтров") {
             mainPage.tableViewToolbar.checkActiveFiltersCount(2)
             mainPage.tableViewToolbar.checkActiveFilter("category", fixture.categoryAlpha)
@@ -40,23 +60,42 @@ class ActiveFiltersPanelUiTest : FilterUiTestBase() {
     @DisplayName("Удаление одного чипа сохраняет остальные активные фильтры")
     fun oneFilterCanBeRemovedWithoutResettingOthers() {
         val fixture = filterFixture()
-        step("Добавляем подготовленные тест-кейсы") {
+        step("Добавляем три тест-кейса: два в категории ${fixture.categoryAlpha} со статусами «Готово» и «Бэклог», один в категории ${fixture.categoryBeta} со статусом «Готово»; приоритеты «Critical», «Blocker» и «Medium»") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и ограничиваем строки категорией и статусом") {
-            with(mainPage) {
-                open()
+        with(mainPage) {
+            step("Открываем главную страницу") { open() }
+            step("Проверяем заголовок открытой страницы") { header.checkTitle() }
+            step("Проверяем загрузку подготовленной строки таблицы") { testCaseTable.checkRowVisible(fixture.firstId) }
+            step("Открываем фильтр колонки") {
                 testCaseTable.openColumnFilter("category")
-                columnFilterPanel.selectFilterValues("category", listOf(fixture.categoryAlpha))
+            }
+            step("Проверяем открытие фильтра колонки") { columnFilterPanel.checkOpened("category") }
+            listOf(fixture.categoryAlpha).forEach { filterValue ->
+                step("Выбираем значение фильтра $filterValue") { columnFilterPanel.selectFilterValue("category", filterValue) }
+            }
+            step("Применяем фильтр колонки") {
                 columnFilterPanel.applyColumnFilter("category")
+            }
+            step("Проверяем закрытие панели фильтра") { columnFilterPanel.checkClosed("category") }
+            step("Проверяем применение фильтра колонки") { testCaseTable.checkColumnFilterActive("category") }
+            step("Открываем фильтр колонки") {
                 testCaseTable.openColumnFilter("generalStatus")
-                columnFilterPanel.selectFilterValues("generalStatus", listOf("Готово"))
+            }
+            step("Проверяем открытие фильтра колонки") { columnFilterPanel.checkOpened("generalStatus") }
+            listOf("Готово").forEach { filterValue ->
+                step("Выбираем значение фильтра $filterValue") { columnFilterPanel.selectFilterValue("generalStatus", filterValue) }
+            }
+            step("Применяем фильтр колонки") {
                 columnFilterPanel.applyColumnFilter("generalStatus")
             }
+            step("Проверяем закрытие панели фильтра") { columnFilterPanel.checkClosed("generalStatus") }
+            step("Проверяем применение фильтра колонки") { testCaseTable.checkColumnFilterActive("generalStatus") }
         }
         step("Убираем только фильтр статуса") {
             mainPage.tableViewToolbar.removeActiveFilter("generalStatus")
         }
+        step("Проверяем сброс фильтра колонки") { mainPage.testCaseTable.checkColumnFilterInactive("generalStatus") }
         step("Проверяем сохранение фильтра категории и возврат второго тест-кейса этой категории") {
             with(mainPage) {
                 tableViewToolbar.checkActiveFiltersCount(1)
@@ -73,21 +112,42 @@ class ActiveFiltersPanelUiTest : FilterUiTestBase() {
     @DisplayName("Общий сброс удаляет все фильтры и возвращает полный набор строк")
     fun allFiltersCanBeClearedTogether() {
         val fixture = filterFixture()
-        step("Добавляем подготовленные тест-кейсы") {
+        step("Добавляем три тест-кейса: два в категории ${fixture.categoryAlpha} со статусами «Готово» и «Бэклог», один в категории ${fixture.categoryBeta} со статусом «Готово»; приоритеты «Critical», «Blocker» и «Medium»") {
             createPreliminaryTestDataViaApi(fixture)
         }
-        step("Открываем таблицу и применяем два фильтра") {
+        step("Открываем главную страницу") {
             mainPage.open()
+        }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
+        step("Проверяем загрузку подготовленной строки таблицы") { mainPage.testCaseTable.checkRowVisible(fixture.firstId) }
+        step("Открываем фильтр колонки") {
             mainPage.testCaseTable.openColumnFilter("category")
-            mainPage.columnFilterPanel.selectFilterValues("category", listOf(fixture.categoryAlpha))
+        }
+        step("Проверяем открытие фильтра колонки") { mainPage.columnFilterPanel.checkOpened("category") }
+        listOf(fixture.categoryAlpha).forEach { filterValue ->
+            step("Выбираем значение фильтра $filterValue") { mainPage.columnFilterPanel.selectFilterValue("category", filterValue) }
+        }
+        step("Применяем фильтр колонки") {
             mainPage.columnFilterPanel.applyColumnFilter("category")
+        }
+        step("Проверяем закрытие панели фильтра") { mainPage.columnFilterPanel.checkClosed("category") }
+        step("Проверяем применение фильтра колонки") { mainPage.testCaseTable.checkColumnFilterActive("category") }
+        step("Открываем фильтр колонки") {
             mainPage.testCaseTable.openColumnFilter("priority")
-            mainPage.columnFilterPanel.selectFilterValues("priority", listOf("Critical"))
+        }
+        step("Проверяем открытие фильтра колонки") { mainPage.columnFilterPanel.checkOpened("priority") }
+        listOf("Critical").forEach { filterValue ->
+            step("Выбираем значение фильтра $filterValue") { mainPage.columnFilterPanel.selectFilterValue("priority", filterValue) }
+        }
+        step("Применяем фильтр колонки") {
             mainPage.columnFilterPanel.applyColumnFilter("priority")
         }
+        step("Проверяем закрытие панели фильтра") { mainPage.columnFilterPanel.checkClosed("priority") }
+        step("Проверяем применение фильтра колонки") { mainPage.testCaseTable.checkColumnFilterActive("priority") }
         step("Сбрасываем все фильтры одной командой") {
             mainPage.tableViewToolbar.clearAllFilters()
         }
+        step("Проверяем отсутствие активных фильтров") { mainPage.tableViewToolbar.checkActiveFiltersCount(0) }
         step("Проверяем отсутствие фильтров и возврат всех предварительно созданных строк") {
             mainPage.tableViewToolbar.checkActiveFiltersCount(0)
             mainPage.testCaseTable.checkRowVisible(fixture.firstId)

@@ -19,8 +19,7 @@ class TestSendForceBatchApiTest {
 
     private val reportService = ReportServiceDao()
     private lateinit var batchRequest: TestBatchRequest
-    val reportDay: LocalDate =
-        step("Определяем дату запуска теста") { LocalDate.now().minusDays(18) }
+    val reportDay: LocalDate = LocalDate.now().minusDays(18)
 
     @AfterEach
     fun cleaDb() {
@@ -33,17 +32,15 @@ class TestSendForceBatchApiTest {
     @Test
     @DisplayName("Создаем запись через batch и проверяем отображение в отчете")
     fun createAndReadReportThroughApi() {
-        step("Удаляем отчеты за выбранную дату") {
+        step("Удаляем тест-кейсы с датой готовности $reportDay — 18 дней назад") {
             TestReportDao.deleteReportsByDate(reportDay)
         }
 
-        batchRequest = step("Готовим десять тест-кейсов для добавления") {
-            TestBatchRequest(
-                items = generateTestCases(10, readyDate = reportDay.toString()),
-            )
-        }
+        batchRequest = TestBatchRequest(
+            items = generateTestCases(10, readyDate = reportDay.toString()),
+        )
 
-        step("Отправляем запрос на сохранение подготовленных тест-кейсов") {
+        step("Добавляем десять тест-кейсов с датой готовности $reportDay — 18 дней назад, в категории «E2E_FOR_AUTOTEST», со статусом «Готово» и приоритетом «Medium»") {
             reportService.sendForceBatch(batchRequest)
         }
 
@@ -51,7 +48,7 @@ class TestSendForceBatchApiTest {
             reportService.getReport()
         }
 
-        step("Проверяем количество записей за выбранную дату") {
+        step("Проверяем, что за $reportDay отображаются все десять добавленных тест-кейсов") {
             report.items
                 .filter { it.readyDate == reportDay }
                 .shouldHaveSize(batchRequest.items.size)

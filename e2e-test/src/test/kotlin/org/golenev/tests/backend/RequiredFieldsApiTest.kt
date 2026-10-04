@@ -87,24 +87,22 @@ class RequiredFieldsApiTest {
         field: String,
         omitField: (TestUpsertItem) -> TestUpsertItem,
     ): Response {
-        val payload = step("Готовим тест-кейс без обязательного поля «$field»") {
-            omitField(
-                TestUpsertItem(
-                    testId = "REQ-1",
-                    category = "E2E",
-                    shortTitle = "Проверка обязательных полей",
-                    scenario = ScenarioRequest(
-                        steps = listOf(
-                            ScenarioStepRequest(
-                                number = 1,
-                                text = "Отправляем запрос с пропущенными полями",
-                                attachments = emptyList(),
-                            ),
+        val payload = omitField(
+            TestUpsertItem(
+                testId = "REQ-1",
+                category = "E2E",
+                shortTitle = "Проверка обязательных полей",
+                scenario = ScenarioRequest(
+                    steps = listOf(
+                        ScenarioStepRequest(
+                            number = 1,
+                            text = "Отправляем запрос с пропущенными полями",
+                            attachments = emptyList(),
                         ),
                     ),
                 ),
-            )
-        }
+            ),
+        )
 
         return step("Отправляем запрос на добавление подготовленного тест-кейса без поля «$field»") {
             reportService.sendBatch(

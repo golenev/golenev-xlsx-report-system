@@ -47,43 +47,43 @@ class StartAndRejectRegressionTest {
     @AllureId("202")
     @DisplayName("Запускаем и пытаемся завершить регресс через UI, получая ошибку отсутствия статуса прогона у тестов с проверкой записи в БД")
     fun startAndStopRegressionViaUi() {
-        val regressionDate =
-            step("Определяем дату запуска регрессионного тестирования") { LocalDate.now() }
+        val regressionDate = LocalDate.now()
 
-        val batchRequest = step("Готовим данные для добавления тест-кейса") {
-            TestBatchRequest(
-                items = listOf(
-                    TestUpsertItem(
-                        testId = createdTestId,
-                        category = "API+UI",
-                        shortTitle = "Создан через API",
-                        issueLink = "https://youtrack.test/issue/$createdTestId",
-                        readyDate = regressionDate.toString(),
-                        generalStatus = GeneralTestStatus.QUEUE.value,
-                        priority = Priority.MEDIUM.value,
-                        scenario = ScenarioRequest(
-                            steps = listOf(
-                                ScenarioStepRequest(
-                                    number = 1,
-                                    text = "Создаём запись через API и удаляем через UI",
-                                    attachments = emptyList()
-                                )
+        val batchRequest = TestBatchRequest(
+            items = listOf(
+                TestUpsertItem(
+                    testId = createdTestId,
+                    category = "API+UI",
+                    shortTitle = "Создан через API",
+                    issueLink = "https://youtrack.test/issue/$createdTestId",
+                    readyDate = regressionDate.toString(),
+                    generalStatus = GeneralTestStatus.QUEUE.value,
+                    priority = Priority.MEDIUM.value,
+                    scenario = ScenarioRequest(
+                        steps = listOf(
+                            ScenarioStepRequest(
+                                number = 1,
+                                text = "Создаём запись через API и удаляем через UI",
+                                attachments = emptyList()
                             )
-                        ),
+                        )
                     ),
                 ),
-            )
-        }
+            ),
+        )
 
-        step("Добавляем подготовленный тест-кейс") {
+        step("Добавляем тест-кейс $createdTestId за сегодня со статусом «Очередь» и приоритетом «Medium», без результата регресса") {
             reportService.sendBatch(batchRequest)
         }
 
         step("Открываем главную страницу") { mainPage.open() }
+        step("Проверяем заголовок открытой страницы") { mainPage.header.checkTitle() }
 
-        step("Запускаем регрессионное тестирование") {
-            mainPage.testCaseTable.regressionWidget.startRegression(createdReleaseName)
-        }
+        step("Открываем форму запуска регресса") { mainPage.testCaseTable.regressionWidget.openStartForm() }
+        step("Проверяем доступность ввода имени релиза") { mainPage.testCaseTable.regressionWidget.checkReleaseNameInputVisible() }
+        step("Указываем имя релиза") { mainPage.testCaseTable.regressionWidget.fillReleaseName(createdReleaseName) }
+        step("Запускаем регресс $createdReleaseName за сегодня для тест-кейса $createdTestId без результата прогона") { mainPage.testCaseTable.regressionWidget.saveRegressionStart() }
+        step("Проверяем запуск регресса") { mainPage.testCaseTable.regressionWidget.checkRegressionStarted() }
 
         val regression = step("Проверяем сохранение начатого регрессионного тестирования") {
             RegressionDao.findByReleaseName(createdReleaseName)
@@ -104,10 +104,12 @@ class StartAndRejectRegressionTest {
         step("Проверяем предупреждение о необходимости заполнить результаты тестирования") {
             mainPage.warningPopup.checkDefaultRegressionWarning()
         }
+        step("Проверяем заголовок предупреждения") { mainPage.warningPopup.checkDefaultRegressionWarningTitle() }
 
         step("Закрываем предупреждение") {
             mainPage.warningPopup.close()
         }
+        step("Проверяем закрытие предупреждения") { mainPage.warningPopup.checkClosed() }
 
         step("Отменяем регрессионное тестирование") {
             mainPage.testCaseTable.regressionWidget.cancelRegression()
